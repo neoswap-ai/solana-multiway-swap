@@ -1,0 +1,22 @@
+User A - 
+giv 2
+1.mint: DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY
+  ata : 7HMD4BHs2yDBANKw6oGsJp9RSQYhWRe1irDYSSgDMhub
+2.mint: 7CZRVmsPoTs4bDjLGs2jMunBg54Lv1bdvmtWQVrFur5G
+  ata : GZbwrsmLcTzk4NrAV1GBQNeSjLJVSRZM83ioaVSYmpaW
+  
+tak 1
+
+User B - 
+giv 1 
+1.mint: DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew
+  ata : G8CBntn6SiCvjD2q6H7wAm8NE954Hw9VnbJVGpZekLfQ
+
+tak 2
+
+User C - 
+giv 1
+1.mint: UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc
+  ata : HkQEDvy8AJRexhpSnT6EkitJw3tRbX5QiPEXjMonVxtd
+
+tak 1
