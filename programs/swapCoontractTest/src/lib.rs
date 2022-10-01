@@ -8,8 +8,6 @@ declare_id!("BRBpGfF6xmQwAJRfx7MKPZq1KEgTvVMfcNXHbs42w8Tz");
 #[program]
 pub mod swap_coontract_test {
 
-
-
     use super::*;
     pub fn initialize(
         ctx: Context<Initialize>,
@@ -24,16 +22,15 @@ pub mod swap_coontract_test {
         swap_data_account.is_complete = false;
 
         swap_data_account.user_a = sent_data.user_a;
-        // swap_data_account.user_a_amount = sent_data.user_a_amount;
-        swap_data_account.user_a_nft1 = sent_data.user_a_nft1;
-        swap_data_account.user_a_nft2 = sent_data.user_a_nft2;
+        swap_data_account.user_a_amount = sent_data.user_a_amount;
+        swap_data_account.user_a_nft = sent_data.user_a_nft;
 
         swap_data_account.user_b = sent_data.user_b;
-        // swap_data_account.user_b_amount = sent_data.user_b_amount;
+        swap_data_account.user_b_amount = sent_data.user_b_amount;
         swap_data_account.user_b_nft = sent_data.user_b_nft;
 
         swap_data_account.user_c = sent_data.user_c;
-        // swap_data_account.user_c_amount = sent_data.user_c_amount;
+        swap_data_account.user_c_amount = sent_data.user_c_amount;
         swap_data_account.user_c_nft = sent_data.user_c_nft;
 
         //user A ATA PDA linked to the NFT to transfer
@@ -118,7 +115,7 @@ pub mod swap_coontract_test {
     //     } else if signer.key == &swap_data_account.user_c {
     //     } else {
     //         // return anchor_lang::prelude::ProgramError::Custom(10)// Err(error!(SCERROR::UserNotPartOfTrade));
-    //         // return err!(MyError::UserNotPartOfTrade)//err!(MyError::UserNotPartOfTrade.into()); 
+    //         // return err!(MyError::UserNotPartOfTrade)//err!(MyError::UserNotPartOfTrade.into());
     //         // return err!(MyError::UserNotPartOfTrade)
     //         // return Err(error!(MyError::UserNotPartOfTrade))//Err(error!(MyError::UserNotPartOfTrade));
     //     }
@@ -198,13 +195,13 @@ pub mod swap_coontract_test {
 }
 
 #[derive(Accounts)]
-#[instruction(trade_ref: String, seed: Vec<u8>, bump: u8)]
+#[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct Initialize<'info> {
     #[account(
         init,
         payer = signer,
-        seeds = [trade_ref.as_bytes(), &seed],
+        seeds = [&seed],
         bump,
         space=SwapData::LEN
     )]
@@ -318,29 +315,39 @@ pub struct SwapData {
     pub initializer: Pubkey,
     pub is_complete: bool,
     pub user_a: Pubkey,
-    // pub user_a_amount: i64,
-    pub user_a_nft1: Pubkey,
-    pub user_a_nft2: Pubkey,
+    pub user_a_amount: i64,
+    pub user_a_nft: NftSwap,
     pub user_b: Pubkey,
-    // pub user_b_amount: i64,
-    pub user_b_nft: Pubkey,
+    pub user_b_amount: i64,
+    pub user_b_nft: NftSwap,
     pub user_c: Pubkey,
-    // pub user_c_amount: i64,
-    pub user_c_nft: Pubkey,
+    pub user_c_amount: i64,
+    pub user_c_nft: NftSwap,
 }
-
 impl SwapData {
     const LEN: usize = 8
         + 1 //bool
-        + 32* (
-            4 
-            + 2 //sent_data.user_a_nft.len
+        + 32 * 4
+        + 
+        NftSwap::LEN 
+            *(
+            1 //sent_data.user_a_nft.len
             + 1 //user_b_nft.len
             + 1 //user_c_nft.len
-        ) ;//pubkey
-        // + 3 * 64; //u8
+            ) //NftSwap
+    + 3 * 64; //i64
 }
 
+#[account]
+#[derive(Default)]
+pub struct NftSwap {
+    mint: Pubkey,
+    destinary: Pubkey,
+}
+
+impl NftSwap {
+    const LEN: usize = 32 * 2;
+}
 
 #[error_code]
 pub enum SCERROR {

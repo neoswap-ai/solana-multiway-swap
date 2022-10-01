@@ -8,6 +8,7 @@ import {
 } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
 import React, { FC, ReactNode, useMemo } from 'react';
+import { Solana } from './solana';
 
 require('./App.css');
 require('@solana/wallet-adapter-react-ui/styles.css');
@@ -51,6 +52,8 @@ const Content: FC = () => {
     return (
         <div className="App">
             <WalletMultiButton />
+            <br />
+            <Solana />
         </div>
     );
 };

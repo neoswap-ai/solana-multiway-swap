@@ -31,27 +31,14 @@ import React, { FC, useCallback } from "react";
 import {
   opts,
   splAssociatedTokenAccountProgramId,
-  getAtaPda,
-  getUserMint,
-  create3TokenAccount,
-  // SwapData,
+  // getAtaPda,
+  // getUserMint,
+  // create3TokenAccount,
+  SwapData,
 } from "./util";
 import { idl } from "./idl";
 // import { ESCROW_ACCOUNT_DATA_LAYOUT } from "./util";
-export type SwapData = {
-  initializer: PublicKey;
-  isComplete: boolean;
-  userA: PublicKey;
-  // userAAmount: Number;
-  userANft1: PublicKey;
-  userANft2: PublicKey;
-  userB: PublicKey;
-  // userBAmount: Number;
-  userBNft: PublicKey;
-  userC: PublicKey;
-  // userCAmount: Number;
-  userCNft: PublicKey;
-};
+
 // let _window = window as any;
 window.Buffer = window.Buffer || require("buffer").Buffer;
 
@@ -152,59 +139,59 @@ export const Custom: FC = () => {
     console.log("swapDataAccount_bump", swapDataAccount_bump);
     console.log("sentData", sentData);
 
-    const [swapDataAtaMintA1, swapDataAtaMintA1_bump] = await getAtaPda(
-      swapDataAccount,
-      sentData.userANft1
-    );
-    console.log(
-      "swapDataAtaMintA1",
-      swapDataAtaMintA1,
-      "swapDataAtaMintA1_bump",
-      swapDataAtaMintA1_bump
-    );
+    // const [swapDataAtaMintA1, swapDataAtaMintA1_bump] = await getAtaPda(
+    //   swapDataAccount,
+    //   sentData.userANft1
+    // );
+    // console.log(
+    //   "swapDataAtaMintA1",
+    //   swapDataAtaMintA1,
+    //   "swapDataAtaMintA1_bump",
+    //   swapDataAtaMintA1_bump
+    // );
 
-    const [swapDataAtaMintA2, swapDataAtaMintA2_bump] = await getAtaPda(
-      swapDataAccount,
-      sentData.userANft2
-    );
-    console.log(
-      "swapDataAtaMintA2",
-      swapDataAtaMintA2.toBase58(),
-      "swapDataAtaMintA2_bump",
-      swapDataAtaMintA2_bump
-    );
+    // const [swapDataAtaMintA2, swapDataAtaMintA2_bump] = await getAtaPda(
+    //   swapDataAccount,
+    //   sentData.userANft2
+    // );
+    // console.log(
+    //   "swapDataAtaMintA2",
+    //   swapDataAtaMintA2.toBase58(),
+    //   "swapDataAtaMintA2_bump",
+    //   swapDataAtaMintA2_bump
+    // );
 
-    const [swapDataAtaMintB, swapDataAtaMintB_bump] = await getAtaPda(
-      swapDataAccount,
-      sentData.userBNft
-    );
-    console.log(
-      "swapDataAtaMintB",
-      swapDataAtaMintB.toBase58(),
-      "swapDataAtaMintB_bump",
-      swapDataAtaMintB_bump
-    );
+    // const [swapDataAtaMintB, swapDataAtaMintB_bump] = await getAtaPda(
+    //   swapDataAccount,
+    //   sentData.userBNft
+    // );
+    // console.log(
+    //   "swapDataAtaMintB",
+    //   swapDataAtaMintB.toBase58(),
+    //   "swapDataAtaMintB_bump",
+    //   swapDataAtaMintB_bump
+    // );
 
-    const [swapDataAtaMintC, swapDataAtaMintC_bump] = await getAtaPda(
-      swapDataAccount,
-      sentData.userCNft
-    );
-    console.log(
-      "swapDataAtaMintC",
-      swapDataAtaMintC.toBase58(),
-      "swapDataAtaMintC_bump",
-      swapDataAtaMintC_bump
-    );
+    // const [swapDataAtaMintC, swapDataAtaMintC_bump] = await getAtaPda(
+    //   swapDataAccount,
+    //   sentData.userCNft
+    // );
+    // console.log(
+    //   "swapDataAtaMintC",
+    //   swapDataAtaMintC.toBase58(),
+    //   "swapDataAtaMintC_bump",
+    //   swapDataAtaMintC_bump
+    // );
 
-    const holdSolAtas = await create3TokenAccount(
-      program.provider,
-      web3.SystemProgram.programId,
-      swapDataAccount
-    );
-    console.log("holdSolAtasacc1", holdSolAtas.acc1.toBase58());
-    console.log("holdSolAtasacc2", holdSolAtas.acc2.toBase58());
-    console.log("holdSolAtasacc3", holdSolAtas.acc3.toBase58());
-    console.log("holdSolAtassignature", holdSolAtas.signature);
+    // const holdSolAtas = await create3TokenAccount(
+    //   program.provider,
+    //   web3.SystemProgram.programId,
+    //   swapDataAccount
+    // );
+    // console.log("holdSolAtasacc1", holdSolAtas.acc1.toBase58());
+    // console.log("holdSolAtasacc2", holdSolAtas.acc2.toBase58());
+    // console.log("holdSolAtasacc3", holdSolAtas.acc3.toBase58());
+    // console.log("holdSolAtassignature", holdSolAtas.signature);
 
     console.log(
       "web3.SystemProgram.programId",
