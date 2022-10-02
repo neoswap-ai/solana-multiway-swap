@@ -44,6 +44,42 @@ export const idl = {
                 },
             ],
         },
+        {
+            name: 'deposit',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+                {
+                    name: 'depositPdaTokenAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userTokenAccountToDeposit',
+                    isMut: true,
+                    isSigner: false,
+                },
+            ],
+            args: [],
+        },
     ],
     accounts: [
         {

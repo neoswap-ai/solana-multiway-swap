@@ -56,7 +56,6 @@ export const Solana: FC = () => {
     const initialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         // console.log('publicKey', publicKey.toBase58());
-
         const sentData: SwapData = {
             initializer: publicKey,
             isComplete: false,
@@ -65,7 +64,7 @@ export const Solana: FC = () => {
             userANft:
                 // [
                 {
-                    mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
+                    mint: new PublicKey('7CZRVmsPoTs4bDjLGs2jMunBg54Lv1bdvmtWQVrFur5G'),
                     destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
                 } as NftSwap,
             // ]
@@ -165,7 +164,7 @@ export const Solana: FC = () => {
             userANft:
                 // [
                 {
-                    mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
+                    mint: new PublicKey('7CZRVmsPoTs4bDjLGs2jMunBg54Lv1bdvmtWQVrFur5G'),
                     destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
                 } as NftSwap,
             // ]
@@ -226,13 +225,16 @@ export const Solana: FC = () => {
         console.log('SwapData', swapData);
         let mint: PublicKey;
         let amount: BN;
-        if (swapData.userA === publicKey) {
+        console.log('swapData.userA', swapData.userA.toBase58());
+        console.log('publickey', publicKey.toBase58());
+
+        if (swapData.userA.toBase58() === publicKey.toBase58()) {
             mint = swapData.userANft.mint;
             amount = swapData.userAAmount;
-        } else if (swapData.userB === publicKey) {
+        } else if (swapData.userB.toBase58() === publicKey.toBase58()) {
             mint = swapData.userBNft.mint;
             amount = swapData.userBAmount;
-        } else if (swapData.userC === publicKey) {
+        } else if (swapData.userC.toBase58() === publicKey.toBase58()) {
             mint = swapData.userCNft.mint;
             amount = swapData.userCAmount;
         } else {
@@ -247,21 +249,29 @@ export const Solana: FC = () => {
 
         try {
             pdaMintAta = await findAtaUserFromMint(program, mint, swapDataAccount);
-            console.log('pdaMintAta', pdaMintAta);
+            console.log('pdaMintAta', pdaMintAta.toBase58());
         } catch (error) {
-            let { ix: ixCreateMintAta, pdaMintAta: pdaMintAta } = await createInstructionPdaAta(
-                program,
-                mint,
-                publicKey,
-                swapDataAccount
-            );
-            console.log('pdaMintAta other + txadd', pdaMintAta);
+            const res = await createInstructionPdaAta(program, mint, publicKey, swapDataAccount);
+            pdaMintAta = res.pdaMintAta;
+            ixCreateMintAta = res.ix;
+            console.log('pdaMintAta other + txadd', pdaMintAta.toBase58());
 
             txCreateMintAte.add(ixCreateMintAta);
         }
 
-        
+        const depositIx = await program.instruction.deposit({
+            accounts: {
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                swapDataAccount: swapDataAccount,
+                signer: publicKey,
+                depositPdaTokenAccount: pdaMintAta,
+                userTokenAccountToDeposit: userMintAta,
+            },
+        });
+        console.log('depositIx', depositIx);
 
+        txCreateMintAte.add(depositIx);
         txCreateMintAte.feePayer = publicKey;
         txCreateMintAte.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
@@ -269,7 +279,6 @@ export const Solana: FC = () => {
 
         const hash = await program.provider.send(txCreateMintAte);
         console.log('hash', hash);
-
         // const pdaMintAta = await getAssociatedTokenAddress(swapData.userANft.mint, swapDataAccount);
 
         // const pdaMintAta = await findAtaUserFromMint(program, swapData.userANft.mint, swapDataAccount);

@@ -10,7 +10,6 @@ export async function findAtaUserFromMint(program: Program, mint: PublicKey, pub
         })
     ).value[0].pubkey;
 }
-
 export async function createInstructionPdaAta(
     program: Program,
     mint: PublicKey,
