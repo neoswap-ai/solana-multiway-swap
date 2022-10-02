@@ -3,7 +3,7 @@ use anchor_lang::solana_program::entrypoint::ProgramResult;
 use anchor_spl::token::TokenAccount;
 use anchor_spl::token::Transfer;
 use anchor_lang::solana_program::program::{invoke,
-    //  invoke_signed
+     invoke_signed
     };
 // use anchor_spl::token::{*,TokenAccount,Mint};
 
@@ -53,12 +53,71 @@ pub mod swap_coontract_test {
         Ok(())
     }
 
+    // pub fn deposit_nft(
+    //     ctx: Context<Deposit>,
+    //     // _trade_ref: String,
+    //     // _seed: Vec<u8>,
+    //     // _bump: u8,
+    //     // nft_to_deposit: Pubkey,
+    // ) -> ProgramResult {
+
+    //     let swap_data_account = &ctx.accounts.swap_data_account;
+    //     let token_program = &ctx.accounts.token_program;
+    //     let deposit_pda_token_account = &ctx.accounts.deposit_pda_token_account;
+    //     let signer = &ctx.accounts.signer;
+    //     let user_token_account_to_deposit = &ctx.accounts.user_token_account_to_deposit;
+
+    //     let nft_to_deposit_mint = ctx.accounts.user_token_account_to_deposit;
+    //     // let mut nb_try: u16 = 0;
+    //     // let mut user_selected: u8;
+    //     if signer.key == &swap_data_account.user_a.key() {
+    //         // user_selected = 0 as u8;
+    //         // for nft_id in 0..swap_data_account.user_a_nft.len() {
+    //             if swap_data_account.user_a_nft.mint == nft_to_deposit_mint {
+    //                 msg!("userA");
+                                     
+    //     anchor_spl::token::transfer(
+    //         CpiContext::new(
+    //             token_program.to_account_info(),
+    //             anchor_spl::token::Transfer {
+    //                 from: user_token_account_to_deposit.to_account_info(),
+    //                 to: deposit_pda_token_account.to_account_info(),
+    //                 authority: signer.to_account_info(),
+    //             },
+    //         ),
+    //         1,
+    //     )?;
+    //             } else {
+    //                 // nb_try += 1;
+    //                 return  Err(error!(SCERROR::MintNotFound).into());
+    //             }
+    //         // }
+    //     } else if signer.key == &swap_data_account.user_b.key() {
+    //         msg!("userB")
+
+    //     } else if signer.key == &swap_data_account.user_c.key() {
+    //         msg!("userC")
+
+    //     } else {
+    //         return  Err(error!(SCERROR::UserNotPartOfTrade).into());
+    //     }
+
+
+    //     // ////////
+
+       
+
+    //     // ////////
+    //     Ok(())
+    // }
+    // + Create PDAs for the 3 users and create ATA
     pub fn deposit(
         ctx: Context<Deposit>,
         // _trade_ref: String,
         // _seed: Vec<u8>,
         // _bump: u8,
         // nft_to_deposit: Pubkey,
+        amount :u64
     ) -> ProgramResult {
 
         let swap_data_account = &ctx.accounts.swap_data_account;
@@ -67,19 +126,23 @@ pub mod swap_coontract_test {
         let signer = &ctx.accounts.signer;
         let user_token_account_to_deposit = &ctx.accounts.user_token_account_to_deposit;
 
-        let nft_to_deposit_mint = ctx.accounts.user_token_account_to_deposit.mint;
-        // let mut nb_try: u16 = 0;
+        // let nft_to_deposit_mint = ctx.accounts.user_token_account_to_deposit;
+        
+    // let mut nb_try: u16 = 0;
         // let mut user_selected: u8;
         if signer.key == &swap_data_account.user_a.key() {
+            if (amount==1){
+
+             } else if (swap_data_account.user_a_amount.is_negative()){
+                return Err(error!(SCERROR::ShouldntSend).into())
+            } else if (amount !=swap_data_account.user_a_amount.unsigned_abs()){
+                return Err(error!(SCERROR::AmountIncorrect).into()) 
+            }
             // user_selected = 0 as u8;
             // for nft_id in 0..swap_data_account.user_a_nft.len() {
-                if swap_data_account.user_a_nft.mint == nft_to_deposit_mint {
+                // if swap_data_account.user_a_nft.mint == nft_to_deposit_mint {
                     msg!("userA");
-                    msg!("{:}",&user_token_account_to_deposit.key());
-                    msg!("{:}",&deposit_pda_token_account.key());
-                    msg!("{:}",&nft_to_deposit_mint);
-
-                   
+                                     
         anchor_spl::token::transfer(
             CpiContext::new(
                 token_program.to_account_info(),
@@ -89,12 +152,12 @@ pub mod swap_coontract_test {
                     authority: signer.to_account_info(),
                 },
             ),
-            1,
+            amount,
         )?;
-                } else {
-                    // nb_try += 1;
-                    return  Err(error!(SCERROR::MintNotFound).into());
-                }
+                // } else {
+                //     // nb_try += 1;
+                //     return  Err(error!(SCERROR::MintNotFound).into());
+                // }
             // }
         } else if signer.key == &swap_data_account.user_b.key() {
             msg!("userB")
@@ -114,8 +177,91 @@ pub mod swap_coontract_test {
         // ////////
         Ok(())
     }
-    // + Create PDAs for the 3 users and create ATA
+    pub fn claim(
+        ctx: Context<Claim>,
+        // _trade_ref: String,
+        seed: Vec<u8>,
+        bump: u8,
+        // nft_to_deposit: Pubkey,
+        // amount :u64
+    ) -> ProgramResult {
 
+        let swap_data_account = &ctx.accounts.swap_data_account;
+
+let amount:u64;
+if ctx.accounts.signer.key == &swap_data_account.user_a.key() {
+    msg!("userA");
+     if (swap_data_account.user_a_amount>0){
+
+         amount =swap_data_account.user_a_amount.unsigned_abs();
+         let ix2 = spl_token::instruction::transfer(
+            &ctx.accounts.token_program.key,
+            &ctx.accounts.swap_data_account.to_account_info().key,
+            &ctx.accounts.user_token_account_to_receive.to_account_info().key,
+            &ctx.accounts.swap_data_account.key(),
+            &[&ctx.accounts.swap_data_account.key()],
+            amount,
+        )?;
+        invoke_signed(
+            &ix2,
+            &[
+                ctx.accounts.token_program.clone(),
+                ctx.accounts.swap_data_account.to_account_info(),
+                ctx.accounts.user_token_account_to_receive.to_account_info(),
+                ctx.accounts.swap_data_account.to_account_info(),
+            ],
+            &[&[&seed[..], &[bump]]],
+        )?;
+     }
+
+
+     let ix = spl_token::instruction::transfer(
+        &ctx.accounts.token_program.key,
+        &ctx.accounts.pda_token_account.to_account_info().key,
+        &ctx.accounts.user_token_account_to_receive.to_account_info().key,
+        &ctx.accounts.swap_data_account.key(),
+        &[&ctx.accounts.swap_data_account.key()],
+        1,
+    )?;
+    invoke_signed(
+        &ix,
+        &[
+            ctx.accounts.token_program.clone(),
+            ctx.accounts.pda_token_account.to_account_info(),
+            ctx.accounts.user_token_account_to_receive.to_account_info(),
+            ctx.accounts.swap_data_account.to_account_info(),
+        ],
+        &[&[&seed[..], &[bump]]],
+    )?;
+    //  anchor_spl::token::transfer(
+    //     CpiContext::new(
+    //         ctx.accounts.token_program.to_account_info(),
+    //         anchor_spl::token::Transfer {
+    //             from: ctx.accounts.pda_token_account.to_account_info(),
+    //             to: ctx.accounts.user_token_account_to_receive.to_account_info(),
+    //             authority: ctx.accounts.signer.to_account_info(),
+    //         },
+    //     ),
+    //     1,
+    // )?;
+
+} else if ctx.accounts.signer.key == &swap_data_account.user_b.key() {
+    msg!("userB");
+    amount = swap_data_account.user_b_amount.unsigned_abs();
+
+} else if ctx.accounts.signer.key == &swap_data_account.user_c.key() {
+    msg!("userC");
+    amount = swap_data_account.user_c_amount.unsigned_abs();
+
+} else {
+    return  Err(error!(SCERROR::UserNotPartOfTrade).into());
+}
+
+
+
+        Ok(())
+    }
+   
 }
 
 #[derive(Accounts)]
@@ -154,9 +300,37 @@ pub struct Deposit<'info> {
     #[account(mut)]
     signer: Signer<'info>,
     #[account(mut)]
-    deposit_pda_token_account: Account<'info, TokenAccount>,
+    deposit_pda_token_account: UncheckedAccount<'info>,
     #[account(mut)]
-    user_token_account_to_deposit: Account<'info,TokenAccount>,
+    user_token_account_to_deposit: UncheckedAccount<'info>,
+    // #[account(mut)]
+    // deposit_pda_token_account: Account<'info, TokenAccount>,
+    // #[account(mut)]
+    // user_token_account_to_deposit: Account<'info,TokenAccount>,
+
+}
+
+#[derive(Accounts)]
+// #[instruction(seed: Vec<u8>, bump: u8)]
+
+pub struct Claim<'info> {
+    #[account(executable)]
+    system_program: AccountInfo<'info>,
+    #[account(executable)]
+    token_program: AccountInfo<'info>,
+    // program_id: AccountInfo<'info>,
+    #[account(mut)]
+    swap_data_account: Account<'info, SwapData>,
+    #[account(mut)]
+    signer: Signer<'info>,
+    #[account(mut)]
+    pda_token_account: UncheckedAccount<'info>,
+    #[account(mut)]
+    user_token_account_to_receive: UncheckedAccount<'info>,
+    // #[account(mut)]
+    // deposit_pda_token_account: Account<'info, TokenAccount>,
+    // #[account(mut)]
+    // user_token_account_to_deposit: Account<'info,TokenAccount>,
 
 }
 
@@ -206,6 +380,10 @@ pub enum SCERROR {
     UserNotPartOfTrade,
     #[msg("Mint not found")]
     MintNotFound,
+    #[msg("Amount given isn't correct")]
+    AmountIncorrect,
+    #[msg("User should be receiving funds")]
+    ShouldntSend,
 }
 
 
