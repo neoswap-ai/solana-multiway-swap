@@ -23,22 +23,22 @@ export async function findAtaUserFromMint(program: Program, mint: PublicKey, pub
 export async function createInstructionPdaAta(
     mint: PublicKey,
     payer: PublicKey,
-    pda: PublicKey
-): Promise<{ ix: TransactionInstruction; pdaMintAta: PublicKey }> {
-    const [pidMintAta, pidMintAta_bump] = await PublicKey.findProgramAddress(
-        [pda.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    owner: PublicKey
+): Promise<{ ix: TransactionInstruction; mintAta: PublicKey; mintAta_bump: number }> {
+    const [mintAta, mintAta_bump] = await PublicKey.findProgramAddress(
+        [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
         splAssociatedTokenAccountProgramId
     );
-    console.log('pidMintAta', pidMintAta.toBase58());
+    console.log('mintAta', mintAta.toBase58());
 
     const ixCreateMintAta = createAssociatedTokenAccountInstruction(
         payer,
-        pidMintAta,
-        pda,
+        mintAta,
+        owner,
         mint
         // programId
     );
-    return { ix: ixCreateMintAta, pdaMintAta: pidMintAta };
+    return { ix: ixCreateMintAta, mintAta: mintAta, mintAta_bump: mintAta_bump };
 }
 // export async function createInstructionPdasolAta(
 //     program: Program,

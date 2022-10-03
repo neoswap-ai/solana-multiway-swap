@@ -392,31 +392,23 @@ export const Solana: FC = () => {
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('publickey', publicKey.toBase58());
 
-        let { transaction: createAccountTx, ata: userAta } = await claimNFTInstruction(
+        let { transaction: createClaimNFTx, ata: userAta } = await claimNFTInstruction(
             program,
             publicKey,
-            swapData.userANft.mint
+            swapData.userBNft.mint,
+            swapDataAccount,
+            swapDataAccount_seed,
+            swapDataAccount_bump
         );
-        createAccountTx.feePayer = publicKey;
-        createAccountTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-        if (createAccountTx.instructions.length !== 0) {
-            const hash1 = await program.provider.send(createAccountTx);
+        createClaimNFTx.feePayer = publicKey;
+        createClaimNFTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        // if (createAccountTx.instructions.length !== 0) {
+            const hash1 = await program.provider.send(createClaimNFTx);
             console.log('hash1', hash1);
-        }
-        let swapDataAta = await findAtaUserFromMint(program, swapData.userANft.mint, swapDataAccount);
-        console.log('swapDataAta', swapDataAta.toBase58());
+        // }
+        // console.log('swapDataAta', swapDataAta.toBase58());
 
-        const hash = await program.rpc.claim(swapDataAccount_seed, swapDataAccount_bump, new BN(1), true, {
-            accounts: {
-                systemProgram: web3.SystemProgram.programId,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                swapDataAccount: swapDataAccount,
-                pdaTokenAccount: swapDataAta,
-                signer: publicKey,
-                userTokenAccountToReceive: userAta,
-            },
-        });
-        console.log('hash', hash);
+        // console.log('hash', hash);
 
         // let txCreateMintAte = new Transaction();
         if (swapData.userAAmount.toNumber() < 0) {
