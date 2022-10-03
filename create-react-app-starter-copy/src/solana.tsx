@@ -27,7 +27,7 @@ import {
     createTokenAccountCustom,
     findAtaUserFromMint,
 } from './solana.utils';
-import { depositNFTInstruction, depositTokenInstruction } from './solana.programInstruction';
+import { claimNFTInstruction, depositNFTInstruction, depositTokenInstruction } from './solana.programInstruction';
 
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -253,7 +253,7 @@ export const Solana: FC = () => {
 
         let txCreateMintAte = new Transaction();
         let createSolAccount;
-        txCreateMintAte.add(await depositNFTInstruction(program, publicKey, mint, swapDataAccount));
+        txCreateMintAte.add((await depositNFTInstruction(program, publicKey, mint, swapDataAccount)).transaction);
 
         if (amount.toNumber() > 0) {
             console.log('token to send');
@@ -378,60 +378,73 @@ export const Solana: FC = () => {
             programId
         );
 
-        console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccount)) as SwapData;
 
         console.log('SwapData', swapData);
-        let mint: PublicKey;
-        let amount: BN;
+        console.log('swapDataAccount_seed', swapDataAccount_seed);
+        console.log('swapDataAccount_bump', swapDataAccount_bump);
+        console.log('swapData.userAAmount.toNumber()', Math.abs(swapData.userAAmount.toNumber()));
+        // let mint: PublicKey;
+        // let amount: BN;
         console.log('swapData.userA', swapData.userA.toBase58());
+        console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('publickey', publicKey.toBase58());
 
-        if (swapData.userA.toBase58() === publicKey.toBase58()) {
-            console.log('userA');
-
-            mint = swapData.userANft.mint;
-            amount = swapData.userAAmount;
-        } else if (swapData.userB.toBase58() === publicKey.toBase58()) {
-            console.log('userB');
-
-            mint = swapData.userBNft.mint;
-            amount = swapData.userBAmount;
-        } else if (swapData.userC.toBase58() === publicKey.toBase58()) {
-            console.log('userC');
-
-            mint = swapData.userCNft.mint;
-            amount = swapData.userCAmount;
-        } else {
-            throw Error('User not known in the trade');
+        let { transaction: createAccountTx, ata: userAta } = await claimNFTInstruction(
+            program,
+            publicKey,
+            swapData.userANft.mint
+        );
+        createAccountTx.feePayer = publicKey;
+        createAccountTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        if (createAccountTx.instructions.length !== 0) {
+            const hash1 = await program.provider.send(createAccountTx);
+            console.log('hash1', hash1);
         }
+        let swapDataAta = await findAtaUserFromMint(program, swapData.userANft.mint, swapDataAccount);
+        console.log('swapDataAta', swapDataAta.toBase58());
 
-        let txCreateMintAte = new Transaction();
-        let createSolAccount;
-        txCreateMintAte.add(await depositNFTInstruction(program, publicKey, mint, swapDataAccount));
-
-        if (amount.toNumber() > 0) {
-            console.log('token to send');
-            // const pdaSolAta = await createTokenAccountCustom(program.provider, swapDataAccount);
-            // createSolAccount = await createInstructionPdasolAta(publicKey, program.provider);
-            txCreateMintAte.add(
-                web3.SystemProgram.transfer({
-                    fromPubkey: publicKey,
-                    toPubkey: swapDataAccount,
-                    lamports: amount.toNumber() * 10 ** 9,
-                })
-                // await depositTokenInstruction(program, publicKey, mint, swapData.userAAmount.toNumber())
-            );
-        }
-        txCreateMintAte.feePayer = publicKey;
-        txCreateMintAte.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-        const hash = await program.provider.send(txCreateMintAte);
-        console.log('txCreateMintAte', txCreateMintAte);
-
-        // const hash = await program.provider.send(txCreateMintAte);
+        const hash = await program.rpc.claim(swapDataAccount_seed, swapDataAccount_bump, new BN(1), true, {
+            accounts: {
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                swapDataAccount: swapDataAccount,
+                pdaTokenAccount: swapDataAta,
+                signer: publicKey,
+                userTokenAccountToReceive: userAta,
+            },
+        });
         console.log('hash', hash);
+
+        // let txCreateMintAte = new Transaction();
+        if (swapData.userAAmount.toNumber() < 0) {
+            const hash = await program.rpc.claim(
+                swapDataAccount_seed,
+                swapDataAccount_bump,
+                new BN(Math.abs(swapData.userAAmount.toNumber())),
+                false,
+                {
+                    accounts: {
+                        systemProgram: web3.SystemProgram.programId,
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        swapDataAccount: swapDataAccount,
+                        pdaTokenAccount: swapDataAccount,
+                        signer: publicKey,
+                        userTokenAccountToReceive: publicKey,
+                    },
+                }
+            );
+            console.log('hash', hash);
+        }
+
+        // txCreateMintAte.feePayer = publicKey;
+        // txCreateMintAte.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        // const hash = await program.provider.send(txCreateMintAte);
+        // // const hash = await program.provider.send(txCreateMintAte);
+        // console.log('txCreateMintAte', txCreateMintAte);
+
         // const pdaMintAta = await getAssociatedTokenAddress(swapData.userANft.mint, swapDataAccount);
 
         // const pdaMintAta = await findAtaUserFromMint(program, swapData.userANft.mint, swapDataAccount);
@@ -472,7 +485,6 @@ export const Solana: FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [publicKey, connection]);
 
-
     const onClick = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
@@ -510,10 +522,14 @@ export const Solana: FC = () => {
             <br />
             <button onClick={initialize} disabled={!publicKey}>
                 initialize
-            </button>
+            </button>{' '}
             {/* <br /> */}
             <button onClick={deposit} disabled={!publicKey}>
                 Deposit
+            </button>
+            <br />
+            <button onClick={claim} disabled={!publicKey}>
+                claim
             </button>
             {/* <button onClick={deposit} disabled={!publicKey}>
             Deposit

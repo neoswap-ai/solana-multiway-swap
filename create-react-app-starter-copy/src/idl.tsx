@@ -78,7 +78,65 @@ export const idl = {
                     isSigner: false,
                 },
             ],
-            args: [],
+            args: [
+                {
+                    name: 'amount',
+                    type: 'u64',
+                },
+            ],
+        },
+        {
+            name: 'claim',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+                {
+                    name: 'pdaTokenAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userTokenAccountToReceive',
+                    isMut: true,
+                    isSigner: false,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'amountDesired',
+                    type: 'u64',
+                },
+                {
+                    name: 'nftToDeposit',
+                    type: 'bool',
+                },
+            ],
         },
     ],
     accounts: [
@@ -149,6 +207,21 @@ export const idl = {
                 variants: [
                     {
                         name: 'UserNotPartOfTrade',
+                    },
+                    {
+                        name: 'MintNotFound',
+                    },
+                    {
+                        name: 'AmountIncorrect',
+                    },
+                    {
+                        name: 'ShouldntSend',
+                    },
+                    {
+                        name: 'NoSend',
+                    },
+                    {
+                        name: 'AmountGivenIncorect',
                     },
                 ],
             },

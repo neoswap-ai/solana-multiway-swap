@@ -12,6 +12,7 @@ declare_id!("BRBpGfF6xmQwAJRfx7MKPZq1KEgTvVMfcNXHbs42w8Tz");
 #[program]
 pub mod swap_coontract_test {
 
+    use anchor_lang::solana_program::system_instruction;
     use anchor_spl::token::spl_token;
 
     use super::*;
@@ -131,11 +132,11 @@ pub mod swap_coontract_test {
     // let mut nb_try: u16 = 0;
         // let mut user_selected: u8;
         if signer.key == &swap_data_account.user_a.key() {
-            if (amount==1){
+            if amount==1 {
 
-             } else if (swap_data_account.user_a_amount.is_negative()){
+             } else if  swap_data_account.user_a_amount.is_negative() {
                 return Err(error!(SCERROR::ShouldntSend).into())
-            } else if (amount !=swap_data_account.user_a_amount.unsigned_abs()){
+            } else if amount !=swap_data_account.user_a_amount.unsigned_abs() {
                 return Err(error!(SCERROR::AmountIncorrect).into()) 
             }
             // user_selected = 0 as u8;
@@ -177,62 +178,105 @@ pub mod swap_coontract_test {
         // ////////
         Ok(())
     }
+   
     pub fn claim(
         ctx: Context<Claim>,
-        // _trade_ref: String,
+        // trade_ref: String,
         seed: Vec<u8>,
         bump: u8,
-        // nft_to_deposit: Pubkey,
-        // amount :u64
+        amount_desired :u64,
+        nft_to_deposit: bool,
     ) -> ProgramResult {
 
         let swap_data_account = &ctx.accounts.swap_data_account;
 
-let amount:u64;
+let mut amount:u64;
 if ctx.accounts.signer.key == &swap_data_account.user_a.key() {
     msg!("userA");
-     if (swap_data_account.user_a_amount>0){
+    if nft_to_deposit==true{
+        msg!("NFT To Claim");
 
-         amount =swap_data_account.user_a_amount.unsigned_abs();
-         let ix2 = spl_token::instruction::transfer(
+        
+        let ix = spl_token::instruction::transfer(
             &ctx.accounts.token_program.key,
-            &ctx.accounts.swap_data_account.to_account_info().key,
+            &ctx.accounts.pda_token_account.to_account_info().key,
             &ctx.accounts.user_token_account_to_receive.to_account_info().key,
             &ctx.accounts.swap_data_account.key(),
             &[&ctx.accounts.swap_data_account.key()],
-            amount,
+            1,
         )?;
+
         invoke_signed(
-            &ix2,
+            &ix,
             &[
                 ctx.accounts.token_program.clone(),
-                ctx.accounts.swap_data_account.to_account_info(),
+                ctx.accounts.pda_token_account.to_account_info(),
                 ctx.accounts.user_token_account_to_receive.to_account_info(),
                 ctx.accounts.swap_data_account.to_account_info(),
             ],
             &[&[&seed[..], &[bump]]],
         )?;
+    }else if swap_data_account.user_a_amount<0{
+        msg!("Sol To Claim");
+
+         amount = swap_data_account.user_a_amount.unsigned_abs();
+        if amount != amount_desired {return  Err(error!(SCERROR::AmountGivenIncorect).into());}
+
+
+        // invoke_signed(                                                            
+        //     ,                                             
+        //     &[                          
+        //         pda_account_info.clone(),
+        //         recipient_account_info.clone(),
+        //     ],
+        //     &[&[&pda_seed1.as_ref(), &[pda_bump_seed]]]
+        // )?;
+         let ix2 = &system_instruction::transfer(
+            ctx.accounts.pda_token_account.key, 
+            ctx.accounts.signer.key,
+             amount);
+        //  system_instruction::transfer(
+        //     &ctx.accounts.pda_token_account.key(),
+        //     &ctx.accounts.user_token_account_to_receive.key(),
+        //     amount,
+        // );
+        let bump_sol_vector=bump.to_le_bytes();
+        let inner=vec![seed.as_ref(),bump_sol_vector.as_ref()];
+        let outer_sol=vec![inner.as_slice()];
+        invoke_signed(
+            &ix2,
+            &[
+                ctx.accounts.pda_token_account.to_account_info(),
+                ctx.accounts.signer.to_account_info(),
+            ],outer_sol.as_slice(),
+        )?;
+     } else {
+        return  Err(error!(SCERROR::NoSend).into());
+
      }
 
 
-     let ix = spl_token::instruction::transfer(
-        &ctx.accounts.token_program.key,
-        &ctx.accounts.pda_token_account.to_account_info().key,
-        &ctx.accounts.user_token_account_to_receive.to_account_info().key,
-        &ctx.accounts.swap_data_account.key(),
-        &[&ctx.accounts.swap_data_account.key()],
-        1,
-    )?;
-    invoke_signed(
-        &ix,
-        &[
-            ctx.accounts.token_program.clone(),
-            ctx.accounts.pda_token_account.to_account_info(),
-            ctx.accounts.user_token_account_to_receive.to_account_info(),
-            ctx.accounts.swap_data_account.to_account_info(),
-        ],
-        &[&[&seed[..], &[bump]]],
-    )?;
+
+
+    //  let ix = spl_token::instruction::transfer(
+    //     &ctx.accounts.token_program.key,
+    //     &ctx.accounts.pda_token_account.to_account_info().key,
+    //     &ctx.accounts.user_token_account_to_receive.to_account_info().key,
+    //     &ctx.accounts.swap_data_account.key(),
+    //     &[&ctx.accounts.swap_data_account.key()],
+    //     1,
+    // )?;
+    // invoke_signed(
+
+    //     &ix,
+    //     &[
+    //         ctx.accounts.token_program.clone(),
+    //         ctx.accounts.pda_token_account.to_account_info(),
+    //         ctx.accounts.user_token_account_to_receive.to_account_info(),
+    //         ctx.accounts.swap_data_account.to_account_info(),
+    //     ],
+    //     &[&[&seed[..], &[bump]]],
+    // )?;
     //  anchor_spl::token::transfer(
     //     CpiContext::new(
     //         ctx.accounts.token_program.to_account_info(),
@@ -384,6 +428,10 @@ pub enum SCERROR {
     AmountIncorrect,
     #[msg("User should be receiving funds")]
     ShouldntSend,
+    #[msg("Nothing was found in the smart contract to be sent to you")]
+    NoSend,
+    #[msg("amount given isn't corresponding to the Data")]
+    AmountGivenIncorect
 }
 
 
