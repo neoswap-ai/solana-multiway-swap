@@ -1,14 +1,9 @@
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import {
-    createAccount,
     createAssociatedTokenAccountInstruction,
     createInitializeAccountInstruction,
     TOKEN_PROGRAM_ID,
-    isInitializeAccount3Instruction,
-    initializeAccount3InstructionData,
-    createInitializeAccount3Instruction,
 } from '@solana/spl-token';
-import { Transaction } from '@solana/web3.js';
 import { PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from './solana.const';
 // const TokenInstructions = require('@project-serum/serum').TokenInstructions;
@@ -31,14 +26,18 @@ export async function createInstructionPdaAta(
     );
     console.log('mintAta', mintAta.toBase58());
 
-    const ixCreateMintAta = createAssociatedTokenAccountInstruction(
-        payer,
-        mintAta,
-        owner,
-        mint
-        // programId
-    );
+    const ixCreateMintAta = createAssociatedTokenAccountInstruction(payer, mintAta, owner, mint);
     return { ix: ixCreateMintAta, mintAta: mintAta, mintAta_bump: mintAta_bump };
+}
+export function transferSol(from: PublicKey, to: PublicKey, amount: number, decimals?: number) {
+    if (!decimals) {
+        decimals = 1;
+    }
+    return web3.SystemProgram.transfer({
+        fromPubkey: from,
+        toPubkey: to,
+        lamports: amount * 10 ** decimals,
+    });
 }
 // export async function createInstructionPdasolAta(
 //     program: Program,
@@ -67,8 +66,6 @@ export async function createInstructionPdasolAta(
     payer: PublicKey,
     provider: Provider
 ): Promise<{ signature: any; createdAccount: PublicKey }> {
-    // const lamport =
-    // const lamports = await connection.getMinimumBalanceForRentExemption(0);
     const lamports = await provider.connection.getMinimumBalanceForRentExemption(165);
 
     const vault = web3.Keypair.generate();

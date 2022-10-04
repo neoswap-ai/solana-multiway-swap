@@ -222,34 +222,17 @@ if ctx.accounts.signer.key == &swap_data_account.user_a.key() {
          amount = swap_data_account.user_a_amount.unsigned_abs();
         if amount != amount_desired {return  Err(error!(SCERROR::AmountGivenIncorect).into());}
 
+        let amount_to_send = amount*(10 as u64).pow(9);
+        
+        let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
+        let pda_account_info: &mut AccountInfo = &mut ctx.accounts.pda_token_account.to_account_info();
+    
+        let signer_lamports_initial = signer_account_info.lamports();
+        let pda_lamports_initial = pda_account_info.lamports();
 
-        // invoke_signed(                                                            
-        //     ,                                             
-        //     &[                          
-        //         pda_account_info.clone(),
-        //         recipient_account_info.clone(),
-        //     ],
-        //     &[&[&pda_seed1.as_ref(), &[pda_bump_seed]]]
-        // )?;
-         let ix2 = &system_instruction::transfer(
-            ctx.accounts.pda_token_account.key, 
-            ctx.accounts.signer.key,
-             amount);
-        //  system_instruction::transfer(
-        //     &ctx.accounts.pda_token_account.key(),
-        //     &ctx.accounts.user_token_account_to_receive.key(),
-        //     amount,
-        // );
-        let bump_sol_vector=bump.to_le_bytes();
-        let inner=vec![seed.as_ref(),bump_sol_vector.as_ref()];
-        let outer_sol=vec![inner.as_slice()];
-        invoke_signed(
-            &ix2,
-            &[
-                ctx.accounts.pda_token_account.to_account_info(),
-                ctx.accounts.signer.to_account_info(),
-            ],outer_sol.as_slice(),
-        )?;
+        **ctx.accounts.signer.lamports.borrow_mut() = signer_lamports_initial +(amount_to_send);
+        **ctx.accounts.pda_token_account.lamports.borrow_mut() = pda_lamports_initial -amount_to_send;
+
      } else {
         return  Err(error!(SCERROR::NoSend).into());
 
