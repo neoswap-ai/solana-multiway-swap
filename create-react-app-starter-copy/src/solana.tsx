@@ -1,12 +1,12 @@
 import { BN, Program, Provider, utils, web3 } from '@project-serum/anchor';
-import { WalletAdapterNetwork, WalletNotConnectedError } from '@solana/wallet-adapter-base';
+import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
 import { CONST_PROGRAM, splAssociatedTokenAccountProgramId, programId, opts, network, sentData } from './solana.const';
-import { NftSwap, SwapData } from './solana.types';
+import { SwapData } from './solana.types';
 import { transferSol } from './solana.utils';
 import { claimNFTInstruction, depositNFTInstruction } from './solana.programInstruction';
 
@@ -39,7 +39,7 @@ export const Solana: FC = () => {
         console.log('sentData', sentData);
 
         // 890880 lamports as of 2022-09-01
-        const lamports = await connection.getMinimumBalanceForRentExemption(0);
+        // const lamports = await connection.getMinimumBalanceForRentExemption(0);
 
         const program = await getProgram();
         console.log('program', program);
@@ -82,16 +82,13 @@ export const Solana: FC = () => {
                 console.error('error', error);
             }
         }
-    }, [publicKey, connection, getProgram]);
+    }, [publicKey, getProgram]);
 
     const deposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         // console.log('publicKey', publicKey.toBase58());
 
         console.log('sentData', sentData);
-
-        // 890880 lamports as of 2022-09-01
-        const lamports = await connection.getMinimumBalanceForRentExemption(0);
 
         const program = await getProgram();
 
@@ -165,9 +162,6 @@ export const Solana: FC = () => {
 
         console.log('sentData', sentData);
 
-        // 890880 lamports as of 2022-09-01
-        const lamports = await connection.getMinimumBalanceForRentExemption(0);
-
         const program = await getProgram();
 
         console.log('program', program);
@@ -204,6 +198,7 @@ export const Solana: FC = () => {
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('publickey', publicKey.toBase58());
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         let { transaction: createClaimNFTx, ata: userAta } = await claimNFTInstruction(
             program,
             publicKey,

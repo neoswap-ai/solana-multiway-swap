@@ -1,13 +1,7 @@
 import { BN, Program, web3 } from '@project-serum/anchor';
-import {
-    TOKEN_PROGRAM_ID,
-    createTransferInstruction,
-    createAssociatedTokenAccountInstruction,
-    transferInstructionData,
-} from '@solana/spl-token';
-import { SystemProgram } from '@solana/web3.js';
-import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { createInstructionPdaAta, createInstructionPdasolAta, findAtaUserFromMint } from './solana.utils';
+import { TOKEN_PROGRAM_ID, createTransferInstruction } from '@solana/spl-token';
+import { PublicKey, Transaction } from '@solana/web3.js';
+import { createInstructionPdaAta, findAtaUserFromMint } from './solana.utils';
 
 export async function depositNFTInstruction(
     program: Program,
@@ -80,7 +74,7 @@ export async function findOrCreateAta(
     let mintAta;
     let txCreate = new Transaction();
     let ixCreateMintAta;
-    
+
     try {
         mintAta = await findAtaUserFromMint(program, mint, owner);
         console.log('mintAta', mintAta.toBase58());
