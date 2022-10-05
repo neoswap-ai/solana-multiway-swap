@@ -1,8 +1,6 @@
 use anchor_lang::prelude::{AnchorDeserialize, AnchorSerialize, *};
 use anchor_lang::solana_program::entrypoint::ProgramResult;
-use anchor_spl::token::TokenAccount;
-use anchor_spl::token::Transfer;
-use anchor_lang::solana_program::program::{invoke,
+use anchor_lang::solana_program::program::{
      invoke_signed
     };
 // use anchor_spl::token::{*,TokenAccount,Mint};
@@ -40,78 +38,10 @@ pub mod swap_coontract_test {
         swap_data_account.user_c_amount = sent_data.user_c_amount;
         swap_data_account.user_c_nft = sent_data.user_c_nft;
 
-        //user A ATA PDA linked to the NFT to transfer
-
-        // for user_a_ata_id in 0..swap_data_account.user_a_nft.len() {
-        //    
-        // }
-
-        // for user_b_ata_id in 0..swap_data_account.user_b_nft.len() {}
-
-        // for user_c_ata_id in 0..swap_data_account.user_c_nft.len() {}
-        // need to create ATA linked to the mint they will have to receive
 
         Ok(())
     }
 
-    // pub fn deposit_nft(
-    //     ctx: Context<Deposit>,
-    //     // _trade_ref: String,
-    //     // _seed: Vec<u8>,
-    //     // _bump: u8,
-    //     // nft_to_deposit: Pubkey,
-    // ) -> ProgramResult {
-
-    //     let swap_data_account = &ctx.accounts.swap_data_account;
-    //     let token_program = &ctx.accounts.token_program;
-    //     let deposit_pda_token_account = &ctx.accounts.deposit_pda_token_account;
-    //     let signer = &ctx.accounts.signer;
-    //     let user_token_account_to_deposit = &ctx.accounts.user_token_account_to_deposit;
-
-    //     let nft_to_deposit_mint = ctx.accounts.user_token_account_to_deposit;
-    //     // let mut nb_try: u16 = 0;
-    //     // let mut user_selected: u8;
-    //     if signer.key == &swap_data_account.user_a.key() {
-    //         // user_selected = 0 as u8;
-    //         // for nft_id in 0..swap_data_account.user_a_nft.len() {
-    //             if swap_data_account.user_a_nft.mint == nft_to_deposit_mint {
-    //                 msg!("userA");
-                                     
-    //     anchor_spl::token::transfer(
-    //         CpiContext::new(
-    //             token_program.to_account_info(),
-    //             anchor_spl::token::Transfer {
-    //                 from: user_token_account_to_deposit.to_account_info(),
-    //                 to: deposit_pda_token_account.to_account_info(),
-    //                 authority: signer.to_account_info(),
-    //             },
-    //         ),
-    //         1,
-    //     )?;
-    //             } else {
-    //                 // nb_try += 1;
-    //                 return  Err(error!(SCERROR::MintNotFound).into());
-    //             }
-    //         // }
-    //     } else if signer.key == &swap_data_account.user_b.key() {
-    //         msg!("userB")
-
-    //     } else if signer.key == &swap_data_account.user_c.key() {
-    //         msg!("userC")
-
-    //     } else {
-    //         return  Err(error!(SCERROR::UserNotPartOfTrade).into());
-    //     }
-
-
-    //     // ////////
-
-       
-
-    //     // ////////
-    //     Ok(())
-    // }
-    // + Create PDAs for the 3 users and create ATA
     pub fn deposit(
         ctx: Context<Deposit>,
         // _trade_ref: String,
@@ -550,3 +480,64 @@ pub enum SCERROR {
 //     // vesting_program: AccountInfo<'info>,
 //     // clock_sysvar: AccountInfo<'info>,
 // }
+
+
+
+    // pub fn deposit_nft(
+    //     ctx: Context<Deposit>,
+    //     // _trade_ref: String,
+    //     // _seed: Vec<u8>,
+    //     // _bump: u8,
+    //     // nft_to_deposit: Pubkey,
+    // ) -> ProgramResult {
+
+    //     let swap_data_account = &ctx.accounts.swap_data_account;
+    //     let token_program = &ctx.accounts.token_program;
+    //     let deposit_pda_token_account = &ctx.accounts.deposit_pda_token_account;
+    //     let signer = &ctx.accounts.signer;
+    //     let user_token_account_to_deposit = &ctx.accounts.user_token_account_to_deposit;
+
+    //     let nft_to_deposit_mint = ctx.accounts.user_token_account_to_deposit;
+    //     // let mut nb_try: u16 = 0;
+    //     // let mut user_selected: u8;
+    //     if signer.key == &swap_data_account.user_a.key() {
+    //         // user_selected = 0 as u8;
+    //         // for nft_id in 0..swap_data_account.user_a_nft.len() {
+    //             if swap_data_account.user_a_nft.mint == nft_to_deposit_mint {
+    //                 msg!("userA");
+                                     
+    //     anchor_spl::token::transfer(
+    //         CpiContext::new(
+    //             token_program.to_account_info(),
+    //             anchor_spl::token::Transfer {
+    //                 from: user_token_account_to_deposit.to_account_info(),
+    //                 to: deposit_pda_token_account.to_account_info(),
+    //                 authority: signer.to_account_info(),
+    //             },
+    //         ),
+    //         1,
+    //     )?;
+    //             } else {
+    //                 // nb_try += 1;
+    //                 return  Err(error!(SCERROR::MintNotFound).into());
+    //             }
+    //         // }
+    //     } else if signer.key == &swap_data_account.user_b.key() {
+    //         msg!("userB")
+
+    //     } else if signer.key == &swap_data_account.user_c.key() {
+    //         msg!("userC")
+
+    //     } else {
+    //         return  Err(error!(SCERROR::UserNotPartOfTrade).into());
+    //     }
+
+
+    //     // ////////
+
+       
+
+    //     // ////////
+    //     Ok(())
+    // }
+    // + Create PDAs for the 3 users and create ATA
