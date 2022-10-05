@@ -193,97 +193,83 @@ pub mod swap_coontract_test {
 let mut amount:u64;
 if ctx.accounts.signer.key == &swap_data_account.user_a.key() {
     msg!("userA");
-    if nft_to_deposit==true{
-        msg!("NFT To Claim");
-
-        
-        let ix = spl_token::instruction::transfer(
-            &ctx.accounts.token_program.key,
-            &ctx.accounts.pda_token_account.to_account_info().key,
-            &ctx.accounts.user_token_account_to_receive.to_account_info().key,
-            &ctx.accounts.swap_data_account.key(),
-            &[&ctx.accounts.swap_data_account.key()],
-            1,
-        )?;
-
-        invoke_signed(
-            &ix,
-            &[
-                ctx.accounts.token_program.clone(),
-                ctx.accounts.pda_token_account.to_account_info(),
-                ctx.accounts.user_token_account_to_receive.to_account_info(),
-                ctx.accounts.swap_data_account.to_account_info(),
-            ],
-            &[&[&seed[..], &[bump]]],
-        )?;
+    if nft_to_deposit{
+        amount=0
     }else if swap_data_account.user_a_amount<0{
-        msg!("Sol To Claim");
+    msg!("money to get");
 
-         amount = swap_data_account.user_a_amount.unsigned_abs();
-        if amount != amount_desired {return  Err(error!(SCERROR::AmountGivenIncorect).into());}
+        amount = swap_data_account.user_a_amount.unsigned_abs();
+    }else {amount=0}
 
-        let amount_to_send = amount*(10 as u64).pow(9);
-        
-        let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
-        let pda_account_info: &mut AccountInfo = &mut ctx.accounts.pda_token_account.to_account_info();
-    
-        let signer_lamports_initial = signer_account_info.lamports();
-        let pda_lamports_initial = pda_account_info.lamports();
-
-        **ctx.accounts.signer.lamports.borrow_mut() = signer_lamports_initial +(amount_to_send);
-        **ctx.accounts.pda_token_account.lamports.borrow_mut() = pda_lamports_initial -amount_to_send;
-
-     } else {
-        return  Err(error!(SCERROR::NoSend).into());
-
-     }
-
-
-
-
-    //  let ix = spl_token::instruction::transfer(
-    //     &ctx.accounts.token_program.key,
-    //     &ctx.accounts.pda_token_account.to_account_info().key,
-    //     &ctx.accounts.user_token_account_to_receive.to_account_info().key,
-    //     &ctx.accounts.swap_data_account.key(),
-    //     &[&ctx.accounts.swap_data_account.key()],
-    //     1,
-    // )?;
-    // invoke_signed(
-
-    //     &ix,
-    //     &[
-    //         ctx.accounts.token_program.clone(),
-    //         ctx.accounts.pda_token_account.to_account_info(),
-    //         ctx.accounts.user_token_account_to_receive.to_account_info(),
-    //         ctx.accounts.swap_data_account.to_account_info(),
-    //     ],
-    //     &[&[&seed[..], &[bump]]],
-    // )?;
-    //  anchor_spl::token::transfer(
-    //     CpiContext::new(
-    //         ctx.accounts.token_program.to_account_info(),
-    //         anchor_spl::token::Transfer {
-    //             from: ctx.accounts.pda_token_account.to_account_info(),
-    //             to: ctx.accounts.user_token_account_to_receive.to_account_info(),
-    //             authority: ctx.accounts.signer.to_account_info(),
-    //         },
-    //     ),
-    //     1,
-    // )?;
 
 } else if ctx.accounts.signer.key == &swap_data_account.user_b.key() {
     msg!("userB");
-    amount = swap_data_account.user_b_amount.unsigned_abs();
+    if nft_to_deposit{
+        amount=0
+    }else if swap_data_account.user_b_amount<0{
+    msg!("money to get");
+
+        amount = swap_data_account.user_b_amount.unsigned_abs();
+    }else {amount=0}
 
 } else if ctx.accounts.signer.key == &swap_data_account.user_c.key() {
     msg!("userC");
-    amount = swap_data_account.user_c_amount.unsigned_abs();
+    if nft_to_deposit{
+        amount=0
+    }else if swap_data_account.user_c_amount<0{
+    msg!("money to get");
+
+        amount = swap_data_account.user_c_amount.unsigned_abs();
+    }else {amount=0}
 
 } else {
     return  Err(error!(SCERROR::UserNotPartOfTrade).into());
 }
 
+
+if nft_to_deposit==true{
+    msg!("NFT To Claim");
+
+    let ix = spl_token::instruction::transfer(
+        &ctx.accounts.token_program.key,
+        &ctx.accounts.pda_token_account.to_account_info().key,
+        &ctx.accounts.user_token_account_to_receive.to_account_info().key,
+        &ctx.accounts.swap_data_account.key(),
+        &[&ctx.accounts.swap_data_account.key()],
+        1,
+    )?;
+
+    invoke_signed(
+        &ix,
+        &[
+            ctx.accounts.token_program.clone(),
+            ctx.accounts.pda_token_account.to_account_info(),
+            ctx.accounts.user_token_account_to_receive.to_account_info(),
+            ctx.accounts.swap_data_account.to_account_info(),
+        ],
+        &[&[&seed[..], &[bump]]],
+    )?;
+}else if amount>0{
+    msg!("Sol To Claim");
+
+     amount = swap_data_account.user_a_amount.unsigned_abs();
+    if amount != amount_desired {return  Err(error!(SCERROR::AmountGivenIncorect).into());}
+
+    let amount_to_send = amount*(10 as u64).pow(9);
+    
+    let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
+    let pda_account_info: &mut AccountInfo = &mut ctx.accounts.pda_token_account.to_account_info();
+
+    let signer_lamports_initial = signer_account_info.lamports();
+    let pda_lamports_initial = pda_account_info.lamports();
+
+    **ctx.accounts.signer.lamports.borrow_mut() = signer_lamports_initial +(amount_to_send);
+    **ctx.accounts.pda_token_account.lamports.borrow_mut() = pda_lamports_initial -amount_to_send;
+
+ } else {
+    return  Err(error!(SCERROR::NoSend).into());
+
+ }
 
 
         Ok(())

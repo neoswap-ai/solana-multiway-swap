@@ -5,7 +5,7 @@ import { NftSwap, SwapData } from './solana.types';
 
 export const programId = new PublicKey('BRBpGfF6xmQwAJRfx7MKPZq1KEgTvVMfcNXHbs42w8Tz');
 export const splAssociatedTokenAccountProgramId = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
-export const CONST_PROGRAM: String = '0009';
+export const CONST_PROGRAM: String = '0010';
 export const opts = {
     preflightCommitment: 'confirmed' as any,
 };
