@@ -1,7 +1,7 @@
 # solana-multiway-swap
 
-in create react app copy 
-npm i
+in create react app copy \n
+npm i \n
 npm start
 
 in folder
