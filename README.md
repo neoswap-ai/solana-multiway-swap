@@ -1,1 +1,1 @@
-# NeoSwap
+# solana-multiway-swap
