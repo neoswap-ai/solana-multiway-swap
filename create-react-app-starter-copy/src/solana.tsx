@@ -4,9 +4,17 @@ import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapte
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
-import { CONST_PROGRAM, splAssociatedTokenAccountProgramId, programId, opts, network, sentData } from './solana.const';
+import {
+    CONST_PROGRAM,
+    splAssociatedTokenAccountProgramId,
+    programId,
+    opts,
+    network,
+    sentData,
+    swapDataAccountGiven,
+} from './solana.const';
 import { SwapData } from './solana.types';
-import { cIdepositNFT, cIdepositSol } from './solana.programInstruction';
+import { cIclaimNft, cIclaimSol, cIdepositNft, cIdepositSol } from './solana.programInstruction';
 
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -85,23 +93,13 @@ export const Solana: FC = () => {
 
     const deposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
-        // console.log('publicKey', publicKey.toBase58());
-
-        console.log('sentData', sentData);
 
         const program = await getProgram();
-
         console.log('program', program);
-        // const tradeRef =
-        //     CONST_PROGRAM +
-        //     sentData.userA?.toString().slice(0, 2) +
-        //     sentData.userANft?.mint.toString().slice(0, 2) +
-        //     sentData.userB?.toString().slice(0, 2) +
-        //     sentData.userBNft?.mint.toString().slice(0, 2) +
-        //     sentData.userC?.toString().slice(0, 2) +
-        //     sentData.userCNft?.mint.toString().slice(0, 2);
 
-        const tradeRef = getSeed(sentData);
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+
+        const tradeRef = getSeed(swapData);
         console.log('tradeRef', tradeRef);
 
         const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
@@ -115,7 +113,6 @@ export const Solana: FC = () => {
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccount)) as SwapData;
         console.log('SwapData', swapData);
 
         let depositNFTInstructionTransaction = new Transaction();
@@ -128,7 +125,7 @@ export const Solana: FC = () => {
                 case true:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
                         depositNFTInstructionTransaction.add(
-                            (await cIdepositNFT(program, publicKey, e.mint, swapDataAccount)).transaction
+                            (await cIdepositNft(program, publicKey, e.mint, swapDataAccount)).transaction
                         );
                     }
                     break;
@@ -152,25 +149,61 @@ export const Solana: FC = () => {
         }
     }, [publicKey, getProgram, getSeed, connection]);
 
+    const validateTrade = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        sentData.initializer = publicKey;
+        // console.log('sentData', sentData);
+
+        const program = await getProgram();
+        console.log('program', program);
+
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+
+        const tradeRef = getSeed(swapData);
+
+        console.log('tradeRef', tradeRef);
+
+        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        console.log('swapDataAccount_seed', swapDataAccount_seed);
+
+        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+            [swapDataAccount_seed],
+            programId
+        );
+
+        console.log('swapDataAccount', swapDataAccount.toBase58());
+        console.log('swapDataAccount_bump', swapDataAccount_bump);
+
+        const transactionHash = await program.rpc.validateDeposit({
+            accounts: {
+                swapDataAccount: swapDataAccount,
+                signer: publicKey,
+            },
+        });
+
+        console.log('transactionHash', transactionHash);
+        // try {
+        // } catch (error) {
+        //     if (String(error).includes('0x0')) {
+        //         console.error('PDA is already existing with this tradeRef', tradeRef, '\n', error);
+        //     } else {
+        //         console.error('error', error);
+        //     }
+        // }
+    }, [publicKey, getProgram, getSeed]);
+
     const claim = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         // console.log('publicKey', publicKey.toBase58());
-
-        console.log('sentData', sentData);
+        // console.log('sentData', sentData);
 
         const program = await getProgram();
-
         console.log('program', program);
-        // const tradeRef =
-        //     CONST_PROGRAM +
-        //     sentData.userA?.toString().slice(0, 2) +
-        //     sentData.userANft?.mint.toString().slice(0, 2) +
-        //     sentData.userB?.toString().slice(0, 2) +
-        //     sentData.userBNft?.mint.toString().slice(0, 2) +
-        //     sentData.userC?.toString().slice(0, 2) +
-        //     sentData.userCNft?.mint.toString().slice(0, 2);
 
-        const tradeRef = getSeed(sentData);
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log(swapData);
+
+        const tradeRef = getSeed(swapData);
         console.log('tradeRef', tradeRef);
 
         const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
@@ -183,54 +216,103 @@ export const Solana: FC = () => {
 
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccount)) as SwapData;
+        // const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccount)) as SwapData;
 
         console.log('SwapData', swapData);
         console.log('swapDataAccount_seed', swapDataAccount_seed);
         console.log('swapDataAccount_bump', swapDataAccount_bump);
-        // console.log('swapData.userAAmount.toNumber()', Math.abs(swapData.userAAmount.toNumber()));
-        // // let mint: PublicKey;
-        // // let amount: BN;
-        // console.log('swapData.userA', swapData.userA.toBase58());
-        // console.log('swapDataAccount', swapDataAccount.toBase58());
-        // console.log('publickey', publicKey.toBase58());
 
-        // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        // let { transaction: createClaimNFTx, ata: userAta } = await claimNFTInstruction(
-        //     program,
-        //     publicKey,
-        //     swapData.userBNft.mint,
-        //     swapDataAccount,
-        //     swapDataAccount_seed,
-        //     swapDataAccount_bump
-        // );
+        let claimNFTInstructionTransaction = new Transaction();
 
-        // if (swapData.userAAmount.toNumber() < 0) {
-        //     const getSolInstruction = program.instruction.claim(
-        //         swapDataAccount_seed,
-        //         swapDataAccount_bump,
-        //         new BN(Math.abs(swapData.userAAmount.toNumber())),
-        //         false,
-        //         {
-        //             accounts: {
-        //                 systemProgram: web3.SystemProgram.programId,
-        //                 tokenProgram: TOKEN_PROGRAM_ID,
-        //                 swapDataAccount: swapDataAccount,
-        //                 pdaTokenAccount: swapDataAccount,
-        //                 signer: publicKey,
-        //                 userTokenAccountToReceive: publicKey,
-        //             },
-        //         }
-        //     );
+        for (let item = 0; item < swapData.items.length; item++) {
+            let e = swapData.items[item];
+            console.log('element', item, ' \n', e);
 
-        //     createClaimNFTx.add(getSolInstruction);
-        // }
-        // createClaimNFTx.feePayer = publicKey;
-        // createClaimNFTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+            switch (e.isNft) {
+                case true:
+                    if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
+                        claimNFTInstructionTransaction.add(
+                            (
+                                await cIclaimNft(
+                                    program,
+                                    publicKey,
+                                    e.mint,
+                                    swapDataAccount,
+                                    swapDataAccount_seed,
+                                    swapDataAccount_bump
+                                )
+                            ).transaction
+                        );
+                    }
+                    break;
+                case false:
+                    if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
+                        claimNFTInstructionTransaction.add(
+                            (await cIclaimSol(program, publicKey, swapDataAccount)).transaction
+                        );
+                    }
+                    break;
+            }
+        }
 
-        // const hash1 = await program.provider.send(createClaimNFTx);
-        // console.log('hash1', hash1);
+        claimNFTInstructionTransaction.feePayer = publicKey;
+        claimNFTInstructionTransaction.recentBlockhash = (
+            await program.provider.connection.getLatestBlockhash()
+        ).blockhash;
+        console.log('claimNFTInstructionTransaction', claimNFTInstructionTransaction);
+
+        if (claimNFTInstructionTransaction.instructions.length > 0) {
+            const hash = await program.provider.send(claimNFTInstructionTransaction);
+            console.log('hash', hash);
+        } else {
+            console.log('Nothing to claim');
+        }
     }, [publicKey, getProgram, getSeed]);
+
+    const validateClaimed = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        sentData.initializer = publicKey;
+        // console.log('sentData', sentData);
+
+        const program = await getProgram();
+        console.log('program', program);
+
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log('swapData', swapData);
+
+        const tradeRef = getSeed(swapData);
+        console.log('tradeRef', tradeRef);
+
+
+        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        console.log('swapDataAccount_seed', swapDataAccount_seed);
+
+        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+            [swapDataAccount_seed],
+            programId
+        );
+
+        console.log('swapDataAccount', swapDataAccount.toBase58());
+        console.log('swapDataAccount_bump', swapDataAccount_bump);
+
+        const transactionHash = await program.rpc.validateClaimed({
+            accounts: {
+                swapDataAccount: swapDataAccount,
+                signer: publicKey,
+            },
+        });
+
+        console.log('transactionHash', transactionHash);
+        // try {
+        // } catch (error) {
+        //     if (String(error).includes('0x0')) {
+        //         console.error('PDA is already existing with this tradeRef', tradeRef, '\n', error);
+        //     } else {
+        //         console.error('error', error);
+        //     }
+        // }
+    }, [publicKey, getProgram, getSeed]);
+
 
     return (
         <div>
@@ -243,9 +325,17 @@ export const Solana: FC = () => {
                 Deposit
             </button>
             <br />
+            <button onClick={validateTrade} disabled={!publicKey}>
+                validateTrade
+            </button>
+            <br />
             <button onClick={claim} disabled={!publicKey}>
                 claim
             </button>
+            <button onClick={validateClaimed} disabled={!publicKey}>
+            validateClaimed
+            </button>
+            <br />
         </div>
     );
 };

@@ -44,6 +44,10 @@ pub mod swap_coontract_test {
         let item_to_deposit = &ctx.accounts.item_to_deposit;
         let item_from_deposit = &ctx.accounts.item_from_deposit;
 
+        if swap_data_account.status != TradeStatus::Pending.to_u8() {
+            return  Err(error!(SCERROR::NotReady).into());
+        }
+
         for item_id in 0..items_to_swap.len() {
             if items_to_swap[item_id].is_nft && items_to_swap[item_id].mint == item_to_deposit.mint && items_to_swap[item_id].status == 0 {
 
@@ -83,6 +87,10 @@ pub mod swap_coontract_test {
         let swap_data_account = &ctx.accounts.swap_data_account;
         let items_to_swap = &swap_data_account.items;
         let signer = &ctx.accounts.signer.to_account_info();
+
+        if swap_data_account.status != TradeStatus::Pending.to_u8() {
+            return  Err(error!(SCERROR::NotReady).into());
+        }
 
         for item_id in 0..items_to_swap.len() {
             // msg!("for loop");
@@ -178,27 +186,32 @@ pub mod swap_coontract_test {
       }
 
         for item_id in 0..items_to_swap.len() {
-            if !items_to_swap[item_id].is_nft && items_to_swap[item_id].status == 1 && items_to_swap[item_id].amount < 0 && items_to_swap[item_id].destinary==signer.key() {
+            if !items_to_swap[item_id].is_nft && items_to_swap[item_id].status == 1 &&  items_to_swap[item_id].destinary==signer.key() {
+                msg!("claim accepted");
 
-                let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
-    
-                let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
-                let swap_data_account_info: &mut AccountInfo =
-                    &mut ctx.accounts.swap_data_account.to_account_info();
-    
-                let signer_lamports_initial = signer_account_info.lamports();
-                let swap_data_lamports_initial = swap_data_account_info.lamports();
-    
-                **ctx.accounts.signer.lamports.borrow_mut() =
-                    signer_lamports_initial + (amount_to_send);
-                **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
-                swap_data_lamports_initial - amount_to_send;
+              if  items_to_swap[item_id].amount < 0 {
 
+                  let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+      
+                  let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
+                  let swap_data_account_info: &mut AccountInfo =
+                      &mut ctx.accounts.swap_data_account.to_account_info();
+      
+                  let signer_lamports_initial = signer_account_info.lamports();
+                  let swap_data_lamports_initial = swap_data_account_info.lamports();
+      
+                  **ctx.accounts.signer.lamports.borrow_mut() =
+                      signer_lamports_initial + (amount_to_send);
+                  **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
+                  swap_data_lamports_initial - amount_to_send;
+              } 
                     //update status
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
-
                 break
+            } else if item_id == items_to_swap.len(){
+                return  Err(error!(SCERROR::NoSend).into());
             }
+            
         }
 
         Ok(())
@@ -218,9 +231,9 @@ pub mod swap_coontract_test {
         let user_ata = &ctx.accounts.item_to_deposit;
         let swap_data_ata = &ctx.accounts.item_from_deposit;
 
-      if swap_data_account.status != TradeStatus::Deposited.to_u8() {
-        return  Err(error!(SCERROR::NotReady).into());
-      }
+        if swap_data_account.status != TradeStatus::Deposited.to_u8() {
+            return  Err(error!(SCERROR::NotReady).into());
+        }
 
         for item_id in 0..items_to_swap.len() {
             if items_to_swap[item_id].is_nft 
@@ -258,6 +271,38 @@ pub mod swap_coontract_test {
 
         Ok(())
 
+    }
+
+    pub fn validate_claimed(
+        ctx: Context<ValidateClaimed>,
+        // seed: Vec<u8>,
+        // bump: u8,
+    ) -> ProgramResult {
+        let swap_data_account = &ctx.accounts.swap_data_account;
+        let items_to_swap = &swap_data_account.items;
+
+        if swap_data_account.status != TradeStatus::Deposited.to_u8() {
+            return  Err(error!(SCERROR::NotReady).into());
+        }
+
+        let nbr_items = items_to_swap.len();
+        let mut counter : usize=0;
+
+        for item_id in 0..nbr_items{
+            if items_to_swap[item_id].status != TradeStatus::Claimed.to_u8() {
+                return  Err(error!(SCERROR::NotReady).into());
+            } else {
+                counter+=1
+            }
+        }
+
+        if counter != nbr_items {
+            return  Err(error!(SCERROR::NotReady).into());
+        } else {
+            ctx.accounts.swap_data_account.status  = TradeStatus::Claimed.to_u8();
+        }
+
+        Ok(())  
     }
 
 
@@ -347,6 +392,16 @@ pub struct ValidateDeposit<'info> {
     #[account(mut)]
     signer: Signer<'info>,
 }
+#[derive(Accounts)]
+// #[instruction(seed: Vec<u8>, bump: u8)]
+
+pub struct ValidateClaimed<'info> {
+    #[account(mut)]
+    swap_data_account:Box<Account<'info, SwapData>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+}
+
 
 
 
@@ -426,7 +481,7 @@ pub enum TradeStatus {
     Pending,
     Deposited,
     Claimed,
-    Unallocated
+    Closed
 }
 
 impl TradeStatus {
@@ -435,7 +490,7 @@ impl TradeStatus {
             0 => TradeStatus::Pending,
             1 => TradeStatus::Deposited,
             2 => TradeStatus::Claimed,
-            3 => TradeStatus::Unallocated,
+            3 => TradeStatus::Closed,
             _ => panic!("Invalid Proposal Status"),
         }
     }
@@ -445,7 +500,7 @@ impl TradeStatus {
             TradeStatus::Pending => 0,
             TradeStatus::Deposited => 1,
             TradeStatus::Claimed => 2,
-            TradeStatus::Unallocated => 2,
+            TradeStatus::Closed => 2,
         }
     }
 }

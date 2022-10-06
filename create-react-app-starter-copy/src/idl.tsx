@@ -183,6 +183,22 @@ export const idl = {
                 },
             ],
         },
+        {
+            name: 'validateClaimed',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [],
+        },
     ],
     accounts: [
         {
@@ -226,7 +242,7 @@ export const idl = {
                         name: 'Claimed',
                     },
                     {
-                        name: 'Unallocated',
+                        name: 'Closed',
                     },
                 ],
             },
@@ -256,6 +272,9 @@ export const idl = {
                     },
                     {
                         name: 'NotReady',
+                    },
+                    {
+                        name: 'UnexpectedData',
                     },
                 ],
             },

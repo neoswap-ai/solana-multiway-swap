@@ -1,9 +1,9 @@
-import { BN, Program, web3 } from '@project-serum/anchor';
+import { BN, Program, utils, web3 } from '@project-serum/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { findOrCreateAta } from './solana.utils';
 
-export async function cIdepositNFT(
+export async function cIdepositNft(
     program: Program,
     publicKey: PublicKey,
     mint: PublicKey,
@@ -76,40 +76,60 @@ export async function cIdepositSol(
     );
 }
 
-export async function cIclaimNFT(
+export async function cIclaimNft(
     program: Program,
     publicKey: PublicKey,
     mint: PublicKey,
     swapDataAccount: PublicKey,
     swapDataAccount_seed: Buffer,
     swapDataAccount_bump: number
-): Promise<{ transaction: Transaction; ata: PublicKey }> {
-    let txCreate: Transaction = new Transaction();
+): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
+    let transaction: Transaction = new Transaction();
 
     const userMintAtaData = await findOrCreateAta(program, publicKey, mint, publicKey);
     const userMintAta = userMintAtaData.mintAta;
     if (userMintAtaData.transaction) {
-        txCreate.add(userMintAtaData.transaction);
+        transaction.add(userMintAtaData.transaction);
     }
 
     const swapDataAta = (await findOrCreateAta(program, swapDataAccount, mint, publicKey)).mintAta;
 
-    const claimNftTx = program.instruction.claim(swapDataAccount_seed, swapDataAccount_bump, new BN(1), true, {
+    const claimNftTx = program.instruction.claimNft(swapDataAccount_seed, swapDataAccount_bump, {
         accounts: {
             systemProgram: web3.SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             swapDataAccount: swapDataAccount,
-            pdaTokenAccount: swapDataAta,
             signer: publicKey,
-            userTokenAccountToReceive: userMintAta,
+            itemFromDeposit: swapDataAta,
+            itemToDeposit: userMintAta,
+        },
+    });
+    console.log(claimNftTx);
+
+    transaction.add(claimNftTx);
+
+    return { transaction, userMintAta };
+}
+
+export async function cIclaimSol(
+    program: Program,
+    publicKey: PublicKey,
+    swapDataAccount: PublicKey
+): Promise<{ transaction: Transaction }> {
+    let transaction: Transaction = new Transaction();
+
+    const claimNftTx = program.instruction.claimSol({
+        accounts: {
+            systemProgram: web3.SystemProgram.programId,
+            swapDataAccount: swapDataAccount,
+            signer: publicKey,
         },
     });
 
-    txCreate.add(claimNftTx);
+    transaction.add(claimNftTx);
 
-    return { transaction: txCreate, ata: userMintAta };
+    return { transaction };
 }
-
 // export async function depositTokenInstruction(
 //     program: Program,
 //     publicKey: PublicKey,
