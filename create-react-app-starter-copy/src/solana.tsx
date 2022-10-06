@@ -1,8 +1,7 @@
-import { BN, Program, Provider, utils, web3 } from '@project-serum/anchor';
+import { Program, Provider, utils, web3 } from '@project-serum/anchor';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
 import { CONST_PROGRAM, splAssociatedTokenAccountProgramId, programId, opts, network, sentData } from './solana.const';
@@ -144,7 +143,7 @@ export const Solana: FC = () => {
         depositNFTInstructionTransaction.feePayer = publicKey;
         depositNFTInstructionTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
         console.log('depositNFTInstructionTransaction', depositNFTInstructionTransaction);
-        
+
         if (depositNFTInstructionTransaction.instructions.length > 0) {
             const hash = await program.provider.send(depositNFTInstructionTransaction);
             console.log('hash', hash);
@@ -231,7 +230,7 @@ export const Solana: FC = () => {
 
         // const hash1 = await program.provider.send(createClaimNFTx);
         // console.log('hash1', hash1);
-    }, [publicKey, getProgram, getSeed, connection]);
+    }, [publicKey, getProgram, getSeed]);
 
     return (
         <div>

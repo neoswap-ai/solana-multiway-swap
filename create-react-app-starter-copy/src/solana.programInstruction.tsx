@@ -1,11 +1,6 @@
 import { BN, Program, web3 } from '@project-serum/anchor';
-import {
-    TOKEN_PROGRAM_ID,
-    createTransferInstruction,
-    createAssociatedTokenAccountInstruction,
-} from '@solana/spl-token';
-import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { programId, splAssociatedTokenAccountProgramId } from './solana.const';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { findOrCreateAta } from './solana.utils';
 
 export async function cIdepositNFT(
@@ -41,7 +36,7 @@ export async function cIdepositNFT(
         console.log('ixCreatePdaMintAta added');
         transaction.add(ixCreatePdaMintAta);
     }
-    
+
     const depositIx = new Transaction().add(
         program.instruction.depositNft({
             accounts: {
