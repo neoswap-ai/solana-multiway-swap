@@ -45,7 +45,7 @@ export const idl = {
             ],
         },
         {
-            name: 'deposit',
+            name: 'depositNft',
             accounts: [
                 {
                     name: 'systemProgram',
@@ -59,7 +59,7 @@ export const idl = {
                 },
                 {
                     name: 'swapDataAccount',
-                    isMut: false,
+                    isMut: true,
                     isSigner: false,
                 },
                 {
@@ -68,25 +68,78 @@ export const idl = {
                     isSigner: true,
                 },
                 {
-                    name: 'depositPdaTokenAccount',
+                    name: 'itemFromDeposit',
                     isMut: true,
                     isSigner: false,
                 },
                 {
-                    name: 'userTokenAccountToDeposit',
+                    name: 'itemToDeposit',
                     isMut: true,
                     isSigner: false,
                 },
             ],
-            args: [
-                {
-                    name: 'amount',
-                    type: 'u64',
-                },
-            ],
+            args: [],
         },
         {
-            name: 'claim',
+            name: 'depositSol',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [],
+        },
+        {
+            name: 'validateDeposit',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [],
+        },
+        {
+            name: 'claimSol',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [],
+        },
+        {
+            name: 'claimNft',
             accounts: [
                 {
                     name: 'systemProgram',
@@ -109,12 +162,12 @@ export const idl = {
                     isSigner: true,
                 },
                 {
-                    name: 'pdaTokenAccount',
+                    name: 'itemFromDeposit',
                     isMut: true,
                     isSigner: false,
                 },
                 {
-                    name: 'userTokenAccountToReceive',
+                    name: 'itemToDeposit',
                     isMut: true,
                     isSigner: false,
                 },
@@ -128,20 +181,12 @@ export const idl = {
                     name: 'bump',
                     type: 'u8',
                 },
-                {
-                    name: 'amountDesired',
-                    type: 'u64',
-                },
-                {
-                    name: 'nftToDeposit',
-                    type: 'bool',
-                },
             ],
         },
     ],
     accounts: [
         {
-            name: 'SwapData',
+            name: 'swapData',
             type: {
                 kind: 'struct',
                 fields: [
@@ -150,49 +195,15 @@ export const idl = {
                         type: 'publicKey',
                     },
                     {
-                        name: 'isComplete',
-                        type: 'bool',
+                        name: 'status',
+                        type: 'u8',
                     },
                     {
-                        name: 'userA',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'userAAmount',
-                        type: 'i64',
-                    },
-                    {
-                        name: 'userANft',
+                        name: 'items',
                         type: {
-                            defined: 'NftSwap',
-                        },
-                    },
-                    {
-                        name: 'userB',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'userBAmount',
-                        type: 'i64',
-                    },
-                    {
-                        name: 'userBNft',
-                        type: {
-                            defined: 'NftSwap',
-                        },
-                    },
-                    {
-                        name: 'userC',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'userCAmount',
-                        type: 'i64',
-                    },
-                    {
-                        name: 'userCNft',
-                        type: {
-                            defined: 'NftSwap',
+                            vec: {
+                                defined: 'NftSwapItem',
+                            },
                         },
                     },
                 ],
@@ -200,6 +211,26 @@ export const idl = {
         },
     ],
     types: [
+        {
+            name: 'TradeStatus',
+            type: {
+                kind: 'enum',
+                variants: [
+                    {
+                        name: 'Pending',
+                    },
+                    {
+                        name: 'Deposited',
+                    },
+                    {
+                        name: 'Claimed',
+                    },
+                    {
+                        name: 'Unallocated',
+                    },
+                ],
+            },
+        },
         {
             name: 'SCERROR',
             type: {
@@ -223,21 +254,64 @@ export const idl = {
                     {
                         name: 'AmountGivenIncorect',
                     },
+                    {
+                        name: 'NotReady',
+                    },
                 ],
             },
         },
         {
-            name: 'NftSwap',
+            name: 'SwapData',
             type: {
                 kind: 'struct',
                 fields: [
+                    {
+                        name: 'initializer',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'status',
+                        type: 'u8',
+                    },
+                    {
+                        name: 'items',
+                        type: {
+                            vec: {
+                                defined: 'NftSwapItem',
+                            },
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            name: 'NftSwapItem',
+            type: {
+                kind: 'struct',
+                fields: [
+                    {
+                        name: 'isNft',
+                        type: 'bool',
+                    },
                     {
                         name: 'mint',
                         type: 'publicKey',
                     },
                     {
+                        name: 'amount',
+                        type: 'i64',
+                    },
+                    {
+                        name: 'owner',
+                        type: 'publicKey',
+                    },
+                    {
                         name: 'destinary',
                         type: 'publicKey',
+                    },
+                    {
+                        name: 'status',
+                        type: 'u8',
                     },
                 ],
             },

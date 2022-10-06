@@ -1,37 +1,77 @@
 import { BN } from '@project-serum/anchor';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PublicKey } from '@solana/web3.js';
-import { NftSwap, SwapData } from './solana.types';
+import { NftSwapItem, SwapData } from './solana.types';
 
-export const programId = new PublicKey('BRBpGfF6xmQwAJRfx7MKPZq1KEgTvVMfcNXHbs42w8Tz');
+export const programId = new PublicKey('EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk');
 export const splAssociatedTokenAccountProgramId = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
-export const CONST_PROGRAM: String = '0010';
+export const CONST_PROGRAM: String = '0004';
 export const opts = {
     preflightCommitment: 'confirmed' as any,
 };
 
+const i1: NftSwapItem = {
+    isNft: false,
+    amount: new BN(-1),
+    owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    mint: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    status: 0,
+};
+
+const i2: NftSwapItem = {
+    isNft: true,
+    amount: new BN(1),
+    owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+    mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
+    status: 0,
+};
+
+const i3: NftSwapItem = {
+    isNft: true,
+    amount: new BN(1),
+    owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
+    mint: new PublicKey('7CZRVmsPoTs4bDjLGs2jMunBg54Lv1bdvmtWQVrFur5G'),
+    status: 0,
+};
+const i4: NftSwapItem = {
+    isNft: false,
+    amount: new BN(1),
+    owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+    destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+    mint: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+    status: 0,
+};
+const i5: NftSwapItem = {
+    isNft: true,
+    amount: new BN(1),
+    owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+    destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    mint: new PublicKey('DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew'),
+    status: 0,
+};
+const i6: NftSwapItem = {
+    isNft: false,
+    amount: new BN(1),
+    owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
+    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
+    mint: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
+    status: 0,
+};
+const i7: NftSwapItem = {
+    isNft: true,
+    amount: new BN(1),
+    owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
+    destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
+    status: 0,
+};
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    isComplete: false,
-    userA: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    userAAmount: new BN(-1),
-    userANft: {
-        mint: new PublicKey('7CZRVmsPoTs4bDjLGs2jMunBg54Lv1bdvmtWQVrFur5G'),
-        destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    } as NftSwap,
-    userB: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    userBAmount: new BN(1),
-    userBNft: {
-        mint: new PublicKey('DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew'),
-        destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    } as NftSwap,
-
-    userC: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    userCAmount: new BN(2),
-    userCNft: {
-        mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
-        destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    } as NftSwap,
+    status: 0,
+    items: [i1, i2, i3, i4, i5, i6, i7] as Array<NftSwapItem>,
 };
 
 /// DEV
@@ -55,7 +95,7 @@ export const network = WalletAdapterNetwork.Devnet;
 //         },
 //     ],
 
-//     userB: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+//     userB: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
 //     userBAmount: new BN(1),
 //     userBNft: [
 //         {
@@ -64,7 +104,7 @@ export const network = WalletAdapterNetwork.Devnet;
 //         },
 //     ],
 
-//     userC: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+//     userC: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
 //     userCAmount: new BN(2),
 //     userCNft: [
 //         {

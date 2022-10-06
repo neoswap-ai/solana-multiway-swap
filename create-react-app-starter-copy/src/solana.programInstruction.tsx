@@ -1,37 +1,87 @@
 import { BN, Program, web3 } from '@project-serum/anchor';
-import { TOKEN_PROGRAM_ID, createTransferInstruction } from '@solana/spl-token';
-import { PublicKey, Transaction } from '@solana/web3.js';
-import { createInstructionPdaAta, findAtaUserFromMint } from './solana.utils';
+import {
+    TOKEN_PROGRAM_ID,
+    createTransferInstruction,
+    createAssociatedTokenAccountInstruction,
+} from '@solana/spl-token';
+import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { programId, splAssociatedTokenAccountProgramId } from './solana.const';
+import { findOrCreateAta } from './solana.utils';
 
-export async function depositNFTInstruction(
+export async function cIdepositNFT(
     program: Program,
     publicKey: PublicKey,
     mint: PublicKey,
     swapDataAccount: PublicKey
 ): Promise<{ transaction: Transaction; ata: PublicKey }> {
-    const userMintAta = await findAtaUserFromMint(program, mint, publicKey);
-    console.log('userMintAta', userMintAta.toBase58());
-
     let transaction: Transaction = new Transaction();
-    const { mintAta: pdaMintAta, transaction: ixCreateMintAta } = await findOrCreateAta(
+
+    const { mintAta: userMintAta, transaction: ixCreateUserMintAta } = await findOrCreateAta(
+        program,
+        publicKey,
+        mint,
+        publicKey
+    );
+
+    console.log('userMintAta', userMintAta.toBase58());
+    if (ixCreateUserMintAta) {
+        console.log('ixCreateUserMintAta added');
+        transaction.add(ixCreateUserMintAta);
+    }
+
+    const { mintAta: pdaMintAta, transaction: ixCreatePdaMintAta } = await findOrCreateAta(
         program,
         swapDataAccount,
         mint,
         publicKey
     );
 
-    if (ixCreateMintAta) {
-        transaction.add(ixCreateMintAta);
+    console.log('pdaMintAta', pdaMintAta.toBase58());
+    if (ixCreatePdaMintAta) {
+        console.log('ixCreatePdaMintAta added');
+        transaction.add(ixCreatePdaMintAta);
     }
+    
+    const depositIx = new Transaction().add(
+        program.instruction.depositNft({
+            accounts: {
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                swapDataAccount: swapDataAccount,
+                signer: publicKey,
+                itemFromDeposit: userMintAta,
+                itemToDeposit: pdaMintAta,
+            },
+        })
+    );
 
-    const depositIx = createTransferInstruction(userMintAta, pdaMintAta, publicKey, 1);
-    transaction.add(depositIx);
     console.log('depositIx', depositIx);
+    transaction.add(depositIx);
 
     return { transaction, ata: pdaMintAta };
 }
 
-export async function claimNFTInstruction(
+export async function cIdepositSol(
+    program: Program,
+    from: PublicKey,
+    to: PublicKey,
+    decimals?: number
+): Promise<Transaction> {
+    if (!decimals) {
+        decimals = 9;
+    }
+    return new Transaction().add(
+        program.instruction.depositSol({
+            accounts: {
+                systemProgram: web3.SystemProgram.programId,
+                swapDataAccount: to,
+                signer: from,
+            },
+        })
+    );
+}
+
+export async function cIclaimNFT(
     program: Program,
     publicKey: PublicKey,
     mint: PublicKey,
@@ -65,30 +115,6 @@ export async function claimNFTInstruction(
     return { transaction: txCreate, ata: userMintAta };
 }
 
-export async function findOrCreateAta(
-    program: Program,
-    owner: PublicKey,
-    mint: PublicKey,
-    payer: PublicKey
-): Promise<{ mintAta: PublicKey; transaction?: Transaction }> {
-    let mintAta;
-    let txCreate = new Transaction();
-    let ixCreateMintAta;
-
-    try {
-        mintAta = await findAtaUserFromMint(program, mint, owner);
-        console.log('mintAta', mintAta.toBase58());
-        return { mintAta };
-    } catch (error) {
-        const res = await createInstructionPdaAta(mint, payer, owner);
-        mintAta = res.mintAta;
-        ixCreateMintAta = res.ix;
-        console.log('mintAta other + txadd', mintAta.toBase58());
-
-        txCreate.add(ixCreateMintAta);
-        return { mintAta, transaction: txCreate };
-    }
-}
 // export async function depositTokenInstruction(
 //     program: Program,
 //     publicKey: PublicKey,

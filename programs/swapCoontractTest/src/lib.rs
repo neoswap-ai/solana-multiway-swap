@@ -3,7 +3,7 @@ use anchor_lang::solana_program::entrypoint::ProgramResult;
 use anchor_lang::solana_program::program::{invoke_signed, invoke};
 use anchor_spl::token::{spl_token, TokenAccount};
 
-declare_id!("BRBpGfF6xmQwAJRfx7MKPZq1KEgTvVMfcNXHbs42w8Tz");
+declare_id!("EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk");
 
 #[program]
 pub mod swap_coontract_test {
@@ -17,6 +17,16 @@ pub mod swap_coontract_test {
         sent_data: SwapData,
     ) -> ProgramResult {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
+
+        if sent_data.status != TradeStatus::Pending.to_u8() {
+            return  Err(error!(SCERROR::UnexpectedData).into());
+        }
+
+        for item_id in 0..sent_data.items.len() {
+            if sent_data.items[item_id].status != TradeStatus::Pending.to_u8() {
+                return  Err(error!(SCERROR::UnexpectedData).into());
+            }
+        }
 
         swap_data_account.initializer = sent_data.initializer;
         swap_data_account.items = sent_data.items;
@@ -50,6 +60,7 @@ pub mod swap_coontract_test {
                     invoke(
                         &ix,
                         &[
+                            item_from_deposit.to_account_info(),
                             item_to_deposit.to_account_info(),
                             signer.to_account_info(),
                             token_program.clone(),
@@ -74,29 +85,46 @@ pub mod swap_coontract_test {
         let signer = &ctx.accounts.signer.to_account_info();
 
         for item_id in 0..items_to_swap.len() {
+            // msg!("for loop");
+            // msg!("is_nft {:}",!(items_to_swap[item_id].is_nft) );
+            // msg!("status {:}",items_to_swap[item_id].status);
+            // msg!("owner {:}",items_to_swap[item_id].owner);
+            // msg!("signer {:}",signer.key());
+            // msg!("amount {:}",items_to_swap[item_id].amount);
+            // msg!("mint {:}",items_to_swap[item_id].mint);
             if  !(items_to_swap[item_id].is_nft) 
             && items_to_swap[item_id].status == 0  
-            && items_to_swap[item_id].amount > 0 
             && items_to_swap[item_id].owner == signer.key() {
+                if items_to_swap[item_id].amount > 0 {
+                    msg!("Deposit  Sent");
+                    let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
 
-                let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
-
-                let pda_account_info: &mut AccountInfo =
-                    &mut ctx.accounts.swap_data_account.to_account_info();
-    
-                let signer_lamports_initial = signer.lamports();
-                let pda_lamports_initial = pda_account_info.lamports();
-    
-                **ctx.accounts.signer.to_account_info().lamports.borrow_mut() =
-                    signer_lamports_initial - (amount_to_send);
-
-                **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
-                    pda_lamports_initial + amount_to_send;
+                    let ix = anchor_lang::solana_program::system_instruction::transfer(
+                        &ctx.accounts.signer.key(),
+                        &ctx.accounts.swap_data_account.key(),
+                        amount_to_send,
+                    );
+                    anchor_lang::solana_program::program::invoke(
+                        &ix,
+                        &[
+                            ctx.accounts.signer.to_account_info(),
+                            ctx.accounts.swap_data_account.to_account_info(),
+                        ],
+                    )?;
 
                     //update status
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
+    
+                    break;
 
-                break;
+                } else if items_to_swap[item_id].amount <= 0 {
+                    msg!("nothing to deposit, your account was validated");
+                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
+                    break;
+                } else {
+                    return  Err(error!(SCERROR::NotReady).into());
+                }
+
             }
         }
         Ok(())
@@ -236,7 +264,7 @@ pub mod swap_coontract_test {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, swap_data_account_vec:Vec<NftSwapItem>)]
+#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
 
 pub struct Initialize<'info> {
     #[account(
@@ -244,7 +272,7 @@ pub struct Initialize<'info> {
         payer = signer,
         seeds = [&seed],
         bump,
-        space=SwapData::size(swap_data_account_vec)
+        space=SwapData::size(sent_data)
     )]
     // #[account(mut)]
     swap_data_account:Box<Account<'info, SwapData>>,
@@ -265,7 +293,7 @@ pub struct DepositNft<'info> {
     #[account(executable)]
     token_program: AccountInfo<'info>,
     // #[account(executable)]
-    // program_id: AccountInfo<'info>,
+    // program_custom: AccountInfo<'info>,
     #[account(mut)]
     swap_data_account:Account<'info, SwapData>,
     #[account(mut)]
@@ -291,7 +319,7 @@ pub struct DepositSol<'info> {
     // #[account(executable)]
     // token_program: AccountInfo<'info>,
     // #[account(executable)]
-    // program_id: AccountInfo<'info>,
+    // program_custom: AccountInfo<'info>,
     #[account(mut)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -313,6 +341,7 @@ pub struct DepositSol<'info> {
 // #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct ValidateDeposit<'info> {
+    
     #[account(mut)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -363,13 +392,14 @@ pub struct SwapData {
     pub status: u8,
     pub items: Vec<NftSwapItem>,
 }
+
 impl SwapData {
     const LEN: usize = 8 
         + 1 //u8
         + 32 ;
 
-    pub fn size(swap_data_account:Vec<NftSwapItem>)->usize{
-        return SwapData::LEN + (swap_data_account.len() * NftSwapItem::LEN );
+    pub fn size(swap_data_account:SwapData)->usize{
+        return SwapData::LEN + (swap_data_account.items.len() * NftSwapItem::LEN );
     }
 }
 
@@ -452,7 +482,8 @@ pub enum SCERROR {
     AmountGivenIncorect,
     #[msg("Not ready for claim yet")]
     NotReady,
-
+    #[msg("Given data isn't fitting")]
+    UnexpectedData,
 }
 
 // pub fn claim(

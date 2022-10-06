@@ -7,8 +7,7 @@ import { FC, useCallback } from 'react';
 import { idl } from './idl';
 import { CONST_PROGRAM, splAssociatedTokenAccountProgramId, programId, opts, network, sentData } from './solana.const';
 import { SwapData } from './solana.types';
-import { transferSol } from './solana.utils';
-import { claimNFTInstruction, depositNFTInstruction } from './solana.programInstruction';
+import { cIdepositNFT, cIdepositSol } from './solana.programInstruction';
 
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -33,24 +32,25 @@ export const Solana: FC = () => {
         return new Program(idl, programId, await getProvider());
     }, [getProvider]);
 
+    const getSeed = useCallback((sentData: SwapData) => {
+        let addSeed_temp: string = '';
+        for (let item = 0; item < sentData.items.length; item++) {
+            addSeed_temp += sentData.items[item].mint.toString().slice(0, 4);
+        }
+        return CONST_PROGRAM + addSeed_temp;
+
+        // return new Program(idl, programId, await getProvider());
+    }, []);
+
     const initialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         sentData.initializer = publicKey;
         console.log('sentData', sentData);
 
-        // 890880 lamports as of 2022-09-01
-        // const lamports = await connection.getMinimumBalanceForRentExemption(0);
-
         const program = await getProgram();
         console.log('program', program);
-        const tradeRef =
-            CONST_PROGRAM +
-            sentData.userA?.toString().slice(0, 2) +
-            sentData.userANft?.mint.toString().slice(0, 2) +
-            sentData.userB?.toString().slice(0, 2) +
-            sentData.userBNft?.mint.toString().slice(0, 2) +
-            sentData.userC?.toString().slice(0, 2) +
-            sentData.userCNft?.mint.toString().slice(0, 2);
+
+        const tradeRef = getSeed(sentData);
 
         console.log('tradeRef', tradeRef);
 
@@ -82,7 +82,7 @@ export const Solana: FC = () => {
                 console.error('error', error);
             }
         }
-    }, [publicKey, getProgram]);
+    }, [publicKey, getProgram, getSeed]);
 
     const deposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
@@ -93,15 +93,16 @@ export const Solana: FC = () => {
         const program = await getProgram();
 
         console.log('program', program);
-        const tradeRef =
-            CONST_PROGRAM +
-            sentData.userA?.toString().slice(0, 2) +
-            sentData.userANft?.mint.toString().slice(0, 2) +
-            sentData.userB?.toString().slice(0, 2) +
-            sentData.userBNft?.mint.toString().slice(0, 2) +
-            sentData.userC?.toString().slice(0, 2) +
-            sentData.userCNft?.mint.toString().slice(0, 2);
+        // const tradeRef =
+        //     CONST_PROGRAM +
+        //     sentData.userA?.toString().slice(0, 2) +
+        //     sentData.userANft?.mint.toString().slice(0, 2) +
+        //     sentData.userB?.toString().slice(0, 2) +
+        //     sentData.userBNft?.mint.toString().slice(0, 2) +
+        //     sentData.userC?.toString().slice(0, 2) +
+        //     sentData.userCNft?.mint.toString().slice(0, 2);
 
+        const tradeRef = getSeed(sentData);
         console.log('tradeRef', tradeRef);
 
         const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
@@ -118,43 +119,39 @@ export const Solana: FC = () => {
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccount)) as SwapData;
         console.log('SwapData', swapData);
 
-        let mint: PublicKey;
-        let amount: BN;
-        console.log('swapData.userA', swapData.userA.toBase58());
-        console.log('publickey', publicKey.toBase58());
+        let depositNFTInstructionTransaction = new Transaction();
 
-        if (swapData.userA.toBase58() === publicKey.toBase58()) {
-            console.log('userA');
-            mint = swapData.userANft.mint;
-            amount = swapData.userAAmount;
-        } else if (swapData.userB.toBase58() === publicKey.toBase58()) {
-            console.log('userB');
-            mint = swapData.userBNft.mint;
-            amount = swapData.userBAmount;
-        } else if (swapData.userC.toBase58() === publicKey.toBase58()) {
-            console.log('userC');
-            mint = swapData.userCNft.mint;
-            amount = swapData.userCAmount;
+        for (let item = 0; item < swapData.items.length; item++) {
+            let e = swapData.items[item];
+            console.log('element', item, ' \n', e);
+
+            switch (e.isNft) {
+                case true:
+                    if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
+                        depositNFTInstructionTransaction.add(
+                            (await cIdepositNFT(program, publicKey, e.mint, swapDataAccount)).transaction
+                        );
+                    }
+                    break;
+                case false:
+                    if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
+                        depositNFTInstructionTransaction.add(await cIdepositSol(program, publicKey, swapDataAccount));
+                    }
+                    break;
+            }
+        }
+
+        depositNFTInstructionTransaction.feePayer = publicKey;
+        depositNFTInstructionTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        console.log('depositNFTInstructionTransaction', depositNFTInstructionTransaction);
+        
+        if (depositNFTInstructionTransaction.instructions.length > 0) {
+            const hash = await program.provider.send(depositNFTInstructionTransaction);
+            console.log('hash', hash);
         } else {
-            throw Error('User not known in the trade');
+            console.log('Nothing to deposit');
         }
-
-        let txCreateMintAte = new Transaction().add(
-            (await depositNFTInstruction(program, publicKey, mint, swapDataAccount)).transaction
-        );
-
-        if (amount.toNumber() > 0) {
-            console.log('token to send');
-            txCreateMintAte.add(transferSol(publicKey, swapDataAccount, amount.toNumber(), 9));
-        }
-
-        txCreateMintAte.feePayer = publicKey;
-        txCreateMintAte.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-        console.log('txCreateMintAte', txCreateMintAte);
-
-        const hash = await program.provider.send(txCreateMintAte);
-        console.log('hash', hash);
-    }, [publicKey, connection, getProgram]);
+    }, [publicKey, getProgram, getSeed, connection]);
 
     const claim = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
@@ -165,15 +162,16 @@ export const Solana: FC = () => {
         const program = await getProgram();
 
         console.log('program', program);
-        const tradeRef =
-            CONST_PROGRAM +
-            sentData.userA?.toString().slice(0, 2) +
-            sentData.userANft?.mint.toString().slice(0, 2) +
-            sentData.userB?.toString().slice(0, 2) +
-            sentData.userBNft?.mint.toString().slice(0, 2) +
-            sentData.userC?.toString().slice(0, 2) +
-            sentData.userCNft?.mint.toString().slice(0, 2);
+        // const tradeRef =
+        //     CONST_PROGRAM +
+        //     sentData.userA?.toString().slice(0, 2) +
+        //     sentData.userANft?.mint.toString().slice(0, 2) +
+        //     sentData.userB?.toString().slice(0, 2) +
+        //     sentData.userBNft?.mint.toString().slice(0, 2) +
+        //     sentData.userC?.toString().slice(0, 2) +
+        //     sentData.userCNft?.mint.toString().slice(0, 2);
 
+        const tradeRef = getSeed(sentData);
         console.log('tradeRef', tradeRef);
 
         const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
@@ -191,49 +189,49 @@ export const Solana: FC = () => {
         console.log('SwapData', swapData);
         console.log('swapDataAccount_seed', swapDataAccount_seed);
         console.log('swapDataAccount_bump', swapDataAccount_bump);
-        console.log('swapData.userAAmount.toNumber()', Math.abs(swapData.userAAmount.toNumber()));
-        // let mint: PublicKey;
-        // let amount: BN;
-        console.log('swapData.userA', swapData.userA.toBase58());
-        console.log('swapDataAccount', swapDataAccount.toBase58());
-        console.log('publickey', publicKey.toBase58());
+        // console.log('swapData.userAAmount.toNumber()', Math.abs(swapData.userAAmount.toNumber()));
+        // // let mint: PublicKey;
+        // // let amount: BN;
+        // console.log('swapData.userA', swapData.userA.toBase58());
+        // console.log('swapDataAccount', swapDataAccount.toBase58());
+        // console.log('publickey', publicKey.toBase58());
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        let { transaction: createClaimNFTx, ata: userAta } = await claimNFTInstruction(
-            program,
-            publicKey,
-            swapData.userBNft.mint,
-            swapDataAccount,
-            swapDataAccount_seed,
-            swapDataAccount_bump
-        );
+        // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // let { transaction: createClaimNFTx, ata: userAta } = await claimNFTInstruction(
+        //     program,
+        //     publicKey,
+        //     swapData.userBNft.mint,
+        //     swapDataAccount,
+        //     swapDataAccount_seed,
+        //     swapDataAccount_bump
+        // );
 
-        if (swapData.userAAmount.toNumber() < 0) {
-            const getSolInstruction = program.instruction.claim(
-                swapDataAccount_seed,
-                swapDataAccount_bump,
-                new BN(Math.abs(swapData.userAAmount.toNumber())),
-                false,
-                {
-                    accounts: {
-                        systemProgram: web3.SystemProgram.programId,
-                        tokenProgram: TOKEN_PROGRAM_ID,
-                        swapDataAccount: swapDataAccount,
-                        pdaTokenAccount: swapDataAccount,
-                        signer: publicKey,
-                        userTokenAccountToReceive: publicKey,
-                    },
-                }
-            );
+        // if (swapData.userAAmount.toNumber() < 0) {
+        //     const getSolInstruction = program.instruction.claim(
+        //         swapDataAccount_seed,
+        //         swapDataAccount_bump,
+        //         new BN(Math.abs(swapData.userAAmount.toNumber())),
+        //         false,
+        //         {
+        //             accounts: {
+        //                 systemProgram: web3.SystemProgram.programId,
+        //                 tokenProgram: TOKEN_PROGRAM_ID,
+        //                 swapDataAccount: swapDataAccount,
+        //                 pdaTokenAccount: swapDataAccount,
+        //                 signer: publicKey,
+        //                 userTokenAccountToReceive: publicKey,
+        //             },
+        //         }
+        //     );
 
-            createClaimNFTx.add(getSolInstruction);
-        }
-        createClaimNFTx.feePayer = publicKey;
-        createClaimNFTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        //     createClaimNFTx.add(getSolInstruction);
+        // }
+        // createClaimNFTx.feePayer = publicKey;
+        // createClaimNFTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-        const hash1 = await program.provider.send(createClaimNFTx);
-        console.log('hash1', hash1);
-    }, [publicKey, connection, getProgram]);
+        // const hash1 = await program.provider.send(createClaimNFTx);
+        // console.log('hash1', hash1);
+    }, [publicKey, getProgram, getSeed, connection]);
 
     return (
         <div>
