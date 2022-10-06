@@ -66,7 +66,7 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         try {
-            const ix = await program.rpc.initialize(swapDataAccount_seed, swapDataAccount_bump, sentData, {
+            const transactionHash = await program.rpc.initialize(swapDataAccount_seed, swapDataAccount_bump, sentData, {
                 accounts: {
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
@@ -74,7 +74,7 @@ export const Solana: FC = () => {
                     tokenProgram: splAssociatedTokenAccountProgramId,
                 },
             });
-            console.log('ix', ix);
+            console.log('transactionHash', transactionHash);
         } catch (error) {
             if (String(error).includes('0x0')) {
                 console.error('PDA is already existing with this tradeRef', tradeRef, '\n', error);
