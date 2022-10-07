@@ -14,7 +14,14 @@ import {
     swapDataAccountGiven,
 } from './solana.const';
 import { SwapData } from './solana.types';
-import { cIcancelNft, cIcancelSol, cIclaimNft, cIclaimSol, cIdepositNft, cIdepositSol } from './solana.programInstruction';
+import {
+    cIcancelNft,
+    cIcancelSol,
+    cIclaimNft,
+    cIclaimSol,
+    cIdepositNft,
+    cIdepositSol,
+} from './solana.programInstruction';
 
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -98,6 +105,7 @@ export const Solana: FC = () => {
         console.log('program', program);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        if (swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
 
         const tradeRef = getSeed(swapData);
         console.log('tradeRef', tradeRef);
@@ -148,6 +156,7 @@ export const Solana: FC = () => {
             console.log('Nothing to deposit');
         }
     }, [publicKey, getProgram, getSeed, connection]);
+
     const cancel = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
@@ -156,7 +165,9 @@ export const Solana: FC = () => {
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log(swapData);
-
+        if (!(swapData.status === 0 || swapData.status > 89)) {
+            throw console.error('Trade not able to be canceled');
+        }
         const tradeRef = getSeed(swapData);
         console.log('tradeRef', tradeRef);
 
@@ -218,7 +229,7 @@ export const Solana: FC = () => {
         }
     }, [publicKey, getProgram, getSeed]);
 
-    const validateTrade = useCallback(async () => {
+    const validateDeposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         sentData.initializer = publicKey;
         // console.log('sentData', sentData);
@@ -227,6 +238,7 @@ export const Solana: FC = () => {
         console.log('program', program);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        if (swapData.status !== 0) throw console.error('Trade not in waiting to be validated');
 
         const tradeRef = getSeed(swapData);
 
@@ -269,6 +281,8 @@ export const Solana: FC = () => {
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log(swapData);
+
+        if (swapData.status !== 1) throw console.error('Trade not in waiting for claim state');
 
         const tradeRef = getSeed(swapData);
         console.log('tradeRef', tradeRef);
@@ -339,6 +353,7 @@ export const Solana: FC = () => {
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log('swapData', swapData);
+        if (swapData.status !== 1) throw console.error('Trade not in waiting to be changed to claimed');
 
         const tradeRef = getSeed(swapData);
         console.log('tradeRef', tradeRef);
@@ -375,8 +390,8 @@ export const Solana: FC = () => {
                     Deposit
                 </button>
                 <br />
-                <button onClick={validateTrade} disabled={!publicKey}>
-                    validateTrade
+                <button onClick={validateDeposit} disabled={!publicKey}>
+                    validateDeposit
                 </button>
                 <br />
                 <button onClick={claim} disabled={!publicKey}>
