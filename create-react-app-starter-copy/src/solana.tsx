@@ -143,7 +143,7 @@ export const Solana: FC = () => {
 
         if (depositNFTInstructionTransaction.instructions.length > 0) {
             const hash = await program.provider.send(depositNFTInstructionTransaction);
-            console.log('hash', hash);
+            console.log('hash\n', hash);
         } else {
             console.log('Nothing to deposit');
         }
@@ -194,8 +194,6 @@ export const Solana: FC = () => {
 
     const claim = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
-        // console.log('publicKey', publicKey.toBase58());
-        // console.log('sentData', sentData);
 
         const program = await getProgram();
         console.log('program', program);
@@ -213,13 +211,6 @@ export const Solana: FC = () => {
             [swapDataAccount_seed],
             programId
         );
-
-        console.log('swapDataAccount_bump', swapDataAccount_bump);
-
-        // const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccount)) as SwapData;
-
-        console.log('SwapData', swapData);
-        console.log('swapDataAccount_seed', swapDataAccount_seed);
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         let claimNFTInstructionTransaction = new Transaction();
@@ -243,6 +234,7 @@ export const Solana: FC = () => {
                                 )
                             ).transaction
                         );
+                        console.log('claimNftinstruction added');
                     }
                     break;
                 case false:
@@ -250,6 +242,7 @@ export const Solana: FC = () => {
                         claimNFTInstructionTransaction.add(
                             (await cIclaimSol(program, publicKey, swapDataAccount)).transaction
                         );
+                        console.log('claimSolinstruction added');
                     }
                     break;
             }
@@ -271,8 +264,6 @@ export const Solana: FC = () => {
 
     const validateClaimed = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
-        sentData.initializer = publicKey;
-        // console.log('sentData', sentData);
 
         const program = await getProgram();
         console.log('program', program);
@@ -283,7 +274,6 @@ export const Solana: FC = () => {
         const tradeRef = getSeed(swapData);
         console.log('tradeRef', tradeRef);
 
-
         const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
         console.log('swapDataAccount_seed', swapDataAccount_seed);
 
@@ -291,7 +281,6 @@ export const Solana: FC = () => {
             [swapDataAccount_seed],
             programId
         );
-
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
@@ -303,16 +292,7 @@ export const Solana: FC = () => {
         });
 
         console.log('transactionHash', transactionHash);
-        // try {
-        // } catch (error) {
-        //     if (String(error).includes('0x0')) {
-        //         console.error('PDA is already existing with this tradeRef', tradeRef, '\n', error);
-        //     } else {
-        //         console.error('error', error);
-        //     }
-        // }
     }, [publicKey, getProgram, getSeed]);
-
 
     return (
         <div>
@@ -333,7 +313,7 @@ export const Solana: FC = () => {
                 claim
             </button>
             <button onClick={validateClaimed} disabled={!publicKey}>
-            validateClaimed
+                validateClaimed
             </button>
             <br />
         </div>

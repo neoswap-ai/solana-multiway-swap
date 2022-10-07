@@ -1,4 +1,4 @@
-import { BN, Program, utils, web3 } from '@project-serum/anchor';
+import { Program, web3 } from '@project-serum/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { findOrCreateAta } from './solana.utils';
@@ -86,13 +86,27 @@ export async function cIclaimNft(
 ): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
     let transaction: Transaction = new Transaction();
 
-    const userMintAtaData = await findOrCreateAta(program, publicKey, mint, publicKey);
-    const userMintAta = userMintAtaData.mintAta;
-    if (userMintAtaData.transaction) {
-        transaction.add(userMintAtaData.transaction);
+    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(
+        program,
+        publicKey,
+        mint,
+        publicKey
+    );
+    if (userMintAtaTx) {
+        transaction.add(userMintAtaTx);
+        console.log('userAtaClaimNft Transaction Added');
     }
 
-    const swapDataAta = (await findOrCreateAta(program, swapDataAccount, mint, publicKey)).mintAta;
+    const { mintAta: swapDataAta, transaction: pdaMintAtaTx } = await findOrCreateAta(
+        program,
+        swapDataAccount,
+        mint,
+        publicKey
+    );
+    if (pdaMintAtaTx) {
+        transaction.add(pdaMintAtaTx);
+        console.log('pdaAtaClaimNft Transaction Added');
+    }
 
     const claimNftTx = program.instruction.claimNft(swapDataAccount_seed, swapDataAccount_bump, {
         accounts: {
@@ -104,7 +118,7 @@ export async function cIclaimNft(
             itemToDeposit: userMintAta,
         },
     });
-    console.log(claimNftTx);
+    // console.log(claimNftTx);
 
     transaction.add(claimNftTx);
 
@@ -130,37 +144,3 @@ export async function cIclaimSol(
 
     return { transaction };
 }
-// export async function depositTokenInstruction(
-//     program: Program,
-//     publicKey: PublicKey,
-//     swapDataAccount: PublicKey,
-//     amount: number
-// ): Promise<Transaction> {
-//     let txCreate: Transaction = new Transaction();
-//     let ixCreateMintAta: Transaction;
-//     let pdaMintAta: PublicKey;
-
-//     const ceeatePdaSolAtaData = await createInstructionPdasolAta(publicKey, program.provider);
-
-//     pdaMintAta = ceeatePdaSolAtaData.createdAccount;
-//     ixCreateMintAta = new Transaction();
-//     console.log('pdaMintAta other + txadd', pdaMintAta.toBase58());
-
-//     txCreate.add(ixCreateMintAta);
-
-//     const depositIx = createTransferInstruction(publicKey, pdaMintAta, publicKey, amount);
-//     // program.instruction.deposit({
-//     //     accounts: {
-//     //         systemProgram: web3.SystemProgram.programId,
-//     //         tokenProgram: TOKEN_PROGRAM_ID,
-//     //         swapDataAccount: swapDataAccount,
-//     //         signer: publicKey,
-//     //         depositPdaTokenAccount: pdaMintAta,
-//     //         userTokenAccountToDeposit: userMintAta,
-//     //     },
-//     // });
-//     console.log('depositIx', depositIx);
-//     txCreate.add(depositIx);
-
-//     return txCreate;
-// }
