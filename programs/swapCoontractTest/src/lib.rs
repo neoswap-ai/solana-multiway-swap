@@ -19,12 +19,12 @@ pub mod swap_coontract_test {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
         if sent_data.status != TradeStatus::Pending.to_u8() {
-            return  Err(error!(SCERROR::UnexpectedData).into());
+                return  Err(error!(ERROR::UnexpectedData).into());
         }
 
         for item_id in 0..sent_data.items.len() {
             if sent_data.items[item_id].status != TradeStatus::Pending.to_u8() {
-                return  Err(error!(SCERROR::UnexpectedData).into());
+                return  Err(error!(ERROR::UnexpectedData).into());
             }
         }
 
@@ -45,7 +45,7 @@ pub mod swap_coontract_test {
         let item_from_deposit = &ctx.accounts.item_from_deposit;
 
         if swap_data_account.status != TradeStatus::Pending.to_u8() {
-            return  Err(error!(SCERROR::NotReady).into());
+            return  Err(error!(ERROR::NotReady).into());
         }
 
         for item_id in 0..items_to_swap.len() {
@@ -89,7 +89,7 @@ pub mod swap_coontract_test {
         let signer = &ctx.accounts.signer.to_account_info();
 
         if swap_data_account.status != TradeStatus::Pending.to_u8() {
-            return  Err(error!(SCERROR::NotReady).into());
+            return  Err(error!(ERROR::NotReady).into());
         }
 
         for item_id in 0..items_to_swap.len() {
@@ -130,7 +130,7 @@ pub mod swap_coontract_test {
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
                     break;
                 } else {
-                    return  Err(error!(SCERROR::NotReady).into());
+                    return  Err(error!(ERROR::NotReady).into());
                 }
 
             }
@@ -147,7 +147,7 @@ pub mod swap_coontract_test {
         let items_to_swap = &swap_data_account.items;
 
         if swap_data_account.status != TradeStatus::Pending.to_u8() {
-            return  Err(error!(SCERROR::NotReady).into());
+            return  Err(error!(ERROR::NotReady).into());
         }
 
         let nbr_items = items_to_swap.len();
@@ -155,14 +155,14 @@ pub mod swap_coontract_test {
 
         for item_id in 0..nbr_items{
             if items_to_swap[item_id].status != TradeStatus::Deposited.to_u8() {
-                return  Err(error!(SCERROR::NotReady).into());
+                return  Err(error!(ERROR::NotReady).into());
             } else {
                 counter+=1
             }
         }
 
         if counter != nbr_items {
-            return  Err(error!(SCERROR::NotReady).into());
+            return  Err(error!(ERROR::NotReady).into());
         } else {
             ctx.accounts.swap_data_account.status  = TradeStatus::Deposited.to_u8();
         }
@@ -182,7 +182,7 @@ pub mod swap_coontract_test {
         let signer = &ctx.accounts.signer;
 
       if swap_data_account.status != TradeStatus::Deposited.to_u8() {
-        return  Err(error!(SCERROR::NotReady).into());
+        return  Err(error!(ERROR::NotReady).into());
       }
 
         for item_id in 0..items_to_swap.len() {
@@ -209,7 +209,7 @@ pub mod swap_coontract_test {
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                 break
             } else if item_id == items_to_swap.len(){
-                return  Err(error!(SCERROR::NoSend).into());
+                return  Err(error!(ERROR::NoSend).into());
             }
             
         }
@@ -232,7 +232,7 @@ pub mod swap_coontract_test {
         let swap_data_ata = &ctx.accounts.item_from_deposit;
 
         if swap_data_account.status != TradeStatus::Deposited.to_u8() {
-            return  Err(error!(SCERROR::NotReady).into());
+            return  Err(error!(ERROR::NotReady).into());
         }
 
         for item_id in 0..items_to_swap.len() {
@@ -282,7 +282,7 @@ pub mod swap_coontract_test {
         let items_to_swap = &swap_data_account.items;
 
         if swap_data_account.status != TradeStatus::Deposited.to_u8() {
-            return  Err(error!(SCERROR::NotReady).into());
+            return  Err(error!(ERROR::NotReady).into());
         }
 
         let nbr_items = items_to_swap.len();
@@ -290,14 +290,14 @@ pub mod swap_coontract_test {
 
         for item_id in 0..nbr_items{
             if items_to_swap[item_id].status != TradeStatus::Claimed.to_u8() {
-                return  Err(error!(SCERROR::NotReady).into());
+                return  Err(error!(ERROR::NotReady).into());
             } else {
                 counter+=1
             }
         }
 
         if counter != nbr_items {
-            return  Err(error!(SCERROR::NotReady).into());
+            return  Err(error!(ERROR::NotReady).into());
         } else {
             ctx.accounts.swap_data_account.status  = TradeStatus::Claimed.to_u8();
         }
@@ -522,7 +522,7 @@ impl TradeStatus {
 //     claim: Vec<u64>,
 // }
 #[error_code]
-pub enum SCERROR {
+pub enum ERROR {
     #[msg("User not part oof the trade")]
     UserNotPartOfTrade,
     #[msg("Mint not found")]
@@ -722,7 +722,7 @@ pub enum SCERROR {
 //     )?;
 //             } else {
 //                 // nb_try += 1;
-//                 return  Err(error!(SCERROR::MintNotFound).into());
+//                 return  Err(error!(ERROR::MintNotFound).into());
 //             }
 //         // }
 //     } else if signer.key == &swap_data_account.user_b.key() {
@@ -732,7 +732,7 @@ pub enum SCERROR {
 //         msg!("userC")
 
 //     } else {
-//         return  Err(error!(SCERROR::UserNotPartOfTrade).into());
+//         return  Err(error!(ERROR::UserNotPartOfTrade).into());
 //     }
 
 //     // ////////
@@ -745,9 +745,9 @@ pub enum SCERROR {
   // if signer.key == &swap_data_account.user_a.key() {
         //     if amount == 1 {
         //     } else if swap_data_account.user_a_amount.is_negative() {
-        //         return Err(error!(SCERROR::ShouldntSend).into());
+        //         return Err(error!(ERROR::ShouldntSend).into());
         //     } else if amount != swap_data_account.user_a_amount.unsigned_abs() {
-        //         return Err(error!(SCERROR::AmountIncorrect).into());
+        //         return Err(error!(ERROR::AmountIncorrect).into());
         //     }
         //     // user_selected = 0 as u8;
         //     // for item_id in 0..swap_data_account.user_a_nft.len() {
@@ -767,7 +767,7 @@ pub enum SCERROR {
         //     )?;
         //     // } else {
         //     //     // nb_try += 1;
-        //     //     return  Err(error!(SCERROR::MintNotFound).into());
+        //     //     return  Err(error!(ERROR::MintNotFound).into());
         //     // }
         //     // }
         // } else if signer.key == &swap_data_account.user_b.key() {
@@ -775,7 +775,7 @@ pub enum SCERROR {
         // } else if signer.key == &swap_data_account.user_c.key() {
         //     msg!("userC")
         // } else {
-        //     return Err(error!(SCERROR::UserNotPartOfTrade).into());
+        //     return Err(error!(ERROR::UserNotPartOfTrade).into());
         // }
 
     //     pub fn claim(
@@ -797,11 +797,11 @@ pub enum SCERROR {
     //             swap_data_account.items.iter().enumerate().for_each(
     //                     |(i,nftSwapItemIter )|{
     //                         if nftSwapItemIter.status==0 {
-    //                             return Err(error!(SCERROR::NotReady).into());                        
+    //                             return Err(error!(ERROR::NotReady).into());                        
     //                         }else if nftSwapItemIter.destinary==signer.key()||nftSwapItemIter.amount.is_negative(){
     //                             amount = nftSwapItemIter.amount.unsigned_abs()
     //                         }else{
-    //                             return Err(error!(SCERROR::NotReady).into());
+    //                             return Err(error!(ERROR::NotReady).into());
     //                         }
     //                     })
     //             }else {
@@ -843,7 +843,7 @@ pub enum SCERROR {
     //                 amount = 0
     //             }
     //         } else {
-    //             return Err(error!(SCERROR::UserNotPartOfTrade).into());
+    //             return Err(error!(ERROR::UserNotPartOfTrade).into());
     //         }
     
     //         if nft_to_deposit == true {
@@ -876,7 +876,7 @@ pub enum SCERROR {
     
     //             amount = toget;
     //             if amount != amount_desired {
-    //                 return Err(error!(SCERROR::AmountGivenIncorect).into());
+    //                 return Err(error!(ERROR::AmountGivenIncorect).into());
     //             }
     
     //             let amount_to_send = amount * (10 as u64).pow(9);
@@ -893,7 +893,7 @@ pub enum SCERROR {
     //             **ctx.accounts.pda_token_account.lamports.borrow_mut() =
     //                 pda_lamports_initial - amount_to_send;
     //         } else {
-    //             return Err(error!(SCERROR::NoSend).into());
+    //             return Err(error!(ERROR::NoSend).into());
     //         }
     
     //         Ok(())

@@ -248,7 +248,7 @@ export const idl = {
             },
         },
         {
-            name: 'SCERROR',
+            name: 'ERROR',
             type: {
                 kind: 'enum',
                 variants: [
