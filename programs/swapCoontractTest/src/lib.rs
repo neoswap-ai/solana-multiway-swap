@@ -28,8 +28,9 @@ pub mod swap_coontract_test {
             }
         }
 
-        swap_data_account.initializer = sent_data.initializer;
+        swap_data_account.initializer = ctx.accounts.signer.key();
         swap_data_account.items = sent_data.items;
+        swap_data_account.status = TradeStatus::Pending.to_u8();
 
         Ok(())
     }
@@ -143,7 +144,7 @@ pub mod swap_coontract_test {
         // seed: Vec<u8>,
         // bump: u8,
     ) -> ProgramResult {
-        let swap_data_account = &ctx.accounts.swap_data_account;
+        let swap_data_account = ctx.accounts.swap_data_account.clone();
         let items_to_swap = &swap_data_account.items;
 
         if swap_data_account.status != TradeStatus::Pending.to_u8() {
@@ -156,7 +157,9 @@ pub mod swap_coontract_test {
         for item_id in 0..nbr_items{
             if items_to_swap[item_id].status != TradeStatus::Deposited.to_u8() {
                 return  Err(error!(ERROR::NotReady).into());
-            } else {
+            } else if items_to_swap[item_id].status == TradeStatus::Cancelled.to_u8(){
+                ctx.accounts.swap_data_account.status  = TradeStatus::Cancelled.to_u8();
+            }else{
                 counter+=1
             }
         }
@@ -303,6 +306,127 @@ pub mod swap_coontract_test {
         }
 
         Ok(())  
+    }
+
+
+    pub fn cancel_sol(
+        ctx: Context<ClaimSol>,
+        // seed: Vec<u8>,
+        // bump: u8,
+    ) -> ProgramResult {
+
+        let swap_data_account = &ctx.accounts.swap_data_account;
+        let items_to_swap = &swap_data_account.items;
+        let signer = &ctx.accounts.signer;
+
+      if swap_data_account.status != TradeStatus::Pending.to_u8() 
+      && swap_data_account.status != TradeStatus::Cancelled.to_u8()  {
+        return  Err(error!(ERROR::NotReady).into());
+      }
+
+        for item_id in 0..items_to_swap.len() {
+            if !items_to_swap[item_id].is_nft && items_to_swap[item_id].status == 1 &&  items_to_swap[item_id].destinary==signer.key() {
+                // msg!("claim accepted");
+
+              if  items_to_swap[item_id].amount > 0 {
+                msg!("money sending");
+
+                  let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+      
+                  let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
+                  let swap_data_account_info: &mut AccountInfo =
+                      &mut ctx.accounts.swap_data_account.to_account_info();
+      
+                  let signer_lamports_initial = signer_account_info.lamports();
+                  let swap_data_lamports_initial = swap_data_account_info.lamports();
+      
+                  **ctx.accounts.signer.lamports.borrow_mut() =
+                      signer_lamports_initial + (amount_to_send);
+                  **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
+                  swap_data_lamports_initial - amount_to_send;
+              } else {
+                msg!("nothing to recover, you've validated the cancel tho");
+              }
+              //update status
+                        msg!("item status changed to cancelled");
+                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                    if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
+                        ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
+                        msg!("general status changed to cancelled")
+                    }
+                break
+            } else if item_id == items_to_swap.len(){
+                return  Err(error!(ERROR::NoSend).into());
+            }
+            
+        }
+
+        Ok(())
+
+    }
+
+
+    pub fn cancel_nft(
+        ctx: Context<ClaimNft>,
+        seed: Vec<u8>,
+        bump: u8,
+    ) -> ProgramResult {
+
+        let swap_data_account = &ctx.accounts.swap_data_account;
+        let items_to_swap = &swap_data_account.items;
+        let signer = &ctx.accounts.signer;
+        let user_ata = &ctx.accounts.item_to_deposit;
+        let swap_data_ata = &ctx.accounts.item_from_deposit;
+
+        if swap_data_account.status != TradeStatus::Pending.to_u8() 
+        && swap_data_account.status != TradeStatus::Cancelled.to_u8()  {
+          return  Err(error!(ERROR::NotReady).into());
+        }
+
+        for item_id in 0..items_to_swap.len() {
+            if items_to_swap[item_id].is_nft 
+            && items_to_swap[item_id].status == 1 
+            && items_to_swap[item_id].mint == user_ata.mint
+            && items_to_swap[item_id].mint == swap_data_ata.mint
+            && items_to_swap[item_id].owner==signer.key() {
+                // msg!("send instruction");
+    
+                let ix = spl_token::instruction::transfer(
+                    &ctx.accounts.token_program.key,
+                    &swap_data_ata.key(),
+                    &user_ata.key(),
+                    &swap_data_account.key(),
+                    &[&swap_data_account.key()],
+                    1,
+                )?;
+    
+                invoke_signed(
+                    &ix,
+                    &[
+                        ctx.accounts.token_program.clone(),
+                        swap_data_ata.to_account_info(),
+                        user_ata.to_account_info(),
+                        swap_data_account.to_account_info(),
+                    ],
+                    &[&[&seed[..], &[bump]]],
+                )?;
+                    //update status
+                    msg!("item status changed to cancelled");
+                ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                
+                if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
+                    msg!("general status changed to cancelled");
+                    ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
+                }
+
+                break
+            } else if item_id == items_to_swap.len(){
+                return  Err(error!(ERROR::NoSend).into());
+            }
+        }
+
+        Ok(())
+
     }
 
 
@@ -481,7 +605,9 @@ pub enum TradeStatus {
     Pending,
     Deposited,
     Claimed,
-    Closed
+    Closed,
+    Cancelled,
+    CancelledRecovered
 }
 
 impl TradeStatus {
@@ -491,6 +617,8 @@ impl TradeStatus {
             1 => TradeStatus::Deposited,
             2 => TradeStatus::Claimed,
             3 => TradeStatus::Closed,
+            90 => TradeStatus::Cancelled,
+            91 => TradeStatus::CancelledRecovered,
             _ => panic!("Invalid Proposal Status"),
         }
     }
@@ -500,7 +628,9 @@ impl TradeStatus {
             TradeStatus::Pending => 0,
             TradeStatus::Deposited => 1,
             TradeStatus::Claimed => 2,
-            TradeStatus::Closed => 2,
+            TradeStatus::Closed => 3,
+            TradeStatus::Cancelled => 90,
+            TradeStatus::CancelledRecovered => 91,
         }
     }
 }

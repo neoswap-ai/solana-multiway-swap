@@ -144,3 +144,72 @@ export async function cIclaimSol(
 
     return { transaction };
 }
+
+export async function cIcancelNft(
+    program: Program,
+    publicKey: PublicKey,
+    mint: PublicKey,
+    swapDataAccount: PublicKey,
+    swapDataAccount_seed: Buffer,
+    swapDataAccount_bump: number
+): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
+    let transaction: Transaction = new Transaction();
+
+    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(
+        program,
+        publicKey,
+        mint,
+        publicKey
+    );
+    if (userMintAtaTx) {
+        transaction.add(userMintAtaTx);
+        console.log('userAtaClaimNft Transaction Added');
+    }
+
+    const { mintAta: swapDataAta, transaction: pdaMintAtaTx } = await findOrCreateAta(
+        program,
+        swapDataAccount,
+        mint,
+        publicKey
+    );
+    if (pdaMintAtaTx) {
+        transaction.add(pdaMintAtaTx);
+        console.log('pdaAtaClaimNft Transaction Added');
+    }
+
+    const claimNftTx = program.instruction.cancelNft(swapDataAccount_seed, swapDataAccount_bump, {
+        accounts: {
+            systemProgram: web3.SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            swapDataAccount: swapDataAccount,
+            signer: publicKey,
+            itemFromDeposit: swapDataAta,
+            itemToDeposit: userMintAta,
+        },
+    });
+    // console.log(claimNftTx);
+
+    transaction.add(claimNftTx);
+
+    return { transaction, userMintAta };
+}
+
+export async function cIcancelSol(
+    program: Program,
+    publicKey: PublicKey,
+    swapDataAccount: PublicKey
+): Promise<{ transaction: Transaction }> {
+    let transaction: Transaction = new Transaction();
+
+    const claimNftTx = program.instruction.cancelSol({
+        accounts: {
+            systemProgram: web3.SystemProgram.programId,
+            swapDataAccount: swapDataAccount,
+            signer: publicKey,
+        },
+    });
+
+    transaction.add(claimNftTx);
+
+    return { transaction };
+}

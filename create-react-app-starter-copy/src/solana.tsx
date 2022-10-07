@@ -14,7 +14,7 @@ import {
     swapDataAccountGiven,
 } from './solana.const';
 import { SwapData } from './solana.types';
-import { cIclaimNft, cIclaimSol, cIdepositNft, cIdepositSol } from './solana.programInstruction';
+import { cIcancelNft, cIcancelSol, cIclaimNft, cIclaimSol, cIdepositNft, cIdepositSol } from './solana.programInstruction';
 
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -35,11 +35,11 @@ export const Solana: FC = () => {
         }
     }, [anchorWallet]);
 
-    const getProgram = useCallback(async () => {
+    const getProgram = useCallback(async (): Promise<Program> => {
         return new Program(idl, programId, await getProvider());
     }, [getProvider]);
 
-    const getSeed = useCallback((sentData: SwapData) => {
+    const getSeed = useCallback((sentData: SwapData): string => {
         let addSeed_temp: string = '';
         for (let item = 0; item < sentData.items.length; item++) {
             addSeed_temp += sentData.items[item].mint.toString().slice(0, 4);
@@ -115,7 +115,7 @@ export const Solana: FC = () => {
 
         console.log('SwapData', swapData);
 
-        let depositNFTInstructionTransaction = new Transaction();
+        let depositInstructionTransaction = new Transaction();
 
         for (let item = 0; item < swapData.items.length; item++) {
             let e = swapData.items[item];
@@ -124,30 +124,99 @@ export const Solana: FC = () => {
             switch (e.isNft) {
                 case true:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
-                        depositNFTInstructionTransaction.add(
+                        depositInstructionTransaction.add(
                             (await cIdepositNft(program, publicKey, e.mint, swapDataAccount)).transaction
                         );
                     }
                     break;
                 case false:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
-                        depositNFTInstructionTransaction.add(await cIdepositSol(program, publicKey, swapDataAccount));
+                        depositInstructionTransaction.add(await cIdepositSol(program, publicKey, swapDataAccount));
                     }
                     break;
             }
         }
 
-        depositNFTInstructionTransaction.feePayer = publicKey;
-        depositNFTInstructionTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-        console.log('depositNFTInstructionTransaction', depositNFTInstructionTransaction);
+        depositInstructionTransaction.feePayer = publicKey;
+        depositInstructionTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        console.log('depositInstructionTransaction', depositInstructionTransaction);
 
-        if (depositNFTInstructionTransaction.instructions.length > 0) {
-            const hash = await program.provider.send(depositNFTInstructionTransaction);
+        if (depositInstructionTransaction.instructions.length > 0) {
+            const hash = await program.provider.send(depositInstructionTransaction);
             console.log('hash\n', hash);
         } else {
             console.log('Nothing to deposit');
         }
     }, [publicKey, getProgram, getSeed, connection]);
+    const cancel = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+
+        const program = await getProgram();
+        console.log('program', program);
+
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log(swapData);
+
+        const tradeRef = getSeed(swapData);
+        console.log('tradeRef', tradeRef);
+
+        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        console.log('swapDataAccount_seed', swapDataAccount_seed);
+
+        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+            [swapDataAccount_seed],
+            programId
+        );
+        console.log('swapDataAccount_bump', swapDataAccount_bump);
+
+        let cancelInstructionTransaction = new Transaction();
+
+        for (let item = 0; item < swapData.items.length; item++) {
+            let e = swapData.items[item];
+            console.log('element', item, ' \n', e);
+
+            switch (e.isNft) {
+                case true:
+                    if (e.owner.toBase58() === publicKey.toBase58() && e.status === 1) {
+                        cancelInstructionTransaction.add(
+                            (
+                                await cIcancelNft(
+                                    program,
+                                    publicKey,
+                                    e.mint,
+                                    swapDataAccount,
+                                    swapDataAccount_seed,
+                                    swapDataAccount_bump
+                                )
+                            ).transaction
+                        );
+                        console.log('cancelNftinstruction added');
+                    }
+                    break;
+                case false:
+                    if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
+                        cancelInstructionTransaction.add(
+                            (await cIcancelSol(program, publicKey, swapDataAccount)).transaction
+                        );
+                        console.log('cancelSolinstruction added');
+                    }
+                    break;
+            }
+        }
+
+        cancelInstructionTransaction.feePayer = publicKey;
+        cancelInstructionTransaction.recentBlockhash = (
+            await program.provider.connection.getLatestBlockhash()
+        ).blockhash;
+        console.log('cancelInstructionTransaction', cancelInstructionTransaction);
+
+        if (cancelInstructionTransaction.instructions.length > 0) {
+            const hash = await program.provider.send(cancelInstructionTransaction);
+            console.log('hash', hash);
+        } else {
+            console.log('Nothing to cancel');
+        }
+    }, [publicKey, getProgram, getSeed]);
 
     const validateTrade = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
@@ -213,7 +282,7 @@ export const Solana: FC = () => {
         );
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        let claimNFTInstructionTransaction = new Transaction();
+        let claimInstructionTransaction = new Transaction();
 
         for (let item = 0; item < swapData.items.length; item++) {
             let e = swapData.items[item];
@@ -222,7 +291,7 @@ export const Solana: FC = () => {
             switch (e.isNft) {
                 case true:
                     if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
-                        claimNFTInstructionTransaction.add(
+                        claimInstructionTransaction.add(
                             (
                                 await cIclaimNft(
                                     program,
@@ -239,7 +308,7 @@ export const Solana: FC = () => {
                     break;
                 case false:
                     if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
-                        claimNFTInstructionTransaction.add(
+                        claimInstructionTransaction.add(
                             (await cIclaimSol(program, publicKey, swapDataAccount)).transaction
                         );
                         console.log('claimSolinstruction added');
@@ -248,14 +317,14 @@ export const Solana: FC = () => {
             }
         }
 
-        claimNFTInstructionTransaction.feePayer = publicKey;
-        claimNFTInstructionTransaction.recentBlockhash = (
+        claimInstructionTransaction.feePayer = publicKey;
+        claimInstructionTransaction.recentBlockhash = (
             await program.provider.connection.getLatestBlockhash()
         ).blockhash;
-        console.log('claimNFTInstructionTransaction', claimNFTInstructionTransaction);
+        console.log('claimInstructionTransaction', claimInstructionTransaction);
 
-        if (claimNFTInstructionTransaction.instructions.length > 0) {
-            const hash = await program.provider.send(claimNFTInstructionTransaction);
+        if (claimInstructionTransaction.instructions.length > 0) {
+            const hash = await program.provider.send(claimInstructionTransaction);
             console.log('hash', hash);
         } else {
             console.log('Nothing to claim');
@@ -296,26 +365,34 @@ export const Solana: FC = () => {
 
     return (
         <div>
-            <br />
-            <button onClick={initialize} disabled={!publicKey}>
-                initialize
-            </button>
-            <br />
-            <button onClick={deposit} disabled={!publicKey}>
-                Deposit
-            </button>
-            <br />
-            <button onClick={validateTrade} disabled={!publicKey}>
-                validateTrade
-            </button>
-            <br />
-            <button onClick={claim} disabled={!publicKey}>
-                claim
-            </button>
-            <button onClick={validateClaimed} disabled={!publicKey}>
-                validateClaimed
-            </button>
-            <br />
+            <div>
+                <br />
+                <button onClick={initialize} disabled={!publicKey}>
+                    initialize
+                </button>
+                <br />
+                <button onClick={deposit} disabled={!publicKey}>
+                    Deposit
+                </button>
+                <br />
+                <button onClick={validateTrade} disabled={!publicKey}>
+                    validateTrade
+                </button>
+                <br />
+                <button onClick={claim} disabled={!publicKey}>
+                    claim
+                </button>
+                <br />
+                <button onClick={validateClaimed} disabled={!publicKey}>
+                    validateClaimed
+                </button>
+                <br />
+            </div>
+            <div>
+                <button onClick={cancel} disabled={!publicKey}>
+                    Cancel
+                </button>
+            </div>
         </div>
     );
 };

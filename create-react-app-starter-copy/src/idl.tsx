@@ -199,6 +199,72 @@ export const idl = {
             ],
             args: [],
         },
+        {
+            name: 'cancelSol',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [],
+        },
+        {
+            name: 'cancelNft',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+                {
+                    name: 'itemFromDeposit',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'itemToDeposit',
+                    isMut: true,
+                    isSigner: false,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+            ],
+        },
     ],
     accounts: [
         {
@@ -243,6 +309,12 @@ export const idl = {
                     },
                     {
                         name: 'Closed',
+                    },
+                    {
+                        name: 'Cancelled',
+                    },
+                    {
+                        name: 'CancelledRecovered',
                     },
                 ],
             },
