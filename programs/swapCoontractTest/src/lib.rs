@@ -455,7 +455,6 @@ pub mod swap_coontract_test {
             && items_to_swap[item_id].mint == user_ata.mint
             && items_to_swap[item_id].mint == swap_data_ata.mint
             && items_to_swap[item_id].owner==signer.key() {
-                // msg!("send instruction");
     
                 let ix = spl_token::instruction::transfer(
                     &ctx.accounts.token_program.key,
@@ -476,7 +475,6 @@ pub mod swap_coontract_test {
                     ],
                     &[&[&seed[..], &[bump]]],
                 )?;
-                    //update status
                     msg!("item sent and status changed to cancelled");
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
                 
@@ -499,7 +497,6 @@ pub mod swap_coontract_test {
     pub fn validate_cancelled(
         ctx: Context<Validate>,
         seed: Vec<u8>,
-        // bump: u8,
     ) -> ProgramResult {
         // if ctx.accounts.system_program.key() != anchor_lang::system_program::ID {return  Err(error!(ERROR::NotSystemProgram).into());}
         // if ctx.accounts.token_program.key() != anchor_spl::associated_token::ID {return  Err(error!(ERROR::NotTokenProgram).into());}
@@ -564,53 +561,29 @@ pub struct DepositNft<'info> {
     system_program: AccountInfo<'info>,
     #[account(executable)]
     token_program: AccountInfo<'info>,
-    // #[account(executable)]
-    // program_custom: AccountInfo<'info>,
     #[account(mut)]
     swap_data_account:Account<'info, SwapData>,
     #[account(mut)]
     signer: Signer<'info>,
     #[account(mut)]
     item_from_deposit: Account<'info, TokenAccount>,
-    // item_from_deposit: UncheckedAccount<'info>,
     #[account(mut)]
     item_to_deposit: Account<'info, TokenAccount>,
-    // item_to_deposit: UncheckedAccount<'info>,
-    // #[account(mut)]
-    // deposit_pda_token_account: Account<'info, TokenAccount>,
-    // #[account(mut)]
-    // user_token_account_to_deposit: Account<'info,TokenAccount>,
 }
 
 #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct DepositSol<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
-    // #[account(executable)]
-    // token_program: AccountInfo<'info>,
-    // #[account(executable)]
-    // program_custom: AccountInfo<'info>,
     #[account(mut)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    // #[account(mut)]
-    // item_from_deposit: Account<'info, TokenAccount>,
-    // // item_from_deposit: UncheckedAccount<'info>,
-    // #[account(mut)]
-    // item_to_deposit: Account<'info, TokenAccount>,
-    // item_to_deposit: UncheckedAccount<'info>,
-    // #[account(mut)]
-    // deposit_pda_token_account: Account<'info, TokenAccount>,
-    // #[account(mut)]
-    // user_token_account_to_deposit: Account<'info,TokenAccount>,
 }
 
 
 #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct Validate<'info> {
     #[account(mut)]
@@ -622,15 +595,12 @@ pub struct Validate<'info> {
 
 
 #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct ClaimNft<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(executable)]
     token_program: AccountInfo<'info>,
-    // #[account(executable)]
-    // program_id: AccountInfo<'info>,
     #[account(mut)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -641,14 +611,11 @@ pub struct ClaimNft<'info> {
     item_to_deposit: Account<'info, TokenAccount>,
 }
 
-// #[instruction(seed: Vec<u8>, bump: u8)]
 #[derive(Accounts)]
 
 pub struct ClaimSol<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
-    // #[account(executable)]
-    // program_id: AccountInfo<'info>,
     #[account(mut)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -751,14 +718,4 @@ pub enum ERROR {
     NotTokenProgram,
     #[msg("wrong Pda program Id passed")]
     NotPda,
-}
-
-pub fn is_good_pda(
-    seed: &Vec<u8>,
-    swap_data_account: AccountInfo,
-    program_id: Pubkey
-) -> bool {
-    let potential_pda = Pubkey::find_program_address(&[&seed[..]], &program_id);
-    msg!("Pda Checked");
-    if potential_pda.0 != swap_data_account.key() {false} else {true}
 }

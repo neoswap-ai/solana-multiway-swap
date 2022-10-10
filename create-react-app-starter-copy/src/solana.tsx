@@ -23,7 +23,6 @@ import {
     cIdepositSol,
 } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
-import { seed } from '@project-serum/anchor/dist/cjs/idl';
 
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
