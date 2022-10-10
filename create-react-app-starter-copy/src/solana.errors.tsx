@@ -1,6 +1,17 @@
 // 0x1 - > not enough funds (token / nft or sol)
 export const errorMachiavelique = 'error';
 
+
+export async function programCatchError(error:any) {
+    
+    if (String(error).includes('0x0')) {
+        console.error('PDA is already existing with this tradeRef\n', error);
+    // } else if (String(error).includes('0x0') ){
+    //     console.error('error', error);
+    } else {
+        console.error('error', error);
+    }
+}
 // ERROR {
 //     #[msg("User not part oof the trade")]
 //     UserNotPartOfTrade,

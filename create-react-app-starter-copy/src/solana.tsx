@@ -22,6 +22,8 @@ import {
     cIdepositNft,
     cIdepositSol,
 } from './solana.programInstruction';
+import { programCatchError } from './solana.errors';
+import { seed } from '@project-serum/anchor/dist/cjs/idl';
 
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -90,11 +92,7 @@ export const Solana: FC = () => {
             });
             console.log('transactionHash', transactionHash);
         } catch (error) {
-            if (String(error).includes('0x0')) {
-                console.error('PDA is already existing with this tradeRef', tradeRef, '\n', error);
-            } else {
-                console.error('error', error);
-            }
+            programCatchError(error);
         }
     }, [publicKey, getProgram, getSeed]);
 
@@ -105,6 +103,7 @@ export const Solana: FC = () => {
         console.log('program', program);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log('SwapData', swapData);
         if (swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
 
         const tradeRef = getSeed(swapData);
@@ -121,8 +120,6 @@ export const Solana: FC = () => {
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        console.log('SwapData', swapData);
-
         let depositInstructionTransaction = new Transaction();
 
         for (let item = 0; item < swapData.items.length; item++) {
@@ -133,13 +130,16 @@ export const Solana: FC = () => {
                 case true:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
                         depositInstructionTransaction.add(
-                            (await cIdepositNft(program, publicKey, e.mint, swapDataAccount)).transaction
+                            (await cIdepositNft(program, publicKey, e.mint, swapDataAccount, swapDataAccount_seed))
+                                .transaction
                         );
                     }
                     break;
                 case false:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
-                        depositInstructionTransaction.add(await cIdepositSol(program, publicKey, swapDataAccount));
+                        depositInstructionTransaction.add(
+                            await cIdepositSol(program, publicKey, swapDataAccount, swapDataAccount_seed)
+                        );
                     }
                     break;
             }
@@ -150,8 +150,12 @@ export const Solana: FC = () => {
         console.log('depositInstructionTransaction', depositInstructionTransaction);
 
         if (depositInstructionTransaction.instructions.length > 0) {
-            const hash = await program.provider.send(depositInstructionTransaction);
-            console.log('hash\n', hash);
+            try {
+                const hash = await program.provider.send(depositInstructionTransaction);
+                console.log('hash\n', hash);
+            } catch (error) {
+                programCatchError(error);
+            }
         } else {
             console.log('Nothing to deposit');
         }
@@ -207,7 +211,7 @@ export const Solana: FC = () => {
                 case false:
                     if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
                         cancelInstructionTransaction.add(
-                            (await cIcancelSol(program, publicKey, swapDataAccount)).transaction
+                            (await cIcancelSol(program, publicKey, swapDataAccount, swapDataAccount_seed)).transaction
                         );
                         console.log('cancelSolinstruction added');
                     }
@@ -222,8 +226,12 @@ export const Solana: FC = () => {
         console.log('cancelInstructionTransaction', cancelInstructionTransaction);
 
         if (cancelInstructionTransaction.instructions.length > 0) {
-            const hash = await program.provider.send(cancelInstructionTransaction);
-            console.log('hash', hash);
+            try {
+                const hash = await program.provider.send(cancelInstructionTransaction);
+                console.log('hash', hash);
+            } catch (error) {
+                programCatchError(error);
+            }
         } else {
             console.log('Nothing to cancel');
         }
@@ -255,22 +263,18 @@ export const Solana: FC = () => {
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        const transactionHash = await program.rpc.validateDeposit({
-            accounts: {
-                swapDataAccount: swapDataAccount,
-                signer: publicKey,
-            },
-        });
+        try {
+            const transactionHash = await program.rpc.validateDeposit(swapDataAccount_seed,{
+                accounts: {
+                    swapDataAccount: swapDataAccount,
+                    signer: publicKey,
+                },
+            });
 
-        console.log('transactionHash', transactionHash);
-        // try {
-        // } catch (error) {
-        //     if (String(error).includes('0x0')) {
-        //         console.error('PDA is already existing with this tradeRef', tradeRef, '\n', error);
-        //     } else {
-        //         console.error('error', error);
-        //     }
-        // }
+            console.log('transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+        }
     }, [publicKey, getProgram, getSeed]);
 
     const claim = useCallback(async () => {
@@ -323,7 +327,7 @@ export const Solana: FC = () => {
                 case false:
                     if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
                         claimInstructionTransaction.add(
-                            (await cIclaimSol(program, publicKey, swapDataAccount)).transaction
+                            (await cIclaimSol(program, publicKey, swapDataAccount, swapDataAccount_seed)).transaction
                         );
                         console.log('claimSolinstruction added');
                     }
@@ -338,8 +342,12 @@ export const Solana: FC = () => {
         console.log('claimInstructionTransaction', claimInstructionTransaction);
 
         if (claimInstructionTransaction.instructions.length > 0) {
-            const hash = await program.provider.send(claimInstructionTransaction);
-            console.log('hash', hash);
+            try {
+                const hash = await program.provider.send(claimInstructionTransaction);
+                console.log('hash', hash);
+            } catch (error) {
+                programCatchError(error);
+            }
         } else {
             console.log('Nothing to claim');
         }
@@ -367,15 +375,18 @@ export const Solana: FC = () => {
         );
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
+        try {
+            const transactionHash = await program.rpc.validateClaimed(swapDataAccount_seed,{
+                accounts: {
+                    swapDataAccount: swapDataAccount,
+                    signer: publicKey,
+                },
+            });
 
-        const transactionHash = await program.rpc.validateClaimed({
-            accounts: {
-                swapDataAccount: swapDataAccount,
-                signer: publicKey,
-            },
-        });
-
-        console.log('transactionHash', transactionHash);
+            console.log('transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+        }
     }, [publicKey, getProgram, getSeed]);
 
     return (
@@ -389,7 +400,6 @@ export const Solana: FC = () => {
                 <button onClick={deposit} disabled={!publicKey}>
                     Deposit
                 </button>
-                <br />
                 <button onClick={validateDeposit} disabled={!publicKey}>
                     validateDeposit
                 </button>
@@ -397,7 +407,6 @@ export const Solana: FC = () => {
                 <button onClick={claim} disabled={!publicKey}>
                     claim
                 </button>
-                <br />
                 <button onClick={validateClaimed} disabled={!publicKey}>
                     validateClaimed
                 </button>

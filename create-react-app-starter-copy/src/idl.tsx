@@ -78,7 +78,12 @@ export const idl = {
                     isSigner: false,
                 },
             ],
-            args: [],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+            ],
         },
         {
             name: 'depositSol',
@@ -99,7 +104,12 @@ export const idl = {
                     isSigner: true,
                 },
             ],
-            args: [],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+            ],
         },
         {
             name: 'validateDeposit',
@@ -115,7 +125,12 @@ export const idl = {
                     isSigner: true,
                 },
             ],
-            args: [],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+            ],
         },
         {
             name: 'claimSol',
@@ -136,7 +151,12 @@ export const idl = {
                     isSigner: true,
                 },
             ],
-            args: [],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+            ],
         },
         {
             name: 'claimNft',
@@ -197,7 +217,12 @@ export const idl = {
                     isSigner: true,
                 },
             ],
-            args: [],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+            ],
         },
         {
             name: 'cancelSol',
@@ -218,7 +243,12 @@ export const idl = {
                     isSigner: true,
                 },
             ],
-            args: [],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+            ],
         },
         {
             name: 'cancelNft',
@@ -262,6 +292,27 @@ export const idl = {
                 {
                     name: 'bump',
                     type: 'u8',
+                },
+            ],
+        },
+        {
+            name: 'validateCancelled',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
                 },
             ],
         },
@@ -347,6 +398,15 @@ export const idl = {
                     },
                     {
                         name: 'UnexpectedData',
+                    },
+                    {
+                        name: 'NotSystemProgram',
+                    },
+                    {
+                        name: 'NotTokenProgram',
+                    },
+                    {
+                        name: 'NotPda',
                     },
                 ],
             },
