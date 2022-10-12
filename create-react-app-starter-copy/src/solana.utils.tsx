@@ -37,10 +37,12 @@ export async function findOrCreateAta(
 
     try {
         const mintAtaData = await findAtaUserFromMint(program, mint, owner);
-        // if (mintAtaData.length === 1) {
-            console.log('mintAtaData', mintAtaData[0].pubkey.toBase58());
-            return { mintAta: mintAtaData[0].pubkey };
-        // } else 
+        console.log('mintAtaData', mintAtaData[0].pubkey.toBase58());
+        if (mintAtaData.length > 1){
+            console.log('mintAtaData[1].pubkey.toBase58()', mintAtaData[1]?.pubkey.toBase58());
+            console.log('mintAtaData[2].pubkey.toBase58()', mintAtaData[2]?.pubkey.toBase58());
+        }
+        return { mintAta: mintAtaData[0].pubkey };
     } catch (error) {
         const res = await cIPdaAta(mint, payer, owner);
         mintAta = res.mintAta;

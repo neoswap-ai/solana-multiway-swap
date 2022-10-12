@@ -1,4 +1,4 @@
-import { Program, Provider, utils, web3 } from '@project-serum/anchor';
+import { BN, Program, Provider, utils, web3 } from '@project-serum/anchor';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
@@ -61,6 +61,17 @@ export const Solana: FC = () => {
         if (!publicKey) throw new WalletNotConnectedError();
         sentData.initializer = publicKey;
         console.log('sentData', sentData);
+        let sum = new BN(0);
+        for (let index = 0; index < sentData.items.length; index++) {
+            const element = sentData.items[index];
+            if (!element.isNft) {
+                sum = sum.add(element.amount);
+            }
+        }
+        if (sum.toNumber() !== 0) {
+
+        }
+        console.log('sum', sum.toNumber());
 
         const program = await getProgram();
         console.log('program', program);
@@ -86,7 +97,7 @@ export const Solana: FC = () => {
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
                     systemProgram: web3.SystemProgram.programId,
-                    tokenProgram: splAssociatedTokenAccountProgramId,
+                    splTokenProgram: splAssociatedTokenAccountProgramId,
                 },
             });
             console.log('transactionHash', transactionHash);
@@ -129,15 +140,29 @@ export const Solana: FC = () => {
                 case true:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
                         depositInstructionTransaction.add(
-                            (await cIdepositNft(program, publicKey, e.mint, swapDataAccount, swapDataAccount_seed))
-                                .transaction
+                            (
+                                await cIdepositNft(
+                                    program,
+                                    publicKey,
+                                    e.mint,
+                                    swapDataAccount,
+                                    swapDataAccount_seed,
+                                    swapDataAccount_bump
+                                )
+                            ).transaction
                         );
                     }
                     break;
                 case false:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
                         depositInstructionTransaction.add(
-                            await cIdepositSol(program, publicKey, swapDataAccount, swapDataAccount_seed)
+                            await cIdepositSol(
+                                program,
+                                publicKey,
+                                swapDataAccount,
+                                swapDataAccount_seed,
+                                swapDataAccount_bump
+                            )
                         );
                     }
                     break;
@@ -167,7 +192,7 @@ export const Solana: FC = () => {
         console.log('program', program);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log(swapData);
+        console.log('SwapData', swapData);
         if (!(swapData.status === 0 || swapData.status > 89)) {
             throw console.error('Trade not able to be canceled');
         }
@@ -191,7 +216,7 @@ export const Solana: FC = () => {
 
             switch (e.isNft) {
                 case true:
-                    if (e.owner.toBase58() === publicKey.toBase58() && e.status === 1) {
+                    if (e.owner.toBase58() === publicKey.toBase58() && (e.status === 1 || e.status === 0)) {
                         cancelInstructionTransaction.add(
                             (
                                 await cIcancelNft(
@@ -208,9 +233,17 @@ export const Solana: FC = () => {
                     }
                     break;
                 case false:
-                    if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
+                    if (e.destinary.toBase58() === publicKey.toBase58() && (e.status === 1 || e.status === 0)) {
                         cancelInstructionTransaction.add(
-                            (await cIcancelSol(program, publicKey, swapDataAccount, swapDataAccount_seed)).transaction
+                            (
+                                await cIcancelSol(
+                                    program,
+                                    publicKey,
+                                    swapDataAccount,
+                                    swapDataAccount_seed,
+                                    swapDataAccount_bump
+                                )
+                            ).transaction
                         );
                         console.log('cancelSolinstruction added');
                     }
@@ -236,6 +269,49 @@ export const Solana: FC = () => {
         }
     }, [publicKey, getProgram, getSeed]);
 
+    const validateCancel = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        sentData.initializer = publicKey;
+        // console.log('sentData', sentData);
+
+        const program = await getProgram();
+        console.log('program', program);
+
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log('swapData', swapData);
+        if (swapData.status !== 90) throw console.error('Trade not in waiting to be cancelled');
+
+        const tradeRef = getSeed(swapData);
+
+        console.log('tradeRef', tradeRef);
+
+        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        console.log('swapDataAccount_seed', swapDataAccount_seed);
+
+        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+            [swapDataAccount_seed],
+            programId
+        );
+
+        console.log('swapDataAccount', swapDataAccount.toBase58());
+        console.log('swapDataAccount_bump', swapDataAccount_bump);
+
+        try {
+            const transactionHash = await program.rpc.validateCancelled(swapDataAccount_seed, swapDataAccount_bump, {
+                accounts: {
+                    systemProgram: web3.SystemProgram.programId,
+                    splTokenProgram: splAssociatedTokenAccountProgramId,
+                    swapDataAccount: swapDataAccount,
+                    signer: publicKey,
+                },
+            });
+
+            console.log('transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+        }
+    }, [publicKey, getProgram, getSeed]);
+
     const validateDeposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         sentData.initializer = publicKey;
@@ -245,6 +321,7 @@ export const Solana: FC = () => {
         console.log('program', program);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log('swapData', swapData);
         if (swapData.status !== 0) throw console.error('Trade not in waiting to be validated');
 
         const tradeRef = getSeed(swapData);
@@ -263,7 +340,7 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         try {
-            const transactionHash = await program.rpc.validateDeposit(swapDataAccount_seed,{
+            const transactionHash = await program.rpc.validateDeposit(swapDataAccount_seed, swapDataAccount_bump, {
                 accounts: {
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
@@ -284,7 +361,6 @@ export const Solana: FC = () => {
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log(swapData);
-
         if (swapData.status !== 1) throw console.error('Trade not in waiting for claim state');
 
         const tradeRef = getSeed(swapData);
@@ -326,7 +402,15 @@ export const Solana: FC = () => {
                 case false:
                     if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
                         claimInstructionTransaction.add(
-                            (await cIclaimSol(program, publicKey, swapDataAccount, swapDataAccount_seed)).transaction
+                            (
+                                await cIclaimSol(
+                                    program,
+                                    publicKey,
+                                    swapDataAccount,
+                                    swapDataAccount_seed,
+                                    swapDataAccount_bump
+                                )
+                            ).transaction
                         );
                         console.log('claimSolinstruction added');
                     }
@@ -375,8 +459,10 @@ export const Solana: FC = () => {
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
         try {
-            const transactionHash = await program.rpc.validateClaimed(swapDataAccount_seed,{
+            const transactionHash = await program.rpc.validateClaimed(swapDataAccount_seed, swapDataAccount_bump, {
                 accounts: {
+                    systemProgram: web3.SystemProgram.programId,
+                    splTokenProgram: splAssociatedTokenAccountProgramId,
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
                 },
@@ -391,11 +477,11 @@ export const Solana: FC = () => {
     return (
         <div>
             <div>
-                <br />
                 <button onClick={initialize} disabled={!publicKey}>
                     initialize
                 </button>
-                <br />
+            </div>
+            <div>
                 <button onClick={deposit} disabled={!publicKey}>
                     Deposit
                 </button>
@@ -403,6 +489,8 @@ export const Solana: FC = () => {
                     validateDeposit
                 </button>
                 <br />
+            </div>
+            <div>
                 <button onClick={claim} disabled={!publicKey}>
                     claim
                 </button>
@@ -414,6 +502,9 @@ export const Solana: FC = () => {
             <div>
                 <button onClick={cancel} disabled={!publicKey}>
                     Cancel
+                </button>
+                <button onClick={validateCancel} disabled={!publicKey}>
+                    validateCancel
                 </button>
             </div>
         </div>

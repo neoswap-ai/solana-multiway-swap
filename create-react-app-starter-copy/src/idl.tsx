@@ -22,7 +22,7 @@ export const idl = {
                     isSigner: false,
                 },
                 {
-                    name: 'tokenProgram',
+                    name: 'splTokenProgram',
                     isMut: false,
                     isSigner: false,
                 },
@@ -83,6 +83,10 @@ export const idl = {
                     name: 'seed',
                     type: 'bytes',
                 },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
             ],
         },
         {
@@ -109,6 +113,10 @@ export const idl = {
                     name: 'seed',
                     type: 'bytes',
                 },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
             ],
         },
         {
@@ -129,6 +137,10 @@ export const idl = {
                 {
                     name: 'seed',
                     type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
                 },
             ],
         },
@@ -155,6 +167,10 @@ export const idl = {
                 {
                     name: 'seed',
                     type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
                 },
             ],
         },
@@ -207,6 +223,16 @@ export const idl = {
             name: 'validateClaimed',
             accounts: [
                 {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splTokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
                     name: 'swapDataAccount',
                     isMut: true,
                     isSigner: false,
@@ -221,6 +247,10 @@ export const idl = {
                 {
                     name: 'seed',
                     type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
                 },
             ],
         },
@@ -247,6 +277,10 @@ export const idl = {
                 {
                     name: 'seed',
                     type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
                 },
             ],
         },
@@ -299,6 +333,16 @@ export const idl = {
             name: 'validateCancelled',
             accounts: [
                 {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splTokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
                     name: 'swapDataAccount',
                     isMut: true,
                     isSigner: false,
@@ -313,6 +357,10 @@ export const idl = {
                 {
                     name: 'seed',
                     type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
                 },
             ],
         },
@@ -407,6 +455,12 @@ export const idl = {
                     },
                     {
                         name: 'NotPda',
+                    },
+                    {
+                        name: 'NotInit',
+                    },
+                    {
+                        name: 'NotBump',
                     },
                 ],
             },

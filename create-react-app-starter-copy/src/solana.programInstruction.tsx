@@ -8,7 +8,8 @@ export async function cIdepositNft(
     publicKey: PublicKey,
     mint: PublicKey,
     swapDataAccount: PublicKey,
-    seed: Buffer
+    seed: Buffer,
+    bump: number
 ): Promise<{ transaction: Transaction; ata: PublicKey }> {
     let transaction: Transaction = new Transaction();
 
@@ -37,9 +38,14 @@ export async function cIdepositNft(
         console.log('ixCreatePdaMintAta added');
         transaction.add(ixCreatePdaMintAta);
     }
+    // transaction.feePayer = publicKey;
+    // transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+    // const hash = await program.provider.send(transaction);
+    // console.log('hash\n', hash);
+    // const DataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
 
     const depositIx = new Transaction().add(
-        program.instruction.depositNft(seed, {
+        program.instruction.depositNft(seed, bump,{
             accounts: {
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: TOKEN_PROGRAM_ID,
@@ -62,13 +68,16 @@ export async function cIdepositSol(
     from: PublicKey,
     to: PublicKey,
     seed: Buffer,
+    bump: number,
     decimals?: number
 ): Promise<Transaction> {
     if (!decimals) {
         decimals = 9;
     }
+    // const DataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+
     return new Transaction().add(
-        program.instruction.depositSol(seed, {
+        program.instruction.depositSol(seed, bump,{
             accounts: {
                 systemProgram: web3.SystemProgram.programId,
                 swapDataAccount: to,
@@ -131,11 +140,12 @@ export async function cIclaimSol(
     program: Program,
     publicKey: PublicKey,
     swapDataAccount: PublicKey,
-    seed: Buffer
+    seed: Buffer,
+    bump: number
 ): Promise<{ transaction: Transaction }> {
     let transaction: Transaction = new Transaction();
 
-    const claimNftTx = program.instruction.claimSol(seed, {
+    const claimNftTx = program.instruction.claimSol(seed, bump,{
         accounts: {
             systemProgram: web3.SystemProgram.programId,
             swapDataAccount: swapDataAccount,
@@ -201,11 +211,12 @@ export async function cIcancelSol(
     program: Program,
     publicKey: PublicKey,
     swapDataAccount: PublicKey,
-    seed: Buffer
+    seed: Buffer,
+    bump:number
 ): Promise<{ transaction: Transaction }> {
     let transaction: Transaction = new Transaction();
 
-    const claimNftTx = program.instruction.cancelSol(seed, {
+    const claimNftTx = program.instruction.cancelSol(seed, bump,{
         accounts: {
             systemProgram: web3.SystemProgram.programId,
             swapDataAccount: swapDataAccount,
