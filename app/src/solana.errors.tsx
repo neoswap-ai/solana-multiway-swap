@@ -7,49 +7,37 @@ export async function programCatchError(error: any) {
     } else if (String(error).includes('0x0')) {
         console.error('PDA is already existing with this tradeRef \n', error);
     } else if (String(error).includes('0x1770')) {
-        console.error('User not part of the trade', error);
+        console.error('User not part of the trade\n', error);
     } else if (String(error).includes('0x1771')) {
-        console.error('Mint not found', error);
+        console.error('Mint not found\n', error);
     } else if (String(error).includes('0x1772')) {
         console.error("Amount given isn't correct", error);
     } else if (String(error).includes('0x1773')) {
         console.error("User shouldn't be sending funds", error);
     } else if (String(error).includes('0x1774')) {
-        console.error('Nothing was found in the smart contract to be sent to you', error);
+        console.error('Nothing was found in the smart contract to be sent to you\n', error);
     } else if (String(error).includes('0x1775')) {
-        console.error("Sum of amounts is Not Null", error);
+        console.error('Sum of amounts is Not Null\n', error);
     } else if (String(error).includes('0x1776')) {
-        console.error('Not ready for claim', error);
+        console.error('Not ready for claim\n', error);
     } else if (String(error).includes('0x1777')) {
         console.error("Given data isn't fitting", error);
     } else if (String(error).includes('0x1778')) {
-        console.error('wrong system program Id passed', error);
+        console.error('wrong system program Id passed\n', error);
     } else if (String(error).includes('0x1779')) {
-        console.error('wrong Pda program Id passed', error);
+        console.error('wrong token program passed\n', error);
     } else if (String(error).includes('0x177a')) {
-        console.error('wrong Pda program Id passed', error);
+        console.error('wrong Pda program Id passed\n', error);
     } else if (String(error).includes('0x177b')) {
-        console.error('wrong signer, should be initializer to perform this action', error);
+        console.error('wrong signer, should be initializer to perform this action\n', error);
     } else if (String(error).includes('0x177c')) {
-        console.error('wrong bump', error);
-        } else if (String(error).includes('0x177d')) {
-            console.error('The status given is not correct', error);
-        // } else if (String(error).includes('0x177e')) {
-        //     console.error('XXXXXXXXXXXXXXXXX', error);
-        // } else if (String(error).includes('0x177f')) {
-        //     console.error('XXXXXXXXXXXXXXXXX', error);
-        // } else if (String(error).includes('0x1780')) {
-        //     console.error('XXXXXXXXXXXXXXXXX', error);
-        // } else if (String(error).includes('0x1781')) {
-        //     console.error('XXXXXXXXXXXXXXXXX', error);
-        // } else if (String(error).includes('0x1782')) {
-        //     console.error('XXXXXXXXXXXXXXXXX', error);
-        // } else if (error.code === "0x1783") {
-        //     console.error('JJ1', error);
-        // } else if (String(error).includes('0x1783')) {
-        //     console.error('JJ', error);
-        // } else if (String(error).includes('0x1782')) {
-        //     console.error('Token ', error);
+        console.error('wrong bump\n', error);
+    } else if (String(error).includes('0x177d')) {
+        console.error('The status given is not correct \n', error);
+    } else if (String(error).includes('Account does not exist')) {
+        console.error("Account haven't been initialized \n", error);
+    } else if (String(error).includes('0x1')) {
+        console.error('Not enough funds \n', error);
     } else {
         console.error(error);
     }

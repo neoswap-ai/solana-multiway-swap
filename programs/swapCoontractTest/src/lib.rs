@@ -27,6 +27,7 @@ pub mod swap_coontract_test {
         require!(sent_data.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
 
         let mut sum =0 as i64;
+
         for item_id in 0..sent_data.items.len() {
             if !sent_data.items[item_id].is_nft {
                 sum += sent_data.items[item_id].amount
@@ -53,11 +54,11 @@ pub mod swap_coontract_test {
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
 
         let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-    require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
         let swap_data_account = &ctx.accounts.swap_data_account;
-        let items_to_swap = &swap_data_account.items;
+        // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
         let token_program = &ctx.accounts.token_program;
         let signer = &ctx.accounts.signer;
         let item_to_deposit = &ctx.accounts.item_to_deposit;
@@ -65,14 +66,17 @@ pub mod swap_coontract_test {
         
           require!(swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
 
+          let mut transfered : bool = false;
 
-        for item_id in 0..items_to_swap.len() {
+        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             require!(
-               ( items_to_swap[item_id].status == TradeStatus::Pending.to_u8() 
-            || items_to_swap[item_id].status == TradeStatus::Deposited.to_u8() )
+               ( ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() 
+            || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() )
             ,MYERROR::NotReady);
 
-          if items_to_swap[item_id].is_nft && items_to_swap[item_id].mint == item_to_deposit.mint && items_to_swap[item_id].status == 0 {
+          if ctx.accounts.swap_data_account.items[item_id].is_nft 
+          && ctx.accounts.swap_data_account.items[item_id].mint == item_to_deposit.mint 
+          && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
 
                 let ix = spl_token::instruction::transfer(
                     token_program.key,
@@ -93,19 +97,19 @@ pub mod swap_coontract_test {
                             token_program.clone(),
                         ],
                     )?;
-
+                    
                     //update status
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
+                    transfered = true;
 
-                break
+                // break
 
-            } else if item_id == items_to_swap.len(){
+            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
         Ok(())
     }
-
 
     pub fn deposit_sol(
         ctx: Context<DepositSol>,
@@ -119,20 +123,18 @@ pub mod swap_coontract_test {
         require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
-        let swap_data_account = &ctx.accounts.swap_data_account;
-        let items_to_swap = &swap_data_account.items;
-        let signer = &ctx.accounts.signer.to_account_info();
+        require!(ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
 
-          require!(swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
+        let mut transfered : bool = false;
 
-
-        for item_id in 0..items_to_swap.len() {
-            if  !(items_to_swap[item_id].is_nft) 
-            && items_to_swap[item_id].status == 0  
-            && items_to_swap[item_id].owner == signer.key() {
-                if items_to_swap[item_id].amount > 0 {
+        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            if  !(ctx.accounts.swap_data_account.items[item_id].is_nft) 
+            && ctx.accounts.swap_data_account.items[item_id].status == 0  
+            && ctx.accounts.swap_data_account.items[item_id].owner == ctx.accounts.signer.key() 
+            && transfered == false {
+                if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
                     msg!("Deposit  Sent");
-                    let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+                    let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
 
                     let ix = anchor_lang::solana_program::system_instruction::transfer(
                         &ctx.accounts.signer.key(),
@@ -149,18 +151,19 @@ pub mod swap_coontract_test {
 
                     //update status
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
-    
-                    break;
+                    transfered = true
 
-                } else if items_to_swap[item_id].amount <= 0 {
+                    // break;
+
+                } else if ctx.accounts.swap_data_account.items[item_id].amount <= 0 {
                     msg!("nothing to deposit, your account was validated");
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
-                    break;
+                    // break;
                 } else {
                     return  Err(error!(MYERROR::NotReady).into());
                 }
 
-            } else if item_id == items_to_swap.len(){
+            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
@@ -176,27 +179,26 @@ pub mod swap_coontract_test {
         require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require!(potential_pda.1 == bump,MYERROR::NotPda) ;
         
-        let swap_data_account = ctx.accounts.swap_data_account.clone();
-        let items_to_swap = &swap_data_account.items;
+        // let swap_data_account = ctx.accounts.swap_data_account.clone();
+        // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
         
-        require_keys_eq!(swap_data_account.initializer,ctx.accounts.signer.key(),MYERROR::NotInit);
-        require!(swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
+        require_keys_eq!(ctx.accounts.swap_data_account.initializer,ctx.accounts.signer.key(),MYERROR::NotInit);
+        require!(ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
 
         let mut counter : usize = 0;
 
-        for item_id in 0..items_to_swap.len() {
-            require_eq!(items_to_swap[item_id].status,TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
+        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            require_eq!(ctx.accounts.swap_data_account.items[item_id].status,TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
             counter += 1
         }
 
-        require!(counter == items_to_swap.len(),MYERROR::NotReady);
+        require!(counter == ctx.accounts.swap_data_account.items.len(),MYERROR::NotReady);
 
         ctx.accounts.swap_data_account.status  = TradeStatus::Deposited.to_u8();
         msg!("state passed to Deposited");
 
         Ok(())  
     }
-
 
     pub fn claim_sol(
         ctx: Context<ClaimSol>,
@@ -206,23 +208,23 @@ pub mod swap_coontract_test {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
 
         let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-    require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
-        let swap_data_account = &ctx.accounts.swap_data_account;
-        let items_to_swap = &swap_data_account.items;
-        let signer = &ctx.accounts.signer;
+        require!(ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
 
-        require!(swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
+        let mut transfered : bool = false;
 
-
-        for item_id in 0..items_to_swap.len() {
-            if !items_to_swap[item_id].is_nft && items_to_swap[item_id].status == 1 &&  items_to_swap[item_id].destinary==signer.key() {
+        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            if !ctx.accounts.swap_data_account.items[item_id].is_nft 
+            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8()
+            && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.signer.key() 
+            && transfered == false {
                 
-                if  items_to_swap[item_id].amount < 0 {
+                if  ctx.accounts.swap_data_account.items[item_id].amount < 0 {
                         msg!("claim accepted, item status changed to claimed");
                     
-                  let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
       
                   let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
                   let swap_data_account_info: &mut AccountInfo =
@@ -241,8 +243,9 @@ pub mod swap_coontract_test {
                 }
                     //update status
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
-                break
-            } else if item_id == items_to_swap.len(){
+                    transfered = true
+                // break
+            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
             
@@ -251,7 +254,6 @@ pub mod swap_coontract_test {
         Ok(())
 
     }
-
 
     pub fn claim_nft(
         ctx: Context<ClaimNft>,
@@ -262,25 +264,26 @@ pub mod swap_coontract_test {
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
 
         let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-    require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
-        let swap_data_account = &ctx.accounts.swap_data_account;
-        let items_to_swap = &swap_data_account.items;
-        let signer = &ctx.accounts.signer;
+        // let swap_data_account = &ctx.accounts.swap_data_account;
+        // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
+        // let signer = &ctx.accounts.signer;
         let user_ata = &ctx.accounts.item_to_deposit;
         let swap_data_ata = &ctx.accounts.item_from_deposit;
 
-        if swap_data_account.status != TradeStatus::Deposited.to_u8() {
-            return  Err(error!(MYERROR::NotReady).into());
-        }
+        require!(ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
 
-        for item_id in 0..items_to_swap.len() {
-            if items_to_swap[item_id].is_nft 
-            && items_to_swap[item_id].status == 1 
-            && items_to_swap[item_id].mint == user_ata.mint
-            && items_to_swap[item_id].mint == swap_data_ata.mint
-            && items_to_swap[item_id].destinary==signer.key() {
+        let mut transfered : bool = false;
+        
+        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            if ctx.accounts.swap_data_account.items[item_id].is_nft 
+            && ctx.accounts.swap_data_account.items[item_id].status == 1 
+            && ctx.accounts.swap_data_account.items[item_id].mint == user_ata.mint
+            && ctx.accounts.swap_data_account.items[item_id].mint == swap_data_ata.mint
+            && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.signer.key() 
+            && transfered == false {
 
     
                 let ix = spl_token::instruction::transfer(
@@ -309,7 +312,7 @@ pub mod swap_coontract_test {
                     let ix2 = spl_token::instruction::close_account(
                         &ctx.accounts.token_program.key,
                         &swap_data_ata.key(),
-                        &signer.key(),
+                        &ctx.accounts.signer.key(),
                         &ctx.accounts.swap_data_account.key(),
                         &[&ctx.accounts.swap_data_account.key()],
                     )?;
@@ -320,12 +323,13 @@ pub mod swap_coontract_test {
                             ctx.accounts.token_program.clone(),
                             swap_data_ata.to_account_info(),
                             ctx.accounts.swap_data_account.to_account_info(),
-                            signer.to_account_info(),
+                            ctx.accounts.signer.to_account_info(),
                         ],
                         &[&[&seed[..], &[bump]]],
                     )?;
-                break
-             } else if item_id == items_to_swap.len(){
+                    transfered = true;
+                // break
+             } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
@@ -346,22 +350,21 @@ pub mod swap_coontract_test {
         require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
 
-        let swap_data_account = &ctx.accounts.swap_data_account;
-        let items_to_swap = &swap_data_account.items;
+        // let swap_data_account = &ctx.accounts.swap_data_account;
+        // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
 
-        require_eq!(swap_data_account.status, TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
+        require_eq!(ctx.accounts.swap_data_account.status, TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
       
-        require_keys_eq!(swap_data_account.initializer,ctx.accounts.signer.key(),MYERROR::NotInit);
+        require_keys_eq!(ctx.accounts.swap_data_account.initializer,ctx.accounts.signer.key(),MYERROR::NotInit);
     
-        let nbr_items = items_to_swap.len();
         let mut counter : usize=0;
 
-        for item_id in 0..nbr_items{
-            require_eq!(items_to_swap[item_id].status,TradeStatus::Claimed.to_u8(),MYERROR::NotReady);
+        for item_id in 0..ctx.accounts.swap_data_account.items.len(){
+            require_eq!(ctx.accounts.swap_data_account.items[item_id].status,TradeStatus::Claimed.to_u8(),MYERROR::NotReady);
             counter += 1
         }
 
-        require_eq!(counter, nbr_items,MYERROR::NoSend);
+        require_eq!(counter, ctx.accounts.swap_data_account.items.len(),MYERROR::NoSend);
         
         ctx.accounts.swap_data_account.status = TradeStatus::Claimed.to_u8();
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
@@ -382,7 +385,6 @@ pub mod swap_coontract_test {
         Ok(())  
     }
 
-
     pub fn cancel_sol(
         ctx: Context<ClaimSol>,
         seed: Vec<u8>,
@@ -391,37 +393,34 @@ pub mod swap_coontract_test {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
 
         let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-    require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require!(potential_pda.1 == bump,MYERROR::NotPda) ;
-
-        let swap_data_account = &ctx.accounts.swap_data_account;
-        let items_to_swap = &swap_data_account.items;
-        let signer = &ctx.accounts.signer;
 
         require!(
             (
-            swap_data_account.status == TradeStatus::Pending.to_u8() 
-        || swap_data_account.status == TradeStatus::Cancelled.to_u8()
+                ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() 
+        || ctx.accounts.swap_data_account.status == TradeStatus::Cancelled.to_u8()
         )
         ,MYERROR::NotReady
-    );
+        );
 
-    //   if swap_data_account.status != TradeStatus::Pending.to_u8() 
-    //   && swap_data_account.status != TradeStatus::Cancelled.to_u8()  {
-    //     return  Err(error!(MYERROR::NotReady).into());
-    //   }
+        let mut transfered : bool = false;
 
-        for item_id in 0..items_to_swap.len() {
-            if !items_to_swap[item_id].is_nft 
-            && (items_to_swap[item_id].status == TradeStatus::Pending.to_u8() || items_to_swap[item_id].status == TradeStatus::Deposited.to_u8() ) 
-            &&  items_to_swap[item_id].destinary==signer.key() {
+        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            if !ctx.accounts.swap_data_account.items[item_id].is_nft 
+            && (
+                ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() 
+                || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
+            ) 
+            &&  ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.signer.key() 
+            && transfered == false {
                 // msg!("claim accepted");
 
-                if  items_to_swap[item_id].amount > 0 
-                && items_to_swap[item_id].status == TradeStatus::Deposited.to_u8() {
+                if  ctx.accounts.swap_data_account.items[item_id].amount > 0 
+                && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() {
                 msg!("money sending, item status changed to cancelled");
 
-                    let amount_to_send = items_to_swap[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+                    let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
         
                     let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
                     let swap_data_account_info: &mut AccountInfo =
@@ -441,14 +440,15 @@ pub mod swap_coontract_test {
 
                 //update status
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                transfered = true;
 
                 if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
                     ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
                     msg!("general status changed to cancelled")
                 }
 
-                break
-            } else if item_id == items_to_swap.len(){
+                // break
+            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
             
@@ -458,48 +458,53 @@ pub mod swap_coontract_test {
 
     }
 
-
     pub fn cancel_nft(
         ctx: Context<ClaimNft>,
         seed: Vec<u8>,
         bump: u8,
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+        require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
 
         let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
         require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
 
-        let swap_data_account = &ctx.accounts.swap_data_account;
-        // let items_to_swap = &swap_data_account.items;
-        let signer = &ctx.accounts.signer;
+        // let swap_data_account = &ctx.accounts.swap_data_account;
+        // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
+        // let signer = &ctx.accounts.signer;
         let user_ata = &ctx.accounts.item_to_deposit;
         let swap_data_ata = &ctx.accounts.item_from_deposit;
 
         require!(
             (
-            swap_data_account.status == TradeStatus::Pending.to_u8() 
-        || swap_data_account.status == TradeStatus::Cancelled.to_u8()
+            ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() 
+        || ctx.accounts.swap_data_account.status == TradeStatus::Cancelled.to_u8()
         )
         ,MYERROR::NotReady
-    );
+        );
+
+
+        let mut transfered : bool = false;
 
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].status == 0 
             && ctx.accounts.swap_data_account.items[item_id].mint == user_ata.mint
             && ctx.accounts.swap_data_account.items[item_id].mint == swap_data_ata.mint
-            && ctx.accounts.swap_data_account.items[item_id].owner==signer.key()
-            {
-                msg!("item wasn't deposited and status changed to cancelled");
+            && ctx.accounts.swap_data_account.items[item_id].owner==ctx.accounts.signer.key()
+            && transfered == false {
+
+                msg!("no item to cancel and status changed to cancelled");
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                transfered = true;
 
             } else if ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].status == 1 
             && ctx.accounts.swap_data_account.items[item_id].mint == user_ata.mint
             && ctx.accounts.swap_data_account.items[item_id].mint == swap_data_ata.mint
-            && ctx.accounts.swap_data_account.items[item_id].owner==signer.key() {
+            && ctx.accounts.swap_data_account.items[item_id].owner==ctx.accounts.signer.key()
+            && transfered == false {
     
                 let ix = spl_token::instruction::transfer(
                     &ctx.accounts.token_program.key,
@@ -520,13 +525,12 @@ pub mod swap_coontract_test {
                     ],
                     &[&[&seed[..], &[bump]]],
                 )?;
-                    msg!("item sent and status changed to cancelled");
-                ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                  
                 
                 let ix2 = spl_token::instruction::close_account(
                     &ctx.accounts.token_program.key,
                     &swap_data_ata.key(),
-                    &signer.key(),
+                    &ctx.accounts.signer.key(),
                     &ctx.accounts.swap_data_account.key(),
                     &[&ctx.accounts.swap_data_account.key()],
                 )?;
@@ -537,17 +541,22 @@ pub mod swap_coontract_test {
                         ctx.accounts.token_program.clone(),
                         swap_data_ata.to_account_info(),
                         ctx.accounts.swap_data_account.to_account_info(),
-                        signer.to_account_info(),
+                        ctx.accounts.signer.to_account_info(),
                     ],
                     &[&[&seed[..], &[bump]]],
                 )?;
+
+                msg!("item sent and status changed to cancelled");
+                ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                
                 if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
                     msg!("general status changed to cancelled");
                     ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
                 }
+                transfered = true;
 
-                break
-            } else if item_id == ctx.accounts.swap_data_account.items.len(){
+                // break
+            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
@@ -555,7 +564,6 @@ pub mod swap_coontract_test {
         Ok(())
 
     }
-
 
     pub fn validate_cancelled(
         ctx: Context<ValidateAndClose>,
@@ -569,16 +577,16 @@ pub mod swap_coontract_test {
         require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
 
-        let swap_data_account = &ctx.accounts.swap_data_account;
-        let items_to_swap = &swap_data_account.items;
+        // let swap_data_account = &ctx.accounts.swap_data_account;
+        // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
 
-        require_eq!(swap_data_account.status, TradeStatus::Cancelled.to_u8(),MYERROR::NotReady);
+        require_eq!(ctx.accounts.swap_data_account.status, TradeStatus::Cancelled.to_u8(),MYERROR::NotReady);
 
-        let nbr_items = items_to_swap.len();
+        let nbr_items = ctx.accounts.swap_data_account.items.len();
         let mut counter : usize=0;
 
         for item_id in 0..nbr_items{
-            require_eq!(items_to_swap[item_id].status,TradeStatus::Claimed.to_u8(),MYERROR::NotReady);
+            require_eq!(ctx.accounts.swap_data_account.items[item_id].status,TradeStatus::CancelledRecovered.to_u8(),MYERROR::NotReady);
             counter += 1
         }
 
@@ -755,12 +763,12 @@ pub enum TradeStatus {
 impl TradeStatus {
     pub fn from_u8(status: u8) -> TradeStatus {
         match status {
-            0 => TradeStatus::Pending,
+          0 => TradeStatus::Pending,
             1 => TradeStatus::Deposited,
             2 => TradeStatus::Claimed,
             3 => TradeStatus::Closed,
             90 => TradeStatus::Cancelled,
-            91 => TradeStatus::CancelledRecovered,
+            91 => TradeStatus::CancelledRecovered,  
             _ => panic!("Invalid Proposal Status"),
         }
     }

@@ -20,9 +20,9 @@ export async function cIdepositNft(
         publicKey
     );
 
-    console.log('userMintAta', userMintAta.toBase58());
+    // console.log('userMintAta', userMintAta.toBase58());
     if (ixCreateUserMintAta) {
-        console.log('ixCreateUserMintAta added');
+        console.log('CreateUserAta Deposit Tx added');
         transaction.add(ixCreateUserMintAta);
     }
 
@@ -33,9 +33,9 @@ export async function cIdepositNft(
         publicKey
     );
 
-    console.log('pdaMintAta', pdaMintAta.toBase58());
+    // console.log('pdaMintAta', pdaMintAta.toBase58());
     if (ixCreatePdaMintAta) {
-        console.log('ixCreatePdaMintAta added');
+        console.log('CreatePdaAta Deposit Tx added');
         transaction.add(ixCreatePdaMintAta);
     }
     // transaction.feePayer = publicKey;
@@ -45,7 +45,7 @@ export async function cIdepositNft(
     // const DataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
 
     const depositIx = new Transaction().add(
-        program.instruction.depositNft(seed, bump,{
+        program.instruction.depositNft(seed, bump, {
             accounts: {
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: TOKEN_PROGRAM_ID,
@@ -57,8 +57,8 @@ export async function cIdepositNft(
         })
     );
 
-    console.log('depositIx', depositIx);
     transaction.add(depositIx);
+    console.log('deposit NFT Tx added');
 
     return { transaction, ata: pdaMintAta };
 }
@@ -68,16 +68,11 @@ export async function cIdepositSol(
     from: PublicKey,
     to: PublicKey,
     seed: Buffer,
-    bump: number,
-    decimals?: number
+    bump: number
 ): Promise<Transaction> {
-    if (!decimals) {
-        decimals = 9;
-    }
-    // const DataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-
+    console.log('deposit Sol Tx added');
     return new Transaction().add(
-        program.instruction.depositSol(seed, bump,{
+        program.instruction.depositSol(seed, bump, {
             accounts: {
                 systemProgram: web3.SystemProgram.programId,
                 swapDataAccount: to,
@@ -103,9 +98,10 @@ export async function cIclaimNft(
         mint,
         publicKey
     );
+
     if (userMintAtaTx) {
         transaction.add(userMintAtaTx);
-        console.log('userAtaClaimNft Transaction Added');
+        console.log('createUserAta ClaimNft Tx Added');
     }
 
     const { mintAta: swapDataAta, transaction: pdaMintAtaTx } = await findOrCreateAta(
@@ -114,9 +110,10 @@ export async function cIclaimNft(
         mint,
         publicKey
     );
+
     if (pdaMintAtaTx) {
         transaction.add(pdaMintAtaTx);
-        console.log('pdaAtaClaimNft Transaction Added');
+        console.log('createPdaAta ClaimNft Tx Added');
     }
 
     const claimNftTx = program.instruction.claimNft(swapDataAccount_seed, swapDataAccount_bump, {
@@ -132,6 +129,7 @@ export async function cIclaimNft(
     // console.log(claimNftTx);
 
     transaction.add(claimNftTx);
+    console.log('claim NFT Tx added');
 
     return { transaction, userMintAta };
 }
@@ -143,19 +141,18 @@ export async function cIclaimSol(
     seed: Buffer,
     bump: number
 ): Promise<{ transaction: Transaction }> {
-    let transaction: Transaction = new Transaction();
-
-    const claimNftTx = program.instruction.claimSol(seed, bump,{
-        accounts: {
-            systemProgram: web3.SystemProgram.programId,
-            swapDataAccount: swapDataAccount,
-            signer: publicKey,
-        },
-    });
-
-    transaction.add(claimNftTx);
-
-    return { transaction };
+    console.log('claim Sol Tx added');
+    return {
+        transaction: new Transaction().add(
+            program.instruction.claimSol(seed, bump, {
+                accounts: {
+                    systemProgram: web3.SystemProgram.programId,
+                    swapDataAccount: swapDataAccount,
+                    signer: publicKey,
+                },
+            })
+        ),
+    };
 }
 
 export async function cIcancelNft(
@@ -176,7 +173,7 @@ export async function cIcancelNft(
     );
     if (userMintAtaTx) {
         transaction.add(userMintAtaTx);
-        console.log('userAtaClaimNft Transaction Added');
+        console.log('createUserAta Cancel Nft Tx Added');
     }
 
     const { mintAta: swapDataAta, transaction: pdaMintAtaTx } = await findOrCreateAta(
@@ -187,10 +184,10 @@ export async function cIcancelNft(
     );
     if (pdaMintAtaTx) {
         transaction.add(pdaMintAtaTx);
-        console.log('pdaAtaClaimNft Transaction Added');
+        console.log('createPdaAta Cancel Nft Tx Added');
     }
 
-    const claimNftTx = program.instruction.cancelNft(swapDataAccount_seed, swapDataAccount_bump, {
+    const cancelNftTx = program.instruction.cancelNft(swapDataAccount_seed, swapDataAccount_bump, {
         accounts: {
             systemProgram: web3.SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
@@ -200,9 +197,9 @@ export async function cIcancelNft(
             itemToDeposit: userMintAta,
         },
     });
-    // console.log(claimNftTx);
 
-    transaction.add(claimNftTx);
+    transaction.add(cancelNftTx);
+    console.log('cancel NFT Tx added');
 
     return { transaction, userMintAta };
 }
@@ -212,19 +209,18 @@ export async function cIcancelSol(
     publicKey: PublicKey,
     swapDataAccount: PublicKey,
     seed: Buffer,
-    bump:number
+    bump: number
 ): Promise<{ transaction: Transaction }> {
-    let transaction: Transaction = new Transaction();
-
-    const claimNftTx = program.instruction.cancelSol(seed, bump,{
-        accounts: {
-            systemProgram: web3.SystemProgram.programId,
-            swapDataAccount: swapDataAccount,
-            signer: publicKey,
-        },
-    });
-
-    transaction.add(claimNftTx);
-
-    return { transaction };
+    console.log('cancel Sol Tx added');
+    return {
+        transaction: new Transaction().add(
+            program.instruction.cancelSol(seed, bump, {
+                accounts: {
+                    systemProgram: web3.SystemProgram.programId,
+                    swapDataAccount: swapDataAccount,
+                    signer: publicKey,
+                },
+            })
+        ),
+    };
 }
