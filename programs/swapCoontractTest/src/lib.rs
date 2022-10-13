@@ -1,9 +1,10 @@
 use anchor_lang::prelude::{AnchorDeserialize, AnchorSerialize, *};
-use anchor_lang::solana_program::{program_pack::Pack, 
+use anchor_lang::solana_program::{
+    // program_pack::Pack, 
     // program_error::ProgramError::InvalidAccountData,
     pubkey::Pubkey,program::{invoke_signed, invoke}};
 use anchor_spl::token::{spl_token, TokenAccount};
-use spl_token::state::Account as SplTokenAccount;
+// use spl_token::state::Account as SplTokenAccount;
 // use spl_associated_token_account::solana_program::instruction::;
 
 declare_id!("EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk");
@@ -250,8 +251,8 @@ pub mod swap_coontract_test {
 
     pub fn claim_sol(
         ctx: Context<ClaimSol>,
-        seed: Vec<u8>,
-        bump: u8
+        _seed: Vec<u8>,
+        _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
@@ -778,10 +779,10 @@ pub mod swap_coontract_test {
         ctx.accounts.swap_data_account.status = TradeStatus::CancelledRecovered.to_u8();
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
 
-        let swap_data_account_info: &mut AccountInfo =
-                &mut ctx.accounts.swap_data_account.to_account_info();
+            // let swap_data_account_info: &mut AccountInfo =
+            //         &mut ctx.accounts.swap_data_account.to_account_info();
 
-        let swap_data_lamports_initial = swap_data_account_info.lamports();
+            // let swap_data_lamports_initial = swap_data_account_info.lamports();
 
         **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + ctx.accounts.swap_data_account.to_account_info().lamports();
         // **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports.borrow_mut().checked_add(swap_data_lamports_initial).unwrap();
