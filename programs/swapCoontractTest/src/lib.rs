@@ -1,6 +1,10 @@
 use anchor_lang::prelude::{AnchorDeserialize, AnchorSerialize, *};
-use anchor_lang::solana_program::{pubkey::Pubkey,program::{invoke_signed, invoke}};
+use anchor_lang::solana_program::{program_pack::Pack, 
+    // program_error::ProgramError::InvalidAccountData,
+    pubkey::Pubkey,program::{invoke_signed, invoke}};
 use anchor_spl::token::{spl_token, TokenAccount};
+use spl_token::state::Account as SplTokenAccount;
+// use spl_associated_token_account::solana_program::instruction::;
 
 declare_id!("EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk");
 
@@ -10,17 +14,26 @@ pub mod swap_coontract_test {
     use super::*;
     pub fn initialize(
         ctx: Context<Initialize>,
-        seed: Vec<u8>,
-        bump: u8,
+        _seed: Vec<u8>,
+        _bump: u8,
         sent_data: SwapData,
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+        // require_keys_eq!(ctx.accounts.swap_data_account.owner.key(),anchor_spl::associated_token::ID,(InvalidAccountData));
+        // require_keys_eq!(ctx.program_id,SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?.owner,ProgramError::InvalidAccountData);
+      
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
 
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        
-        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require!(potential_pda.1 == bump,MYERROR::NotPda) ;
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+
+        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
        
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
@@ -30,7 +43,7 @@ pub mod swap_coontract_test {
 
         for item_id in 0..sent_data.items.len() {
             if !sent_data.items[item_id].is_nft {
-                sum += sent_data.items[item_id].amount
+                sum = sum.checked_add(sent_data.items[item_id].amount).unwrap()
             }
 
             require!(sent_data.items[item_id].status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
@@ -47,15 +60,38 @@ pub mod swap_coontract_test {
 
     pub fn deposit_nft(
         ctx: Context<DepositNft>,
-        seed: Vec<u8>,
-        bump: u8
+        _seed: Vec<u8>,
+        _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+        // NFT User Account
+        // let token = SplTokenAccount::unpack(&ctx.accounts.item_from_deposit.to_account_info().data.borrow())?;
+        // if ctx.accounts.item_from_deposit.owner != anchor_spl::token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+        // if ctx.accounts.signer.key != &token.owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+        // NFT PDA Account 
+        // let pda_token = SplTokenAccount::unpack(&ctx.accounts.item_to_deposit.to_account_info().data.borrow())?;
+        // if ctx.accounts.item_to_deposit.owner != anchor_spl::token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+        // msg!("ctx.accounts.item_to_deposit.owner {:}",ctx.accounts.item_to_deposit.owner);
+        // if ctx.program_id != &pda_token.owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
 
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require!(potential_pda.1 == bump,MYERROR::NotPda) ;
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
         let swap_data_account = &ctx.accounts.swap_data_account;
         // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
@@ -113,15 +149,21 @@ pub mod swap_coontract_test {
 
     pub fn deposit_sol(
         ctx: Context<DepositSol>,
-        seed: Vec<u8>,
-        bump: u8
+        _seed: Vec<u8>,
+        _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
 
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
 
-        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require!(potential_pda.1 == bump,MYERROR::NotPda) ;
+        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
 
@@ -134,14 +176,15 @@ pub mod swap_coontract_test {
             && transfered == false {
                 if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
                     msg!("Deposit  Sent");
-                    let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
+                //   let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
 
                     let ix = anchor_lang::solana_program::system_instruction::transfer(
                         &ctx.accounts.signer.key(),
                         &ctx.accounts.swap_data_account.key(),
                         amount_to_send,
                     );
-                    anchor_lang::solana_program::program::invoke(
+                    invoke(
                         &ix,
                         &[
                             ctx.accounts.signer.to_account_info(),
@@ -172,13 +215,18 @@ pub mod swap_coontract_test {
 
     pub fn validate_deposit(
         ctx: Context<Validate>,
-        seed: Vec<u8>,
-        bump: u8
+        _seed: Vec<u8>,
+        _bump: u8
     ) -> Result<()>  {
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require!(potential_pda.1 == bump,MYERROR::NotPda) ;
-        
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
+        //         if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
         // let swap_data_account = ctx.accounts.swap_data_account.clone();
         // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
         
@@ -189,7 +237,7 @@ pub mod swap_coontract_test {
 
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             require_eq!(ctx.accounts.swap_data_account.items[item_id].status,TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
-            counter += 1
+            counter = counter.checked_add(1).unwrap()
         }
 
         require!(counter == ctx.accounts.swap_data_account.items.len(),MYERROR::NotReady);
@@ -206,10 +254,16 @@ pub mod swap_coontract_test {
         bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require!(potential_pda.1 == bump,MYERROR::NotPda) ;
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+        
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
 
@@ -224,19 +278,59 @@ pub mod swap_coontract_test {
                 if  ctx.accounts.swap_data_account.items[item_id].amount < 0 {
                         msg!("claim accepted, item status changed to claimed");
                     
-                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+                        let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
+                        // let ix = anchor_lang::solana_program::system_instruction::transfer(
+                        //     &ctx.accounts.swap_data_account.key(),
+                        //     &ctx.accounts.signer.key(),
+                        //     amount_to_send,
+                        // );
+                        // invoke_signed(
+                        //     &ix,
+                        //     &[
+                        //         // ctx.accounts.system_program.to_account_info(),
+                        //         ctx.accounts.signer.to_account_info(),
+                        //         ctx.accounts.swap_data_account.to_account_info(),
+                        //     ],
+                        //     &[&[&seed[..], &[bump]]],
+                        // )?;
+
+                        // let ix = anchor_lang::solana_program::system_instruction::transfer(
+                        //     &ctx.accounts.swap_data_account.key(),
+                        //     &ctx.accounts.signer.key(),
+                        //     amount_to_send,
+                        // );
+                
+                        // anchor_lang::solana_program::program::invoke_signed(
+                        //     &ix,
+                        //     &[
+                        //         ctx.accounts.swap_data_account.to_account_info(), 
+                        //         ctx.accounts.signer.to_account_info()
+                        //         ],
+                        //     &[&[&seed[..], &[bump]]],
+                        // )?;
+
+                //   let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
       
-                  let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
-                  let swap_data_account_info: &mut AccountInfo =
-                      &mut ctx.accounts.swap_data_account.to_account_info();
+                let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
+
+                if swap_data_lamports_initial > amount_to_send {
+                    **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + amount_to_send ;
+                    **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
+                }else {
+                    return  Err(error!(MYERROR::SumNotNull).into());
+                }
+
+
+                //   let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
+                //   let swap_data_account_info: &mut AccountInfo =
+                //       &mut ctx.accounts.swap_data_account.to_account_info();
       
-                  let signer_lamports_initial = signer_account_info.lamports();
-                  let swap_data_lamports_initial = swap_data_account_info.lamports();
+                //   let signer_lamports_initial = signer_account_info.lamports();
       
-                  **ctx.accounts.signer.lamports.borrow_mut() =
-                      signer_lamports_initial + (amount_to_send);
-                  **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
-                  swap_data_lamports_initial - amount_to_send;
+                //   **ctx.accounts.signer.lamports.borrow_mut() =
+                //       signer_lamports_initial + (amount_to_send);
+                //   **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
+                //   swap_data_lamports_initial - amount_to_send;
                   
                 } else {
                     msg!("nothing to claim, your account was validated");
@@ -262,10 +356,34 @@ pub mod swap_coontract_test {
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
 
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require!(potential_pda.1 == bump,MYERROR::NotPda) ;
+         // NFT PDA Account
+        //  let token = SplTokenAccount::unpack(&ctx.accounts.item_from_deposit.to_account_info().data.borrow())?;
+        //  if ctx.accounts.item_from_deposit.owner != anchor_spl::token::ID {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
+        //  if ctx.accounts.signer.key != &token.owner {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
+ 
+         // NFT User Account 
+        //  let pda_token = SplTokenAccount::unpack(&ctx.accounts.item_to_deposit.to_account_info().data.borrow())?;
+        //  if ctx.accounts.item_to_deposit.owner != anchor_spl::token::ID {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
+        //  if ctx.program_id != &pda_token.owner {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
+
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
         // let swap_data_account = &ctx.accounts.swap_data_account;
         // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
@@ -327,6 +445,7 @@ pub mod swap_coontract_test {
                         ],
                         &[&[&seed[..], &[bump]]],
                     )?;
+                    
                     transfered = true;
                 // break
              } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
@@ -340,15 +459,20 @@ pub mod swap_coontract_test {
 
     pub fn validate_claimed(
         ctx: Context<ValidateAndClose>,
-        seed: Vec<u8>,
-        bump: u8
+        _seed: Vec<u8>,
+        _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
-
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
 
         // let swap_data_account = &ctx.accounts.swap_data_account;
         // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
@@ -361,7 +485,8 @@ pub mod swap_coontract_test {
 
         for item_id in 0..ctx.accounts.swap_data_account.items.len(){
             require_eq!(ctx.accounts.swap_data_account.items[item_id].status,TradeStatus::Claimed.to_u8(),MYERROR::NotReady);
-            counter += 1
+            counter = counter.checked_add(1).unwrap()
+            // counter += 1
         }
 
         require_eq!(counter, ctx.accounts.swap_data_account.items.len(),MYERROR::NoSend);
@@ -369,16 +494,36 @@ pub mod swap_coontract_test {
         ctx.accounts.swap_data_account.status = TradeStatus::Claimed.to_u8();
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
 
-        let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
-        let swap_data_account_info: &mut AccountInfo =
-            &mut ctx.accounts.swap_data_account.to_account_info();
+        // let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
+        // let swap_data_account_info: &mut AccountInfo =
+        //     &mut ctx.accounts.swap_data_account.to_account_info();
 
-        let signer_lamports_initial = signer_account_info.lamports();
-        let swap_data_lamports_initial = swap_data_account_info.lamports();
+        // let signer_lamports_initial = signer_account_info.lamports();
+        // let swap_data_lamports_initial = swap_data_account_info.lamports();
 
-        **ctx.accounts.signer.lamports.borrow_mut() =
-            signer_lamports_initial + (swap_data_lamports_initial);
+        **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + ctx.accounts.swap_data_account.to_account_info().lamports();
         **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = 0;
+
+        // let ix2 = spl_associated_token_account::solana_program::system_instruction::SystemInstruction::(
+        //     &ctx.accounts.spl_token_program.key,
+        //     &ctx.accounts.swap_data_account.key(),
+        //     &ctx.accounts.signer.key(),
+        //     &ctx.accounts.swap_data_account.key(),
+        //     &[&ctx.accounts.swap_data_account.key()],
+        // )?;
+
+        // invoke_signed(
+        //     &ix2,
+        //     &[
+        //         ctx.accounts.spl_token_program.clone(),
+        //         ctx.accounts.swap_data_account.to_account_info(),
+        //         ctx.accounts.signer.to_account_info(),
+        //     ],
+        //     &[&[&seed[..], &[bump]]],
+        // )?;
+        // **ctx.accounts.signer.lamports.borrow_mut() =
+        //     signer_lamports_initial + (swap_data_lamports_initial);
+        // **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = 0;
 
         msg!("Account emptied");
 
@@ -387,14 +532,19 @@ pub mod swap_coontract_test {
 
     pub fn cancel_sol(
         ctx: Context<ClaimSol>,
-        seed: Vec<u8>,
-        bump: u8
+        _seed: Vec<u8>,
+        _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require!(potential_pda.1 == bump,MYERROR::NotPda) ;
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
         require!(
             (
@@ -418,21 +568,24 @@ pub mod swap_coontract_test {
 
                 if  ctx.accounts.swap_data_account.items[item_id].amount > 0 
                 && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() {
-                msg!("money sending, item status changed to cancelled");
+                    msg!("money sending, item status changed to cancelled");
 
-                    let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
+ 
+                    **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + amount_to_send;
+                    **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
+
+                    // let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
+                    // let swap_data_account_info: &mut AccountInfo =
+                    //     &mut ctx.accounts.swap_data_account.to_account_info();
         
-                    let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
-                    let swap_data_account_info: &mut AccountInfo =
-                        &mut ctx.accounts.swap_data_account.to_account_info();
+                    // let signer_lamports_initial = signer_account_info.lamports();
+                    // let swap_data_lamports_initial = swap_data_account_info.lamports();
         
-                    let signer_lamports_initial = signer_account_info.lamports();
-                    let swap_data_lamports_initial = swap_data_account_info.lamports();
-        
-                    **ctx.accounts.signer.lamports.borrow_mut() =
-                        signer_lamports_initial + (amount_to_send);
-                    **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
-                    swap_data_lamports_initial - amount_to_send;
+                    // **ctx.accounts.signer.lamports.borrow_mut() =
+                    //     signer_lamports_initial + (amount_to_send);
+                    // **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
+                    // swap_data_lamports_initial - amount_to_send;
 
                 } else {
                 msg!("nothing to recover, you've validated the cancel tho");
@@ -465,10 +618,33 @@ pub mod swap_coontract_test {
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
+         // NFT User Account
+        //  let token = SplTokenAccount::unpack(&ctx.accounts.item_from_deposit.to_account_info().data.borrow())?;
+        //  if ctx.accounts.item_from_deposit.owner != anchor_spl::token::ID {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
+        //  if ctx.accounts.signer.key != &token.owner {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
+ 
+        //  // NFT PDA Account 
+        //  let pda_token = SplTokenAccount::unpack(&ctx.accounts.item_to_deposit.to_account_info().data.borrow())?;
+        //  if ctx.accounts.item_to_deposit.owner != anchor_spl::token::ID {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
+        //  if ctx.program_id != &pda_token.owner {
+        //      return Err(error!(MYERROR::InvalidAccountData).into())
+        //  }
 
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
 
         // let swap_data_account = &ctx.accounts.swap_data_account;
         // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
@@ -567,15 +743,21 @@ pub mod swap_coontract_test {
 
     pub fn validate_cancelled(
         ctx: Context<ValidateAndClose>,
-        seed: Vec<u8>,
-        bump: u8
+        _seed: Vec<u8>,
+        _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // };
+        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
+        //     return Err(error!(MYERROR::InvalidAccountData).into())
+        // }
 
-        let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
-        require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
+        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        // require_keys_eq!(potential_pda.0, ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
+        // require_eq!(potential_pda.1, bump,MYERROR::NotPda) ;
 
         // let swap_data_account = &ctx.accounts.swap_data_account;
         // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
@@ -587,7 +769,8 @@ pub mod swap_coontract_test {
 
         for item_id in 0..nbr_items{
             require_eq!(ctx.accounts.swap_data_account.items[item_id].status,TradeStatus::CancelledRecovered.to_u8(),MYERROR::NotReady);
-            counter += 1
+            counter = counter.checked_add(1).unwrap()
+            // counter += 1
         }
 
         require_eq!(counter, nbr_items,MYERROR::NoSend);
@@ -595,15 +778,13 @@ pub mod swap_coontract_test {
         ctx.accounts.swap_data_account.status = TradeStatus::CancelledRecovered.to_u8();
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
 
-        let signer_account_info: &mut AccountInfo = &mut ctx.accounts.signer.to_account_info();
         let swap_data_account_info: &mut AccountInfo =
                 &mut ctx.accounts.swap_data_account.to_account_info();
 
-        let signer_lamports_initial = signer_account_info.lamports();
         let swap_data_lamports_initial = swap_data_account_info.lamports();
 
-        **ctx.accounts.signer.lamports.borrow_mut() =
-                signer_lamports_initial + (swap_data_lamports_initial);
+        **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + ctx.accounts.swap_data_account.to_account_info().lamports();
+        // **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports.borrow_mut().checked_add(swap_data_lamports_initial).unwrap();
         **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = 0;
 
         msg!("Account emptied");
@@ -636,28 +817,30 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct DepositNft<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(executable)]
     token_program: AccountInfo<'info>,
-    #[account(mut)]
-    swap_data_account:Account<'info, SwapData>,
+    #[account(mut,seeds = [&seed[..]], bump)]
+    swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(mut)]
+    #[account(mut, constraint = signer.key() == item_from_deposit.owner)]
     item_from_deposit: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut, constraint = swap_data_account.key() == item_to_deposit.owner)]
     item_to_deposit: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]
 
+#[instruction(seed: Vec<u8>, bump: u8)]
 pub struct DepositSol<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -665,20 +848,22 @@ pub struct DepositSol<'info> {
 
 #[derive(Accounts)]
 
+#[instruction(seed: Vec<u8>, bump: u8)]
 pub struct Validate<'info> {
-    #[account(mut)]
+    #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
 }
 #[derive(Accounts)]
 
+#[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ValidateAndClose<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(executable)]
     spl_token_program: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut,seeds = [&seed[..]], bump, close = signer)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -688,27 +873,29 @@ pub struct ValidateAndClose<'info> {
 
 #[derive(Accounts)]
 
+#[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimNft<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(executable)]
     token_program: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(mut)]
+    #[account(mut, constraint = swap_data_account.key() == item_from_deposit.owner)]
     item_from_deposit: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut, constraint = signer.key() == item_to_deposit.owner)]
     item_to_deposit: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]
 
+#[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimSol<'info> {
     #[account(executable)]
     system_program: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -816,8 +1003,8 @@ pub enum MYERROR {
     NotBump,
     #[msg("The status given is not correct")]
     UnexpectedState,
-    // #[msg("e")]
-    // EE,
+    #[msg("owner checks unsuccessfuls")]
+    InvalidAccountData,
     // #[msg("f")]
     // FF,
     // #[msg("g")]

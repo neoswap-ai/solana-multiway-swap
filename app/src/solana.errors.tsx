@@ -34,6 +34,8 @@ export async function programCatchError(error: any) {
         console.error('wrong bump\n', error);
     } else if (String(error).includes('0x177d')) {
         console.error('The status given is not correct \n', error);
+    } else if (String(error).includes('0x7d3')) {
+        console.error('incorect owner ATA \n', error);
     } else if (String(error).includes('Account does not exist')) {
         console.error("Account haven't been initialized \n", error);
     } else if (String(error).includes('0x1')) {
@@ -42,7 +44,7 @@ export async function programCatchError(error: any) {
         console.error(error);
     }
 }
-// ERROR {
+// ERROR {0x7d3
 //     #[msg("User not part oof the trade")]
 //     UserNotPartOfTrade,
 //     #[msg("Mint not found")]

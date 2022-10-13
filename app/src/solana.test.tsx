@@ -2,8 +2,8 @@ import { NftSwapItem, SwapData } from './solana.types';
 import { BN } from '@project-serum/anchor';
 import { PublicKey } from '@solana/web3.js';
 
-export const CONST_PROGRAM: String = '0027';
-export const swapDataAccountGiven = new PublicKey('26pX3SRtXrSxhfuRLLXfGeJLJpPQT7orUWTXdwCp8Qra');
+export const CONST_PROGRAM: String = '0028';
+export const swapDataAccountGiven = new PublicKey('4iVjXBi3W2xbo7sb84MBQ26iJ47xSNJmU7MNG3UK89HA');
 
 const i1: NftSwapItem = {
     isNft: false,
