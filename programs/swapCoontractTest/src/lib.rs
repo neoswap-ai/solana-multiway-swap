@@ -7,7 +7,7 @@ use anchor_spl::token::{spl_token, TokenAccount};
 // use spl_token::state::Account as SplTokenAccount;
 // use spl_associated_token_account::solana_program::instruction::;
 
-declare_id!("EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk");
+declare_id!("6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W");
 
 #[program]
 pub mod swap_coontract_test {
@@ -884,6 +884,8 @@ pub struct ClaimNft<'info> {
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
+    // #[account(mut)]
+    user: AccountInfo<'info>,
     #[account(mut, constraint = swap_data_account.key() == item_from_deposit.owner)]
     item_from_deposit: Account<'info, TokenAccount>,
     #[account(mut, constraint = signer.key() == item_to_deposit.owner)]

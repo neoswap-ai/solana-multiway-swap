@@ -4,8 +4,8 @@ import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
-import { splAssociatedTokenAccountProgramId, programId, opts, network } from './solana.const';
-import { CONST_PROGRAM, sentData, swapDataAccountGiven } from './solana.test';
+import { splAssociatedTokenAccountProgramId, opts } from './solana.const';
+import { CONST_PROGRAM, network, programId, sentData, swapDataAccountGiven } from './solana.test';
 import { SwapData } from './solana.types';
 import {
     cIcancelNft,

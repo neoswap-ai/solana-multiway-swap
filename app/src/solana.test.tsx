@@ -1,8 +1,19 @@
 import { NftSwapItem, SwapData } from './solana.types';
 import { BN } from '@project-serum/anchor';
 import { PublicKey } from '@solana/web3.js';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
-export const CONST_PROGRAM: String = '0028';
+
+/// DEV
+export const network = WalletAdapterNetwork.Devnet;
+export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W');
+
+/// MAIN
+// export const network = WalletAdapterNetwork.Mainnet;
+// export const programId = new PublicKey('');
+
+
+export const CONST_PROGRAM: String = '0000';
 export const swapDataAccountGiven = new PublicKey('4iVjXBi3W2xbo7sb84MBQ26iJ47xSNJmU7MNG3UK89HA');
 
 const i1: NftSwapItem = {
