@@ -2,7 +2,7 @@ use anchor_lang::prelude::{AnchorDeserialize, AnchorSerialize, *};
 use anchor_lang::solana_program::{pubkey::Pubkey,program::{invoke_signed, invoke}};
 use anchor_spl::token::{spl_token, TokenAccount};
 
-declare_id!("EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk");
+declare_id!("77m2FaVWDBu3yRmw17ouHCbGMcwdzXqdwQALNYTHsRda");
 
 #[program]
 pub mod swap_coontract_test {
@@ -119,8 +119,8 @@ pub mod swap_coontract_test {
             && transfered == false {
                 if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
                     msg!("Deposit  Sent");
-                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
-                //   let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(9);
+                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(0)).unwrap();
+                //   let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs() * (10 as u64).pow(0);
 
                     let ix = anchor_lang::solana_program::system_instruction::transfer(
                         &ctx.accounts.signer.key(),
@@ -200,7 +200,7 @@ pub mod swap_coontract_test {
                 if  ctx.accounts.swap_data_account.items[item_id].amount < 0 {
                         msg!("claim accepted, item status changed to claimed");
                     
-                        let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
+                        let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(0)).unwrap();
                         
                 let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
 
@@ -369,7 +369,7 @@ pub mod swap_coontract_test {
                 && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() {
                     msg!("money sending, item status changed to cancelled");
 
-                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
+                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(0)).unwrap();
  
                     **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + amount_to_send;
                     **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
