@@ -4,8 +4,6 @@ export const errorMachiavelique = 'error';
 export async function programCatchError(error: any) {
     if (String(error).includes('User rejected the request')) {
         console.error('Cancelled by user');
-    } else if (String(error).includes('0x0')) {
-        console.error('PDA is already existing with this tradeRef \n', error);
     } else if (String(error).includes('0x1770')) {
         console.error('User not part of the trade\n', error);
     } else if (String(error).includes('0x1771')) {
@@ -36,15 +34,19 @@ export async function programCatchError(error: any) {
         console.error('The status given is not correct \n', error);
     } else if (String(error).includes('0x7d3')) {
         console.error('incorect owner ATA \n', error);
+    } else if (String(error).includes('0xbc4')) {
+        console.error('incorect seed given to PDA \n', error);
     } else if (String(error).includes('Account does not exist')) {
         console.error("Account haven't been initialized \n", error);
+    } else if (String(error).includes('0x0')) {
+        console.error('PDA is already existing with this tradeRef \n', error);
     } else if (String(error).includes('0x1')) {
         console.error('Not enough funds \n', error);
     } else {
         console.error(error);
     }
 }
-// ERROR {0x7d3
+// ERROR {0xbc4
 //     #[msg("User not part oof the trade")]
 //     UserNotPartOfTrade,
 //     #[msg("Mint not found")]
