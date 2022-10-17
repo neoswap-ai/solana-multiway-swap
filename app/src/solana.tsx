@@ -1,4 +1,4 @@
-import { BN, Program, Provider, utils, web3 } from '@project-serum/anchor';
+import { Program, Provider, utils, web3 } from '@project-serum/anchor';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
@@ -133,33 +133,16 @@ export const Solana: FC = () => {
                     accounts: {
                         swapDataAccount: swapDataAccount,
                         signer: publicKey,
-                        // systemProgram: web3.SystemProgram.programId,
-                        // splTokenProgram: splAssociatedTokenAccountProgramId,
                     },
                 })
             );
         }
 
         try {
-            // const transactionHash = depositTransaction
             depositTransaction.feePayer = publicKey;
             depositTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
             const transactionHash = await program.provider.send(depositTransaction);
-            // console.log('claimInstructionTransaction', claimInstructionTransaction);
 
-            //  await program.rpc.initializeAdd(
-            //     swapDataAccount_seed,
-            //     swapDataAccount_bump,
-            //     sentData.items[1],
-            //     {
-            //         accounts: {
-            //             swapDataAccount: swapDataAccount,
-            //             signer: publicKey,
-            //             // systemProgram: web3.SystemProgram.programId,
-            //             // splTokenProgram: splAssociatedTokenAccountProgramId,
-            //         },
-            //     }
-            // );
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
@@ -170,18 +153,6 @@ export const Solana: FC = () => {
         if (!publicKey) throw new WalletNotConnectedError();
         sentData.initializer = publicKey;
         console.log('sentData', sentData);
-        let sum = new BN(0);
-
-        // for (let index = 0; index < sentData.items.length; index++) {
-        //     const element = sentData.items[index];
-        //     if (!element.isNft) {
-        //         sum = sum.add(element.amount);
-        //     }
-        // }
-        // if (sum.toNumber() !== 0) {
-        //     console.log('sum', sum.toNumber());
-        //     throw console.error('balance at the end of trade not null');
-        // }
 
         const program = await getProgram();
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
