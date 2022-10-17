@@ -13,47 +13,73 @@ declare_id!("EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk");
 pub mod swap_coontract_test {
 
     use super::*;
-    pub fn initialize(
-        ctx: Context<Initialize>,
+
+    pub fn init_initialize(
+        ctx: Context<InitInitialize>,
         _seed: Vec<u8>,
         _bump: u8,
         sent_data: SwapData,
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
-        // require_keys_eq!(ctx.accounts.swap_data_account.owner.key(),anchor_spl::associated_token::ID,(InvalidAccountData));
-        // require_keys_eq!(ctx.program_id,SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?.owner,ProgramError::InvalidAccountData);
-      
-        // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
-        //     return Err(error!(MYERROR::InvalidAccountData).into())
-        // };
-        // if ctx.program_id != &(SplTokenAccount::unpack(&ctx.accounts.swap_data_account.to_account_info().data.borrow())?).owner {
-        //     return Err(error!(MYERROR::InvalidAccountData).into())
-        // }
 
-        // let potential_pda = Pubkey::find_program_address(&[&seed[..]], &ctx.program_id.key());
+        require!(sent_data.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
+        require!(sent_data.items.len() == 1, MYERROR::IncorrectLength);
 
-        // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
-        // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
-       
+        ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
+        ctx.accounts.swap_data_account.items = sent_data.items;
+        ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
+
+        Ok(())
+    }
+
+    pub fn initialize_add(
+        ctx: Context<InitializeAdd>,
+        _seed: Vec<u8>,
+        _bump: u8,
+        trade_to_add: NftSwapItem,
+    ) -> Result<()>  {
+        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
+        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+        
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
-        require!(sent_data.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
+        require!(swap_data_account.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
+        require_keys_eq!(swap_data_account.initializer, ctx.accounts.signer.key(),MYERROR::NotInit);
+        // require!(swap_data_account.initializer == ctx.accounts.signer.key(),MYERROR::NotInit);
+
+        swap_data_account.items.push(trade_to_add);
+
+        Ok(())
+    }
+
+
+    pub fn validate_initialize(
+        ctx: Context<Initialize>,
+        _seed: Vec<u8>,
+        _bump: u8,
+    ) -> Result<()>  {
+        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
+        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+
+        let swap_data_account = &mut ctx.accounts.swap_data_account;
+
+        require!(swap_data_account.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
+        require_keys_eq!(swap_data_account.initializer, ctx.accounts.signer.key(),MYERROR::NotInit);
+
 
         let mut sum =0 as i64;
 
-        for item_id in 0..sent_data.items.len() {
-            if !sent_data.items[item_id].is_nft {
-                sum = sum.checked_add(sent_data.items[item_id].amount).unwrap()
+        for item_id in 0..swap_data_account.items.len() {
+            if !swap_data_account.items[item_id].is_nft {
+                sum = sum.checked_add(swap_data_account.items[item_id].amount).unwrap()
             }
 
-            require!(sent_data.items[item_id].status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
+            require!(swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
         };
 
         require!(sum==0, MYERROR::SumNotNull);
 
-        swap_data_account.initializer = ctx.accounts.signer.key();
-        swap_data_account.items = sent_data.items;
         swap_data_account.status = TradeStatus::Pending.to_u8();
 
         Ok(())
@@ -66,6 +92,10 @@ pub mod swap_coontract_test {
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
+        
+        let swap_data_account = &ctx.accounts.swap_data_account;
+        require!(swap_data_account.initializer == ctx.accounts.signer.key(),MYERROR::NotInit);
+
         // if ctx.accounts.swap_data_account.to_account_info().owner.key() != anchor_spl::associated_token::ID {
         //     return Err(error!(MYERROR::InvalidAccountData).into())
         // };
@@ -94,14 +124,13 @@ pub mod swap_coontract_test {
         // require_keys_eq!(potential_pda.0,ctx.accounts.swap_data_account.key(),MYERROR::NotPda);
         // require!(potential_pda.1 == bump,MYERROR::NotPda) ;
 
-        let swap_data_account = &ctx.accounts.swap_data_account;
         // let ctx.accounts.swap_data_account.items = &swap_data_account.items;
         let token_program = &ctx.accounts.token_program;
         let signer = &ctx.accounts.signer;
         let item_to_deposit = &ctx.accounts.item_to_deposit;
         let item_from_deposit = &ctx.accounts.item_from_deposit;
         
-          require!(swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
+          require!(swap_data_account.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
 
           let mut transfered : bool = false;
 
@@ -800,7 +829,7 @@ pub mod swap_coontract_test {
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
 
-pub struct Initialize<'info> {
+pub struct InitInitialize<'info> {
     #[account(
         init,
         payer = signer,
@@ -816,6 +845,34 @@ pub struct Initialize<'info> {
     #[account(executable)]
     spl_token_program: AccountInfo<'info>,
 }
+
+#[derive(Accounts)]
+#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
+
+pub struct InitializeAdd<'info> {
+    #[account(mut)]
+    swap_data_account:Box<Account<'info, SwapData>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+    #[account(executable)]
+    system_program: AccountInfo<'info>,
+    #[account(executable)]
+    spl_token_program: AccountInfo<'info>,
+}
+#[derive(Accounts)]
+#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
+
+pub struct Initialize<'info> {
+    #[account(mut)]
+    swap_data_account:Box<Account<'info, SwapData>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+    #[account(executable)]
+    system_program: AccountInfo<'info>,
+    #[account(executable)]
+    spl_token_program: AccountInfo<'info>,
+}
+
 
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>, bump: u8)]
@@ -944,6 +1001,7 @@ pub enum TradeStatus {
     Deposited,
     Claimed,
     Closed,
+    Initializing,
     Cancelled,
     CancelledRecovered
 }
@@ -955,6 +1013,7 @@ impl TradeStatus {
             1 => TradeStatus::Deposited,
             2 => TradeStatus::Claimed,
             3 => TradeStatus::Closed,
+            80 => TradeStatus::Initializing,
             90 => TradeStatus::Cancelled,
             91 => TradeStatus::CancelledRecovered,  
             _ => panic!("Invalid Proposal Status"),
@@ -967,6 +1026,7 @@ impl TradeStatus {
             TradeStatus::Deposited => 1,
             TradeStatus::Claimed => 2,
             TradeStatus::Closed => 3,
+            TradeStatus::Initializing => 80,
             TradeStatus::Cancelled => 90,
             TradeStatus::CancelledRecovered => 91,
         }
@@ -1006,8 +1066,8 @@ pub enum MYERROR {
     UnexpectedState,
     #[msg("owner checks unsuccessfuls")]
     InvalidAccountData,
-    // #[msg("f")]
-    // FF,
+    #[msg("Incorrect init data length")]
+    IncorrectLength,
     // #[msg("g")]
     // GG,
     // #[msg("h")]
