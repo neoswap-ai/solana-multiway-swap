@@ -4,7 +4,7 @@ export const idl = {
     name: 'swap_coontract_test',
     instructions: [
         {
-            name: 'initialize',
+            name: 'initInitialize',
             accounts: [
                 {
                     name: 'swapDataAccount',
@@ -41,6 +41,66 @@ export const idl = {
                     type: {
                         defined: 'SwapData',
                     },
+                },
+                {
+                    name: 'nbOfItems',
+                    type: 'u32',
+                },
+            ],
+        },
+        {
+            name: 'initializeAdd',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'tradeToAdd',
+                    type: {
+                        defined: 'NftSwapItem',
+                    },
+                },
+            ],
+        },
+        {
+            name: 'validateInitialize',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
                 },
             ],
         },
@@ -408,6 +468,9 @@ export const idl = {
                     },
                     {
                         name: 'Closed',
+                    },
+                    {
+                        name: 'Initializing',
                     },
                     {
                         name: 'Cancelled',

@@ -4,8 +4,8 @@ import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
-import { splAssociatedTokenAccountProgramId, programId, opts, network } from './solana.const';
-import { CONST_PROGRAM, sentData, swapDataAccountGiven } from './solana.test';
+import { splAssociatedTokenAccountProgramId, opts } from './solana.const';
+import { CONST_PROGRAM, fullData, network, programId, sentData, swapDataAccountGiven } from './solana.test';
 import { SwapData } from './solana.types';
 import {
     cIcancelNft,
@@ -49,25 +49,25 @@ export const Solana: FC = () => {
         // return new Program(idl, programId, await getProvider());
     }, []);
 
-    const initialize = useCallback(async () => {
+    const initInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         sentData.initializer = publicKey;
         console.log('sentData', sentData);
-        let sum = new BN(0);
-        for (let index = 0; index < sentData.items.length; index++) {
-            const element = sentData.items[index];
-            if (!element.isNft) {
-                sum = sum.add(element.amount);
-            }
-        }
-        if (sum.toNumber() !== 0) {
-            console.log('sum', sum.toNumber());
-            throw console.error('balance at the end of trade not null');
-        }
+        // let sum = new BN(0);
+        // for (let index = 0; index < sentData.items.length; index++) {
+        //     const element = sentData.items[index];
+        //     if (!element.isNft) {
+        //         sum = sum.add(element.amount);
+        //     }
+        // }
+        // if (sum.toNumber() !== 0) {
+        //     console.log('sum', sum.toNumber());
+        //     throw console.error('balance at the end of trade not null');
+        // }
 
         const program = await getProgram();
 
-        const tradeRef = getSeed(sentData);
+        const tradeRef = getSeed(fullData);
         console.log('tradeRef', tradeRef);
 
         const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
@@ -79,14 +79,137 @@ export const Solana: FC = () => {
 
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
+        // let newSentData = sentData;
+        // newSentData.items = new Array(sentData.items[0]);
+        // console.log("newSentData",newSentData);
 
         try {
-            const transactionHash = await program.rpc.initialize(swapDataAccount_seed, swapDataAccount_bump, sentData, {
+            const transactionHash = await program.rpc.initInitialize(
+                swapDataAccount_seed,
+                swapDataAccount_bump,
+                sentData,
+                7,
+                {
+                    accounts: {
+                        swapDataAccount: swapDataAccount,
+                        signer: publicKey,
+                        systemProgram: web3.SystemProgram.programId,
+                        splTokenProgram: splAssociatedTokenAccountProgramId,
+                    },
+                }
+            );
+            console.log('initialize transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+        }
+    }, [publicKey, getProgram, getSeed]);
+
+    const addInitialize = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        sentData.initializer = publicKey;
+
+        const program = await getProgram();
+
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log('SwapData', swapData);
+        if (swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
+
+        const tradeRef = getSeed(fullData);
+        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+
+        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+            [swapDataAccount_seed],
+            programId
+        );
+
+        console.log('swapDataAccount', swapDataAccount.toBase58());
+        console.log('swapDataAccount_bump', swapDataAccount_bump);
+
+        let depositTransaction = new Transaction();
+        for (let index = 1; index < fullData.items.length; index++) {
+            const element = fullData.items[index];
+            depositTransaction.add(
+                program.instruction.initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element, {
+                    accounts: {
+                        swapDataAccount: swapDataAccount,
+                        signer: publicKey,
+                        // systemProgram: web3.SystemProgram.programId,
+                        // splTokenProgram: splAssociatedTokenAccountProgramId,
+                    },
+                })
+            );
+        }
+
+        try {
+            // const transactionHash = depositTransaction
+            depositTransaction.feePayer = publicKey;
+            depositTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+            const transactionHash = await program.provider.send(depositTransaction);
+            // console.log('claimInstructionTransaction', claimInstructionTransaction);
+
+            //  await program.rpc.initializeAdd(
+            //     swapDataAccount_seed,
+            //     swapDataAccount_bump,
+            //     sentData.items[1],
+            //     {
+            //         accounts: {
+            //             swapDataAccount: swapDataAccount,
+            //             signer: publicKey,
+            //             // systemProgram: web3.SystemProgram.programId,
+            //             // splTokenProgram: splAssociatedTokenAccountProgramId,
+            //         },
+            //     }
+            // );
+            console.log('initialize transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+        }
+    }, [publicKey, getProgram, getSeed]);
+
+    const verifyInitialize = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        sentData.initializer = publicKey;
+        console.log('sentData', sentData);
+        let sum = new BN(0);
+
+        // for (let index = 0; index < sentData.items.length; index++) {
+        //     const element = sentData.items[index];
+        //     if (!element.isNft) {
+        //         sum = sum.add(element.amount);
+        //     }
+        // }
+        // if (sum.toNumber() !== 0) {
+        //     console.log('sum', sum.toNumber());
+        //     throw console.error('balance at the end of trade not null');
+        // }
+
+        const program = await getProgram();
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log('SwapData', swapData);
+        if (swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
+
+        const tradeRef = getSeed(fullData);
+        console.log('tradeRef', tradeRef);
+        if (getSeed(fullData) !== getSeed(swapData)) {
+            console.log('data missing');
+        }
+        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+
+        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+            [swapDataAccount_seed],
+            programId
+        );
+
+        console.log('swapDataAccount', swapDataAccount.toBase58());
+        console.log('swapDataAccount_bump', swapDataAccount_bump);
+
+        try {
+            const transactionHash = await program.rpc.validateInitialize(swapDataAccount_seed, swapDataAccount_bump, {
                 accounts: {
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
-                    systemProgram: web3.SystemProgram.programId,
-                    splTokenProgram: splAssociatedTokenAccountProgramId,
+                    // systemProgram: web3.SystemProgram.programId,
+                    // splTokenProgram: splAssociatedTokenAccountProgramId,
                 },
             });
             console.log('initialize transactionHash', transactionHash);
@@ -477,8 +600,14 @@ export const Solana: FC = () => {
     return (
         <div>
             <div>
-                <button onClick={initialize} disabled={!publicKey}>
-                    initialize
+                <button onClick={initInitialize} disabled={!publicKey}>
+                    init initialize
+                </button>
+                <button onClick={addInitialize} disabled={!publicKey}>
+                    add initialize
+                </button>
+                <button onClick={verifyInitialize} disabled={!publicKey}>
+                    verify initialize
                 </button>
             </div>
             <div>

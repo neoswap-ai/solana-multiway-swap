@@ -7,7 +7,7 @@ use anchor_spl::token::{spl_token, TokenAccount};
 // use spl_token::state::Account as SplTokenAccount;
 // use spl_associated_token_account::solana_program::instruction::;
 
-declare_id!("EqJGZ36f9Xm8a9kLntuzdTN8HDjbTUEYC5aHtbjr3EAk");
+declare_id!("6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W");
 
 #[program]
 pub mod swap_coontract_test {
@@ -19,6 +19,7 @@ pub mod swap_coontract_test {
         _seed: Vec<u8>,
         _bump: u8,
         sent_data: SwapData,
+        _nb_of_items: u32
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
@@ -39,8 +40,8 @@ pub mod swap_coontract_test {
         _bump: u8,
         trade_to_add: NftSwapItem,
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+        // require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
+        // require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
         
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
@@ -55,12 +56,12 @@ pub mod swap_coontract_test {
 
 
     pub fn validate_initialize(
-        ctx: Context<Initialize>,
+        ctx: Context<VerifyInitialize>,
         _seed: Vec<u8>,
         _bump: u8,
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+        // require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
+        // require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
 
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
@@ -130,7 +131,7 @@ pub mod swap_coontract_test {
         let item_to_deposit = &ctx.accounts.item_to_deposit;
         let item_from_deposit = &ctx.accounts.item_from_deposit;
         
-          require!(swap_data_account.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
+          require!(swap_data_account.status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
 
           let mut transfered : bool = false;
 
@@ -827,7 +828,7 @@ pub mod swap_coontract_test {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
+#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData,_nb_of_items: u32)]
 
 pub struct InitInitialize<'info> {
     #[account(
@@ -835,7 +836,7 @@ pub struct InitInitialize<'info> {
         payer = signer,
         seeds = [&seed],
         bump,
-        space=SwapData::size(sent_data)
+        space=SwapData::size(sent_data,_nb_of_items)
     )]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -847,30 +848,30 @@ pub struct InitInitialize<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
+#[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct InitializeAdd<'info> {
-    #[account(mut)]
+    #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
-    #[account(executable)]
-    spl_token_program: AccountInfo<'info>,
+    // #[account(executable)]
+    // system_program: AccountInfo<'info>,
+    // #[account(executable)]
+    // spl_token_program: AccountInfo<'info>,
 }
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
+#[instruction(seed: Vec<u8>, bump: u8)]
 
-pub struct Initialize<'info> {
-    #[account(mut)]
+pub struct VerifyInitialize<'info> {
+    #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
-    #[account(executable)]
-    spl_token_program: AccountInfo<'info>,
+    // #[account(executable)]
+    // system_program: AccountInfo<'info>,
+    // #[account(executable)]
+    // spl_token_program: AccountInfo<'info>,
 }
 
 
@@ -972,8 +973,8 @@ impl SwapData {
         + 1 //u8
         + 32 ;
 
-    pub fn size(swap_data_account:SwapData)->usize{
-        return SwapData::LEN + (swap_data_account.items.len() * NftSwapItem::LEN );
+    pub fn size(_swap_data_account: SwapData, nb_items: u32 )->usize{
+        return SwapData::LEN + ( nb_items as usize * NftSwapItem::LEN );//* swap_data_account.items.len() *);
     }
 }
 
