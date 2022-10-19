@@ -7,7 +7,7 @@ use anchor_spl::token::{spl_token, TokenAccount};
 // use spl_token::state::Account as SplTokenAccount;
 // use spl_associated_token_account::solana_program::instruction::;
 
-declare_id!("6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W");
+declare_id!("77m2FaVWDBu3yRmw17ouHCbGMcwdzXqdwQALNYTHsRda");
 
 #[program]
 pub mod swap_coontract_test {
@@ -89,7 +89,7 @@ pub mod swap_coontract_test {
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
         
         let swap_data_account = &ctx.accounts.swap_data_account;
-        require!(swap_data_account.initializer == ctx.accounts.signer.key(),MYERROR::NotInit);
+        // require!(swap_data_account.initializer == ctx.accounts.signer.key(),MYERROR::NotInit);
 
         let token_program = &ctx.accounts.token_program;
         let signer = &ctx.accounts.signer;
