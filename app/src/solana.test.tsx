@@ -11,12 +11,12 @@ export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGi
 // export const network = WalletAdapterNetwork.Mainnet;
 // export const programId = new PublicKey('');
 
-export const CONST_PROGRAM: String = '0109';
-export const swapDataAccountGiven = new PublicKey('A2ibgnmAtbZft13Q9rUWwANiefKnAbkvtnLsPR4XbXPK');
+export const CONST_PROGRAM: String = '0114';
+export const swapDataAccountGiven = new PublicKey('EdfKs6vRG6bDgSL4zYrinGyR35ozPLwd9WwiaEHi3epD');
 
 const i1: NftSwapItem = {
     isNft: false,
-    amount: new BN(-2),
+    amount: new BN(-2 * 10 ** 9),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     mint: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
@@ -42,7 +42,7 @@ const i3: NftSwapItem = {
 };
 const i4: NftSwapItem = {
     isNft: false,
-    amount: new BN(1),
+    amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
     destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
     mint: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
@@ -58,7 +58,7 @@ const i5: NftSwapItem = {
 };
 const i6: NftSwapItem = {
     isNft: false,
-    amount: new BN(1),
+    amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     mint: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),

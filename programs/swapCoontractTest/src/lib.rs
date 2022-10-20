@@ -7,7 +7,7 @@ use anchor_spl::token::{spl_token, TokenAccount};
 // use spl_token::state::Account as SplTokenAccount;
 // use spl_associated_token_account::solana_program::instruction::;
 
-declare_id!("77m2FaVWDBu3yRmw17ouHCbGMcwdzXqdwQALNYTHsRda");
+declare_id!("6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W");
 
 #[program]
 pub mod swap_coontract_test {
@@ -100,46 +100,46 @@ pub mod swap_coontract_test {
 
           let mut transfered : bool = false;
 
-        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            require!(
-               ( ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() 
-            || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() )
-            ,MYERROR::NotReady);
+            for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+                require!(
+                ( ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() 
+                || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() )
+                ,MYERROR::NotReady);
 
-          if ctx.accounts.swap_data_account.items[item_id].is_nft 
-          && ctx.accounts.swap_data_account.items[item_id].mint == item_to_deposit.mint 
-          && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
+            if ctx.accounts.swap_data_account.items[item_id].is_nft 
+            && ctx.accounts.swap_data_account.items[item_id].mint == item_to_deposit.mint 
+            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
 
-                let ix = spl_token::instruction::transfer(
-                    token_program.key,
-                    &item_from_deposit.key(),
-                    &item_to_deposit.key(),
-                    &signer.key(),
-                    &[&signer.key()],
-                    1,
-                )?;
-
-                msg!("Calling Token Program to transfer mint {:} to {:}",item_to_deposit.mint , item_to_deposit.key());
-                    invoke(
-                        &ix,
-                        &[
-                            item_from_deposit.to_account_info(),
-                            item_to_deposit.to_account_info(),
-                            signer.to_account_info(),
-                            token_program.clone(),
-                        ],
+                    let ix = spl_token::instruction::transfer(
+                        token_program.key,
+                        &item_from_deposit.key(),
+                        &item_to_deposit.key(),
+                        &signer.key(),
+                        &[&signer.key()],
+                        1,
                     )?;
-                    
-                    //update status
-                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
-                    transfered = true;
 
-                // break
+                    msg!("Calling Token Program to transfer mint {:} to {:}",item_to_deposit.mint , item_to_deposit.key());
+                        invoke(
+                            &ix,
+                            &[
+                                item_from_deposit.to_account_info(),
+                                item_to_deposit.to_account_info(),
+                                signer.to_account_info(),
+                                token_program.clone(),
+                            ],
+                        )?;
+                        
+                        //update status
+                        ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
+                        transfered = true;
 
-            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
-                return  Err(error!(MYERROR::NoSend).into());
+                    // break
+
+                } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
+                    return  Err(error!(MYERROR::NoSend).into());
+                }
             }
-        }
         Ok(())
     }
 
@@ -227,6 +227,7 @@ pub mod swap_coontract_test {
         _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
+        require_keys_eq!(ctx.accounts.signer.key(),ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
 
@@ -235,7 +236,7 @@ pub mod swap_coontract_test {
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if !ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8()
-            && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.signer.key() 
+            && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.user.key() 
             && transfered == false {
                 
                     if  ctx.accounts.swap_data_account.items[item_id].amount < 0 {
@@ -246,7 +247,7 @@ pub mod swap_coontract_test {
                         let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
 
                         if swap_data_lamports_initial > amount_to_send {
-                            **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + amount_to_send ;
+                            **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
                             **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
                         
                         }else {
@@ -277,27 +278,25 @@ pub mod swap_coontract_test {
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
-      
-        let user_ata = &ctx.accounts.item_to_deposit;
-        let swap_data_ata = &ctx.accounts.item_from_deposit;
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
 
         let mut transfered : bool = false;
         
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            if ctx.accounts.swap_data_account.items[item_id].is_nft 
+
+            if ctx.accounts.swap_data_account.items[item_id].is_nft
             && ctx.accounts.swap_data_account.items[item_id].status == 1 
-            && ctx.accounts.swap_data_account.items[item_id].mint == user_ata.mint
-            && ctx.accounts.swap_data_account.items[item_id].mint == swap_data_ata.mint
-            && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.signer.key() 
+            // && ctx.accounts.swap_data_account.items[item_id].mint == ctx.accounts.item_to_deposit.mint
+            && ctx.accounts.swap_data_account.items[item_id].mint.eq(&ctx.accounts.item_from_deposit.mint)
+            && ctx.accounts.swap_data_account.items[item_id].destinary.eq(ctx.accounts.user.key)
             && transfered == false {
 
     
                 let ix = spl_token::instruction::transfer(
                     &ctx.accounts.token_program.key,
-                    &swap_data_ata.key(),
-                    &user_ata.key(),
+                    &ctx.accounts.item_from_deposit.key(),
+                    &ctx.accounts.item_to_deposit.key(),
                     &ctx.accounts.swap_data_account.key(),
                     &[&ctx.accounts.swap_data_account.key()],
                     1,
@@ -307,30 +306,30 @@ pub mod swap_coontract_test {
                     &ix,
                     &[
                         ctx.accounts.token_program.clone(),
-                        swap_data_ata.to_account_info(),
-                        user_ata.to_account_info(),
+                        ctx.accounts.item_from_deposit.to_account_info(),
+                        ctx.accounts.item_to_deposit.to_account_info(),
                         ctx.accounts.swap_data_account.to_account_info(),
                     ],
                     &[&[&seed[..], &[bump]]],
                 )?;
                     //update status
                     msg!("item changed to claimed");
-                    if swap_data_ata.amount == 0 {
+                    if ctx.accounts.item_from_deposit.amount == 0 {
                         let ix2 = spl_token::instruction::close_account(
                             &ctx.accounts.token_program.key,
-                            &swap_data_ata.key(),
-                            &ctx.accounts.signer.key(),
+                            &ctx.accounts.item_from_deposit.key(),
+                            &ctx.accounts.user.key(),
                             &ctx.accounts.swap_data_account.key(),
                             &[&ctx.accounts.swap_data_account.key()],
                         )?;
-                        
+                        msg!("closing account");
                         invoke_signed(
                             &ix2,
                             &[
                                 ctx.accounts.token_program.clone(),
-                                swap_data_ata.to_account_info(),
+                                ctx.accounts.item_from_deposit.to_account_info(),
                                 ctx.accounts.swap_data_account.to_account_info(),
-                                ctx.accounts.signer.to_account_info(),
+                                ctx.accounts.user.to_account_info(),
                                 ],
                                 &[&[&seed[..], &[bump]]],
                             )?;
@@ -339,7 +338,7 @@ pub mod swap_coontract_test {
                         ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                     transfered = true;
                 // break
-             } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
+             } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
@@ -406,7 +405,7 @@ pub mod swap_coontract_test {
                 ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() 
                 || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
             ) 
-            &&  ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.signer.key() 
+            &&  ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.user.key() 
             && transfered == false {
                 // msg!("claim accepted");
 
@@ -416,7 +415,7 @@ pub mod swap_coontract_test {
 
                   let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(0)).unwrap();
  
-                    **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + amount_to_send;
+                    **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send;
                     **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
 
                 } else {
@@ -470,7 +469,7 @@ pub mod swap_coontract_test {
             && ctx.accounts.swap_data_account.items[item_id].status == 0 
             && ctx.accounts.swap_data_account.items[item_id].mint == user_ata.mint
             && ctx.accounts.swap_data_account.items[item_id].mint == swap_data_ata.mint
-            && ctx.accounts.swap_data_account.items[item_id].owner==ctx.accounts.signer.key()
+            && ctx.accounts.swap_data_account.items[item_id].owner==ctx.accounts.user.key()
             && transfered == false {
 
                 msg!("no item to cancel and status changed to cancelled");
@@ -481,7 +480,7 @@ pub mod swap_coontract_test {
             && ctx.accounts.swap_data_account.items[item_id].status == 1 
             && ctx.accounts.swap_data_account.items[item_id].mint == user_ata.mint
             && ctx.accounts.swap_data_account.items[item_id].mint == swap_data_ata.mint
-            && ctx.accounts.swap_data_account.items[item_id].owner==ctx.accounts.signer.key()
+            && ctx.accounts.swap_data_account.items[item_id].owner==ctx.accounts.user.key()
             && transfered == false {
     
                 let ix = spl_token::instruction::transfer(
@@ -511,7 +510,7 @@ pub mod swap_coontract_test {
                     let ix2 = spl_token::instruction::close_account(
                         &ctx.accounts.token_program.key,
                         &swap_data_ata.key(),
-                        &ctx.accounts.signer.key(),
+                        &ctx.accounts.user.key(),
                         &ctx.accounts.swap_data_account.key(),
                         &[&ctx.accounts.swap_data_account.key()],
                     )?;
@@ -522,7 +521,7 @@ pub mod swap_coontract_test {
                             ctx.accounts.token_program.clone(),
                             swap_data_ata.to_account_info(),
                             ctx.accounts.swap_data_account.to_account_info(),
-                            ctx.accounts.signer.to_account_info(),
+                            ctx.accounts.user.to_account_info(),
                         ],
                         &[&[&seed[..], &[bump]]],
                     )?;
@@ -689,10 +688,12 @@ pub struct ClaimNft<'info> {
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
+    user: AccountInfo<'info>,
+    #[account(mut)]
     signer: Signer<'info>,
     #[account(mut, constraint = swap_data_account.key() == item_from_deposit.owner)]
     item_from_deposit: Account<'info, TokenAccount>,
-    #[account(mut, constraint = signer.key() == item_to_deposit.owner)]
+    #[account(mut, constraint = user.key() == item_to_deposit.owner)]
     item_to_deposit: Account<'info, TokenAccount>,
 }
 
@@ -704,6 +705,8 @@ pub struct ClaimSol<'info> {
     system_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
+    #[account(mut)]
+    user: AccountInfo<'info>,
     #[account(mut)]
     signer: Signer<'info>,
 }
