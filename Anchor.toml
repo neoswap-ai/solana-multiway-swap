@@ -1,5 +1,5 @@
 [programs.localnet]
-swap_coontract_test = "BRBpGfF6xmQwAJRfx7MKPZq1KEgTvVMfcNXHbs42w8Tz"
+swap_coontract_test = "6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W"
 
 [registry]
 url = "https://anchor.projectserum.com"
