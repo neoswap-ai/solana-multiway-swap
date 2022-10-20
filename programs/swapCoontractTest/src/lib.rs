@@ -89,7 +89,7 @@ pub mod swap_coontract_test {
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
         
         let swap_data_account = &ctx.accounts.swap_data_account;
-        require!(swap_data_account.initializer == ctx.accounts.signer.key(),MYERROR::NotInit);
+        // require!(swap_data_account.initializer == ctx.accounts.signer.key(),MYERROR::NotInit);
 
         let token_program = &ctx.accounts.token_program;
         let signer = &ctx.accounts.signer;
@@ -161,7 +161,7 @@ pub mod swap_coontract_test {
             && transfered == false {
                 if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
                     msg!("Deposit  Sent");
-                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(9)).unwrap();
+                  let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs();//.checked_mul((10 as u64).pow(9)).unwrap();
 
                     let ix = anchor_lang::solana_program::system_instruction::transfer(
                         &ctx.accounts.signer.key(),
@@ -315,27 +315,28 @@ pub mod swap_coontract_test {
                 )?;
                     //update status
                     msg!("item changed to claimed");
-                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
-
-                    let ix2 = spl_token::instruction::close_account(
-                        &ctx.accounts.token_program.key,
-                        &swap_data_ata.key(),
-                        &ctx.accounts.signer.key(),
-                        &ctx.accounts.swap_data_account.key(),
-                        &[&ctx.accounts.swap_data_account.key()],
-                    )?;
-
-                    invoke_signed(
-                        &ix2,
-                        &[
-                            ctx.accounts.token_program.clone(),
-                            swap_data_ata.to_account_info(),
-                            ctx.accounts.swap_data_account.to_account_info(),
-                            ctx.accounts.signer.to_account_info(),
-                        ],
-                        &[&[&seed[..], &[bump]]],
-                    )?;
-                    
+                    if swap_data_ata.amount == 0 {
+                        let ix2 = spl_token::instruction::close_account(
+                            &ctx.accounts.token_program.key,
+                            &swap_data_ata.key(),
+                            &ctx.accounts.signer.key(),
+                            &ctx.accounts.swap_data_account.key(),
+                            &[&ctx.accounts.swap_data_account.key()],
+                        )?;
+                        
+                        invoke_signed(
+                            &ix2,
+                            &[
+                                ctx.accounts.token_program.clone(),
+                                swap_data_ata.to_account_info(),
+                                ctx.accounts.swap_data_account.to_account_info(),
+                                ctx.accounts.signer.to_account_info(),
+                                ],
+                                &[&[&seed[..], &[bump]]],
+                            )?;
+                        }
+                        
+                        ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                     transfered = true;
                 // break
              } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
@@ -503,25 +504,29 @@ pub mod swap_coontract_test {
                     &[&[&seed[..], &[bump]]],
                 )?;
                   
-                
-                let ix2 = spl_token::instruction::close_account(
-                    &ctx.accounts.token_program.key,
-                    &swap_data_ata.key(),
-                    &ctx.accounts.signer.key(),
-                    &ctx.accounts.swap_data_account.key(),
-                    &[&ctx.accounts.swap_data_account.key()],
-                )?;
+                if swap_data_ata.amount == 0 {
 
-                invoke_signed(
-                    &ix2,
-                    &[
-                        ctx.accounts.token_program.clone(),
-                        swap_data_ata.to_account_info(),
-                        ctx.accounts.swap_data_account.to_account_info(),
-                        ctx.accounts.signer.to_account_info(),
-                    ],
-                    &[&[&seed[..], &[bump]]],
-                )?;
+                    msg!("also close the NFT ata");
+
+                    let ix2 = spl_token::instruction::close_account(
+                        &ctx.accounts.token_program.key,
+                        &swap_data_ata.key(),
+                        &ctx.accounts.signer.key(),
+                        &ctx.accounts.swap_data_account.key(),
+                        &[&ctx.accounts.swap_data_account.key()],
+                    )?;
+    
+                    invoke_signed(
+                        &ix2,
+                        &[
+                            ctx.accounts.token_program.clone(),
+                            swap_data_ata.to_account_info(),
+                            ctx.accounts.swap_data_account.to_account_info(),
+                            ctx.accounts.signer.to_account_info(),
+                        ],
+                        &[&[&seed[..], &[bump]]],
+                    )?;
+                }
 
                 msg!("item sent and status changed to cancelled");
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();

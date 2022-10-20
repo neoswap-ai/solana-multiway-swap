@@ -3,8 +3,6 @@ import { BN } from '@project-serum/anchor';
 import { PublicKey } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
-
-
 /// DEV
 export const network = WalletAdapterNetwork.Devnet;
 export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W');
@@ -13,11 +11,8 @@ export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGi
 // export const network = WalletAdapterNetwork.Mainnet;
 // export const programId = new PublicKey('');
 
-
-
-
-export const CONST_PROGRAM: String = '0102';
-export const swapDataAccountGiven = new PublicKey('2waC8VQXtveFgJNCaT91fKERX4hyJT685muNZXWfuN2J');
+export const CONST_PROGRAM: String = '0109';
+export const swapDataAccountGiven = new PublicKey('A2ibgnmAtbZft13Q9rUWwANiefKnAbkvtnLsPR4XbXPK');
 
 const i1: NftSwapItem = {
     isNft: false,
@@ -80,7 +75,31 @@ const i7: NftSwapItem = {
 export const fullData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: 80,
-    items: [i1, i2, i3, i4, i5, i6, i7] as Array<NftSwapItem>,
+    items: [
+        i1,
+        i2,
+        i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        // i2,
+        i3,
+        i4,
+        i5,
+        i6,
+        i7,
+    ] as Array<NftSwapItem>,
 };
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),

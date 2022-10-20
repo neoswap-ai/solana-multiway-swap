@@ -1,7 +1,7 @@
-import { Program, Provider, utils, web3 } from '@project-serum/anchor';
+import { AnchorProvider, Program, Provider, utils, web3 } from '@project-serum/anchor';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { clusterApiUrl, Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
 import { splAssociatedTokenAccountProgramId, opts } from './solana.const';
@@ -23,11 +23,11 @@ export const Solana: FC = () => {
     const { publicKey } = useWallet();
     const anchorWallet = useAnchorWallet();
 
-    const getProvider = useCallback(async (): Promise<Provider> => {
+    const getProvider = useCallback(async (): Promise<AnchorProvider> => {
         if (!anchorWallet) {
             throw new WalletNotConnectedError();
         } else {
-            return new Provider(
+            return new AnchorProvider(
                 new Connection(clusterApiUrl(network), opts.preflightCommitment),
                 anchorWallet,
                 opts.preflightCommitment
@@ -41,8 +41,17 @@ export const Solana: FC = () => {
 
     const getSeed = useCallback((sentData: SwapData): string => {
         let addSeed_temp: string = '';
+        let temp_count: number = 0;
+        let temp_string: string = '';
         for (let item = 0; item < sentData.items.length; item++) {
-            addSeed_temp += sentData.items[item].mint.toString().slice(0, 4);
+            if (temp_count < 3) {
+                temp_count += 1;
+                temp_string += sentData.items[item].mint.toString().slice(0, 1);
+            } else {
+                addSeed_temp += temp_string + sentData.items[item].mint.toString().slice(0, 1);
+                temp_count = 0;
+                temp_string = '';
+            }
         }
         return CONST_PROGRAM + addSeed_temp;
 
@@ -66,6 +75,13 @@ export const Solana: FC = () => {
         // }
 
         const program = await getProgram();
+        // const latestBlockHash = await program.provider.connection.getLatestBlockhash();
+        // console.log('latestBlockHash', latestBlockHash);
+
+        // const res = await new Connection(clusterApiUrl(network), opts.preflightCommitment).getTransaction(
+        //     '2ZtfSaYgceLVXauqqgBLpHUh6qzBTH1VvGnCYZsJCdi69S1j6736zwSGCB8PTt2B5yrGpjRpeLBqrL3EKaLZP64'
+        // );
+        // console.log('confirm tr', res);
 
         const tradeRef = getSeed(fullData);
         console.log('tradeRef', tradeRef);
@@ -84,31 +100,34 @@ export const Solana: FC = () => {
         // console.log("newSentData",newSentData);
 
         try {
-            const transactionHash = await program.rpc.initInitialize(
-                swapDataAccount_seed,
-                swapDataAccount_bump,
-                sentData,
-                7,
-                {
-                    accounts: {
-                        swapDataAccount: swapDataAccount,
-                        signer: publicKey,
-                        systemProgram: web3.SystemProgram.programId,
-                        splTokenProgram: splAssociatedTokenAccountProgramId,
-                    },
-                }
-            );
+            const transactionHash = await program.methods
+                .initInitialize(swapDataAccount_seed, swapDataAccount_bump, sentData, fullData.items.length)
+                .accounts({
+                    // accounts: {
+                    swapDataAccount: swapDataAccount,
+                    signer: publicKey,
+                    systemProgram: web3.SystemProgram.programId,
+                    splTokenProgram: splAssociatedTokenAccountProgramId,
+                    // },
+                })
+                .rpc();
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
+            const hash = String(error).slice(136, 223);
+            console.log('hash', hash);
+
+            const conftr = await program.provider.connection.confirmTransaction(hash, 'processed');
+
+            console.log('conftr', conftr);
         }
     }, [publicKey, getProgram, getSeed]);
 
     const addInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         sentData.initializer = publicKey;
-
         const program = await getProgram();
+        if (!program.provider.sendAndConfirm) throw console.error('no provider');
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log('SwapData', swapData);
@@ -125,27 +144,75 @@ export const Solana: FC = () => {
         console.log('swapDataAccount', swapDataAccount.toBase58());
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        let depositTransaction = new Transaction();
-        for (let index = 1; index < fullData.items.length; index++) {
+        const firstTx = await program.methods
+            .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, fullData.items[1])
+            .accounts({
+                // accounts: {
+                swapDataAccount: swapDataAccount,
+                signer: publicKey,
+                //  },
+            })
+            .instruction();
+        if (!firstTx) throw console.error('noTx');
+        let depositTransaction: Transaction = new Transaction().add(firstTx);
+
+        // const res = program.methods
+        //     .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, fullData.items[1])
+        //     .accounts({ swapDataAccount: swapDataAccount, signer: publicKey })
+        //     .instruction();
+
+        for (let index = 2; index < fullData.items.length; index++) {
             const element = fullData.items[index];
-            depositTransaction.add(
-                program.instruction.initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element, {
-                    accounts: {
+            let temp_inst = await program.methods
+                .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element)
+                .accounts(
+                    {
+                        //     accounts: {
                         swapDataAccount: swapDataAccount,
-                        signer: publicKey,
-                    },
-                })
+                        signer: publicKey.toString(),
+                    }
+                    // }
+                )
+                .instruction();
+            if (!temp_inst) throw console.error('');
+
+            depositTransaction.add(
+                temp_inst
+                // await program.methods
+                //     .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element)
+                //     .accounts({ swapDataAccount: swapDataAccount, signer: publicKey })
+                //     .instruction()
+                //    new Transaction().add()
+                // .instruction(
+
+                // program.instruction.initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element, {
+                //     accounts: {
+                //         swapDataAccount: swapDataAccount,
+                //         signer: publicKey,
+                //     },
+                // })
             );
+            // depositTransaction[index].feePayer = publicKey;
+            // depositTransaction[index].recentBlockhash = (
+            //     await program.provider.connection.getLatestBlockhash()
+            // ).blockhash;
         }
 
         try {
-            depositTransaction.feePayer = publicKey;
-            depositTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-            const transactionHash = await program.provider.send(depositTransaction);
+            // depositTransaction.feePayer = publicKey;
+            // depositTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+            const transactionHash = await program.provider.sendAndConfirm(depositTransaction);
 
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
+
+            console.log('error', error);
+            const hash = String(error).slice(136, 223);
+            console.log('hash', hash);
+
+            const conftr = await program.provider.connection.getTransaction(hash);
+            console.log('conftr', conftr);
         }
     }, [publicKey, getProgram, getSeed]);
 
@@ -155,6 +222,7 @@ export const Solana: FC = () => {
         console.log('sentData', sentData);
 
         const program = await getProgram();
+        // if (program.provider.sendAndConfirm) throw console.error('no provider');
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log('SwapData', swapData);
         if (swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
@@ -175,25 +243,36 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         try {
-            const transactionHash = await program.rpc.validateInitialize(swapDataAccount_seed, swapDataAccount_bump, {
-                accounts: {
+            const transactionHash = await program.methods
+                .validateInitialize(swapDataAccount_seed, swapDataAccount_bump)
+                .accounts({
+                    // accounts: {
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
                     // systemProgram: web3.SystemProgram.programId,
                     // splTokenProgram: splAssociatedTokenAccountProgramId,
-                },
-            });
+                    // },
+                })
+                .rpc();
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
         }
     }, [publicKey, getProgram, getSeed]);
 
+    const allInitialize = useCallback(async () => {
+        await initInitialize()
+        await addInitialize()
+        await verifyInitialize()
+
+    }, [initInitialize, addInitialize, verifyInitialize]);
+
     const deposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
         const program = await getProgram();
         // console.log('program', program);
+        if (!program.provider.sendAndConfirm) throw console.error('no provider');
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log('SwapData', swapData);
@@ -259,10 +338,14 @@ export const Solana: FC = () => {
 
         if (depositInstructionTransaction.instructions.length > 0) {
             try {
-                const hash = await program.provider.send(depositInstructionTransaction);
+                const hash = await program.provider.sendAndConfirm(depositInstructionTransaction);
                 console.log('deposit transaction hash\n', hash);
             } catch (error) {
                 programCatchError(error);
+                const hash = String(error).slice(136, 223);
+                console.log('hash', hash);
+                const conftr = await program.provider.connection.confirmTransaction(hash, 'processed');
+                console.log('conftr', conftr);
             }
         } else {
             console.log('Nothing to deposit');
@@ -282,6 +365,7 @@ export const Solana: FC = () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
         const program = await getProgram();
+        if (!program.provider.sendAndConfirm) throw console.error('no provider');
         // console.log('program', program);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
@@ -352,7 +436,7 @@ export const Solana: FC = () => {
 
         if (cancelInstructionTransaction.instructions.length > 0) {
             try {
-                const hash = await program.provider.send(cancelInstructionTransaction);
+                const hash = await program.provider.sendAndConfirm(cancelInstructionTransaction);
                 console.log('cancel Transaction hash', hash);
             } catch (error) {
                 programCatchError(error);
@@ -390,14 +474,17 @@ export const Solana: FC = () => {
         // console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         try {
-            const transactionHash = await program.rpc.validateCancelled(swapDataAccount_seed, swapDataAccount_bump, {
-                accounts: {
+            const transactionHash = await program.methods
+                .validateCancelled(swapDataAccount_seed, swapDataAccount_bump)
+                .accounts({
+                    // accounts: {
                     systemProgram: web3.SystemProgram.programId,
                     splTokenProgram: splAssociatedTokenAccountProgramId,
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
-                },
-            });
+                    // },
+                })
+                .rpc();
 
             console.log('validateCancelled transactionHash', transactionHash);
         } catch (error) {
@@ -433,12 +520,15 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         try {
-            const transactionHash = await program.rpc.validateDeposit(swapDataAccount_seed, swapDataAccount_bump, {
-                accounts: {
+            const transactionHash = await program.methods
+                .validateDeposit(swapDataAccount_seed, swapDataAccount_bump)
+                .accounts({
+                    // accounts: {
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
-                },
-            });
+                    // },
+                })
+                .rpc();
 
             console.log('transactionHash', transactionHash);
         } catch (error) {
@@ -450,6 +540,7 @@ export const Solana: FC = () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
         const program = await getProgram();
+        if (!program.provider.sendAndConfirm) throw console.error('no provider');
         // console.log('program', program);
 
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
@@ -520,7 +611,7 @@ export const Solana: FC = () => {
 
         if (claimInstructionTransaction.instructions.length > 0) {
             try {
-                const hash = await program.provider.send(claimInstructionTransaction);
+                const hash = await program.provider.sendAndConfirm(claimInstructionTransaction);
                 console.log('claim transaction hash', hash);
             } catch (error) {
                 programCatchError(error);
@@ -553,14 +644,17 @@ export const Solana: FC = () => {
         // console.log('swapDataAccount', swapDataAccount.toBase58());
         // console.log('swapDataAccount_bump', swapDataAccount_bump);
         try {
-            const transactionHash = await program.rpc.validateClaimed(swapDataAccount_seed, swapDataAccount_bump, {
-                accounts: {
+            const transactionHash = await program.methods
+                .validateClaimed(swapDataAccount_seed, swapDataAccount_bump)
+                .accounts({
+                    // accounts: {
                     systemProgram: web3.SystemProgram.programId,
                     splTokenProgram: splAssociatedTokenAccountProgramId,
                     swapDataAccount: swapDataAccount,
                     signer: publicKey,
-                },
-            });
+                    // },
+                })
+                .rpc();
 
             console.log('validateClaimed transaction Hash', transactionHash);
         } catch (error) {
@@ -579,6 +673,10 @@ export const Solana: FC = () => {
                 </button>
                 <button onClick={verifyInitialize} disabled={!publicKey}>
                     verify initialize
+                </button>
+                <br />
+                <button onClick={allInitialize} disabled={!publicKey}>
+                    all initialize
                 </button>
             </div>
             <div>

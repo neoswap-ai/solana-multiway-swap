@@ -43,7 +43,7 @@ export async function programCatchError(error: any) {
     } else if (String(error).includes('0x1')) {
         console.error('Not enough funds \n', error);
     } else {
-        console.error("unsupported \n",error);
+        console.error('unsupported \n', error);
     }
 }
 // ERROR {0xbc4
