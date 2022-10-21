@@ -2,6 +2,7 @@ import { Program, web3 } from '@project-serum/anchor';
 import { createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from './solana.const';
+import Solana from './solana';
 
 export async function findAtaUserFromMint(
     program: Program,
@@ -29,7 +30,7 @@ export async function findOrCreateAta(
     let mintAta;
     let txCreate = new Transaction();
     let ixCreateMintAta;
-
+// Solana.
     try {
         const mintAtaData = await findAtaUserFromMint(program, mint, owner);
         console.log('mintAtaData', mintAtaData[0].pubkey.toBase58());

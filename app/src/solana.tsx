@@ -16,10 +16,10 @@ import {
     cIdepositSol,
 } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
-
+import NeoSwap from './neoSwap.module/neoSwap.module';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
-export const Solana: FC = () => {
+const Solana: FC = () => {
     const { publicKey } = useWallet();
     const anchorWallet = useAnchorWallet();
 
@@ -291,7 +291,7 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         let depositInstructionTransaction = new Transaction();
-        let ataList: Array<PublicKey>  = [];
+        let ataList: Array<PublicKey> = [];
         for (let item = 0; item < swapData.items.length; item++) {
             let e = swapData.items[item];
             // console.log('element', item, ' \n', e);
@@ -310,8 +310,7 @@ export const Solana: FC = () => {
                         );
                         ataList.push(depositing.ata);
                         depositInstructionTransaction.add(depositing.transaction);
-                        console.log("ataList",ataList);
-                        
+                        console.log('ataList', ataList);
                     }
                     break;
                 case false:
@@ -594,7 +593,7 @@ export const Solana: FC = () => {
             switch (e.isNft) {
                 case true:
                     if (e.status === 1) {
-                        console.log(e.destinary.toBase58())
+                        console.log(e.destinary.toBase58());
                         claimInstructionTransaction.add(
                             (
                                 await cIclaimNft(
@@ -653,41 +652,25 @@ export const Solana: FC = () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
         const program = await getProgram();
-        // console.log('program', program);
+        if (!program.provider.sendAndConfirm) throw new WalletNotConnectedError();
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('swapData', swapData);
-        if (swapData.status !== 1) throw console.error('Trade not in waiting to be changed to claimed');
+        const { validateClaimedTransaction } = await NeoSwap.validateClaimed({
+            userPublickey: publicKey,
+            program,
+            programId,
+            swapDataAccount: swapDataAccountGiven,
+        });
 
-        const tradeRef = getSeed(swapData);
-        // console.log('tradeRef', tradeRef);
+        validateClaimedTransaction.feePayer = publicKey;
+        validateClaimedTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-        // console.log('swapDataAccount_seed', swapDataAccount_seed);
-
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
-        // console.log('swapDataAccount', swapDataAccount.toBase58());
-        // console.log('swapDataAccount_bump', swapDataAccount_bump);
         try {
-            const transactionHash = await program.methods
-                .validateClaimed(swapDataAccount_seed, swapDataAccount_bump)
-                .accounts({
-                    // accounts: {
-                    systemProgram: web3.SystemProgram.programId,
-                    splTokenProgram: splAssociatedTokenAccountProgramId,
-                    swapDataAccount: swapDataAccount,
-                    signer: publicKey,
-                    // },
-                })
-                .rpc();
-
-            console.log('validateClaimed transaction Hash', transactionHash);
+            const hash = await program.provider.sendAndConfirm(validateClaimedTransaction);
+            console.log('claim transaction hash', hash);
         } catch (error) {
             programCatchError(error);
         }
+
     }, [publicKey, getProgram, getSeed]);
 
     return (
@@ -742,3 +725,5 @@ export const Solana: FC = () => {
         </div>
     );
 };
+
+export default Solana;
