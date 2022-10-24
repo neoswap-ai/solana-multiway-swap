@@ -16,6 +16,7 @@ pub mod swap_coontract_test {
 
     pub fn init_initialize(
         ctx: Context<InitInitialize>,
+        // _seed: Vec<Vec<u8>>,
         _seed: Vec<u8>,
         _bump: u8,
         sent_data: SwapData,
@@ -30,7 +31,6 @@ pub mod swap_coontract_test {
         ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
         ctx.accounts.swap_data_account.items = sent_data.items;
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
-
         Ok(())
     }
 
@@ -44,8 +44,22 @@ pub mod swap_coontract_test {
 
         require!(swap_data_account.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
         require_keys_eq!(swap_data_account.initializer, ctx.accounts.signer.key(),MYERROR::NotInit);
+        
+        let mut item_to_add: NftSwapItem= trade_to_add;
 
-        swap_data_account.items.push(trade_to_add);
+        if item_to_add.is_nft {
+            item_to_add.status = TradeStatus::Initializing.to_u8()
+        } else {
+
+            if item_to_add.amount>0{
+                item_to_add.status = TradeStatus::Initializing.to_u8()
+            }else{
+                item_to_add.status = TradeStatus::Deposited.to_u8()
+            }
+
+        }
+
+        swap_data_account.items.push(item_to_add);
 
         Ok(())
     }
@@ -70,7 +84,7 @@ pub mod swap_coontract_test {
                 sum = sum.checked_add(swap_data_account.items[item_id].amount).unwrap()
             }
 
-            require!(swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
+            // require!(swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8(),MYERROR::UnexpectedState);
         };
 
         require!(sum==0, MYERROR::SumNotNull);
@@ -301,7 +315,7 @@ pub mod swap_coontract_test {
                     &[&ctx.accounts.swap_data_account.key()],
                     1,
                 )?;
-    
+    // let signseed = &seed[..].join(&0);
                 invoke_signed(
                     &ix,
                     &[
@@ -310,7 +324,7 @@ pub mod swap_coontract_test {
                         ctx.accounts.item_to_deposit.to_account_info(),
                         ctx.accounts.swap_data_account.to_account_info(),
                     ],
-                    &[&[&seed[..], &[bump]]],
+                    &[&[&seed[..],&[bump]]],
                 )?;
                     //update status
                     msg!("item changed to claimed");
@@ -589,7 +603,7 @@ pub struct InitInitialize<'info> {
     #[account(
         init,
         payer = signer,
-        seeds = [&seed],
+        seeds = [&(&seed[..])],
         bump,
         space=SwapData::size(sent_data,_nb_of_items)
     )]

@@ -2,31 +2,32 @@ import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { types } from 'secretjs';
 import { splAssociatedTokenAccountProgramId } from '../utils.neoSwap/const.neoSwap';
-import { getSeedFromSwapData } from '../utils.neoSwap/getSeed.neoSwap';
+import { getSwapDataFromPDA } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { SwapData } from '../utils.neoSwap/types.neoSwap';
 
-export const validateClaimed = async (vData: {
+export const validateClaimed = async (Data: {
     userPublickey: PublicKey;
     program: Program;
-    programId: PublicKey;
+    // CONST_PROGRAM: string;
+    // programId: PublicKey;
     swapDataAccount: PublicKey;
 }): Promise<{ validateClaimedTransaction: Transaction }> => {
-    const swapData: SwapData = (await vData.program.account.swapData.fetch(vData.swapDataAccount)) as SwapData;
-    // console.log('swapData', swapData);
-    if (swapData.status !== 1) throw console.error('Trade not in waiting to be changed to claimed');
+    const { swapData, swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
+        swapDataAccount: Data.swapDataAccount,
+        program: Data.program,
+    });
 
-    const { swapDataAccount, swapDataAccount_seed_string, swapDataAccount_seed_buffer, swapDataAccount_bump } =
-        await getSeedFromSwapData({ swapData, programId: vData.programId });
+    if (swapData.status !== 1) throw console.error('Trade not in waiting to be changed to claimed');
 
     try {
         const validateClaimedTransaction = new Transaction().add(
-            await vData.program.methods
-                .validateClaimed(swapDataAccount_seed_buffer, swapDataAccount_bump)
+            await Data.program.methods
+                .validateClaimed(swapDataAccount_seed, swapDataAccount_bump)
                 .accounts({
                     systemProgram: web3.SystemProgram.programId,
                     splTokenProgram: splAssociatedTokenAccountProgramId,
-                    swapDataAccount: swapDataAccount,
-                    signer: vData.userPublickey,
+                    swapDataAccount: Data.swapDataAccount,
+                    signer: Data.userPublickey,
                 })
                 .instruction()
         );

@@ -30,7 +30,7 @@ export async function findOrCreateAta(
     let mintAta;
     let txCreate = new Transaction();
     let ixCreateMintAta;
-// Solana.
+    // Solana.
     try {
         const mintAtaData = await findAtaUserFromMint(program, mint, owner);
         console.log('mintAtaData', mintAtaData[0].pubkey.toBase58());
@@ -63,4 +63,30 @@ export async function cIPdaAta(
 
     const ixCreateMintAta = createAssociatedTokenAccountInstruction(payer, mintAta, owner, mint);
     return { ix: ixCreateMintAta, mintAta: mintAta, mintAta_bump: mintAta_bump };
+}
+
+export async function sendAllInstruction(program: Program, transactionList: Array<Transaction>) {
+    transactionList[0].feePayer = program.provider.publicKey;
+    transactionList[0].recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+    let sendAllArray: Array<{
+        tx: web3.Transaction;
+        signers?: web3.Signer[] | undefined;
+    }> = [{ tx: new Transaction().add(transactionList[0]) }];
+
+    console.log('itemtransactionList length ', transactionList.length);
+
+    for (let trx = 1; trx < transactionList.length; trx++) {
+        // const itemtransactionList = ;
+        transactionList[trx].feePayer = program.provider.publicKey;
+        transactionList[trx].recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+        // for (let ind_nd = 1; ind_nd < itemtransactionList.instructions.length; ind_nd++) {
+        sendAllArray.push({
+            tx: new Transaction().add(transactionList[trx]),
+        });
+        // }
+    }
+    
+    return sendAllArray;
 }

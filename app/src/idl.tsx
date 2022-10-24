@@ -28,6 +28,7 @@ export const idl = {
                 },
             ],
             args: [
+               
                 {
                     name: 'seed',
                     type: 'bytes',

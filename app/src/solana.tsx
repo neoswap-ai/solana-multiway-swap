@@ -5,7 +5,7 @@ import { clusterApiUrl, Connection, PublicKey, Transaction, VersionedTransaction
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
 import { splAssociatedTokenAccountProgramId, opts } from './solana.const';
-import { CONST_PROGRAM, fullData, network, programId, sentData, swapDataAccountGiven } from './solana.test';
+import { fullData, network, programId, sentData, swapDataAccountGiven } from './solana.test';
 import { SwapData } from './solana.types';
 import {
     cIcancelNft,
@@ -17,6 +17,7 @@ import {
 } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
 import NeoSwap from './neoSwap.module/neoSwap.module';
+import { sendAllInstruction } from './solana.utils';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
 const Solana: FC = () => {
@@ -39,78 +40,61 @@ const Solana: FC = () => {
         return new Program(idl, programId, await getProvider());
     }, [getProvider]);
 
-    const getSeed = useCallback((sentData: SwapData): string => {
-        let addSeed_temp: string = '';
-        let temp_count: number = 0;
-        let temp_string: string = '';
-        for (let item = 0; item < sentData.items.length; item++) {
-            if (temp_count < 3) {
-                temp_count += 1;
-                temp_string += sentData.items[item].mint.toString().slice(0, 1);
-            } else {
-                addSeed_temp += temp_string + sentData.items[item].mint.toString().slice(0, 1);
-                temp_count = 0;
-                temp_string = '';
-            }
-        }
-        return CONST_PROGRAM + addSeed_temp;
+    const getSeed = useCallback(
+        async (
+            sentData: SwapData,
+            program: Program
+        ): Promise<{
+            swapDataAccount: web3.PublicKey;
+            swapDataAccount_seed: Buffer;
+            swapDataAccount_bump: number;
+        }> => {
+            return await NeoSwap.getSeedFromData({ swapData: sentData, program: program });
+        },
+        []
+    );
+    const getSwapData = useCallback(
+        async (
+            swapDataAccount: PublicKey,
+            program: Program
+        ): Promise<{
+            swapData: SwapData;
+            swapDataAccount_seed: Buffer;
+            swapDataAccount_bump: number;
+        }> => {
+            return await NeoSwap.getSwapDataFromPDA({ swapDataAccount, program });
+        },
+        []
+    );
+    const read = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
 
-        // return new Program(idl, programId, await getProvider());
-    }, []);
+        const program = await getProgram();
+
+        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        console.log('SwapData', swapData);
+    }, [publicKey, getProgram]);
 
     const initInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
-        sentData.initializer = publicKey;
-        console.log('sentData', sentData);
-        // let sum = new BN(0);
-        // for (let index = 0; index < sentData.items.length; index++) {
-        //     const element = sentData.items[index];
-        //     if (!element.isNft) {
-        //         sum = sum.add(element.amount);
-        //     }
-        // }
-        // if (sum.toNumber() !== 0) {
-        //     console.log('sum', sum.toNumber());
-        //     throw console.error('balance at the end of trade not null');
-        // }
-
         const program = await getProgram();
-        // const latestBlockHash = await program.provider.connection.getLatestBlockhash();
-        // console.log('latestBlockHash', latestBlockHash);
+        if (!program.provider.sendAndConfirm) throw console.error('program Incorrect');
 
-        // const res = await new Connection(clusterApiUrl(network), opts.preflightCommitment).getTransaction(
-        //     '2ZtfSaYgceLVXauqqgBLpHUh6qzBTH1VvGnCYZsJCdi69S1j6736zwSGCB8PTt2B5yrGpjRpeLBqrL3EKaLZP64'
-        // );
-        // console.log('confirm tr', res);
+        sentData.initializer = publicKey;
 
-        const tradeRef = getSeed(fullData);
-        console.log('tradeRef', tradeRef);
+        console.log('sentData', sentData);
+        const { initInitTransaction } = await NeoSwap.initInitialize({
+            program,
+            signer: publicKey,
+            swapData: fullData,
+            // CONST_PROGRAM,
+        });
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
-
-        console.log('swapDataAccount', swapDataAccount.toBase58());
-        console.log('swapDataAccount_bump', swapDataAccount_bump);
-        // let newSentData = sentData;
-        // newSentData.items = new Array(sentData.items[0]);
-        // console.log("newSentData",newSentData);
-
+        initInitTransaction.feePayer = publicKey;
+        initInitTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
         try {
-            const transactionHash = await program.methods
-                .initInitialize(swapDataAccount_seed, swapDataAccount_bump, sentData, fullData.items.length)
-                .accounts({
-                    // accounts: {
-                    swapDataAccount: swapDataAccount,
-                    signer: publicKey,
-                    systemProgram: web3.SystemProgram.programId,
-                    splTokenProgram: splAssociatedTokenAccountProgramId,
-                    // },
-                })
-                .rpc();
+            const transactionHash = await program.provider.sendAndConfirm(initInitTransaction);
+
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
@@ -125,96 +109,42 @@ const Solana: FC = () => {
 
     const addInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
-        sentData.initializer = publicKey;
         const program = await getProgram();
-        if (!program.provider.sendAndConfirm) throw console.error('no provider');
+        // const { swapData: swapDataActual } = await NeoSwap.getSwapDataFromPDA({
+        //     swapData: fullData,
+        //     // CONST_PROGRAM,
+        //     // programId,
+        //     program,
+        // });
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('SwapData', swapData);
-        if (swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
+        const { addInitTransaction } = await NeoSwap.addInitialize({
+            program,
+            signer: publicKey,
+            swapData: fullData,
+            // CONST_PROGRAM,
+        });
+        console.log(addInitTransaction.length);
 
-        const tradeRef = getSeed(fullData);
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // addInitTransaction[0].feePayer = publicKey;
+        // addInitTransaction[0].recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
 
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
-
-        console.log('swapDataAccount', swapDataAccount.toBase58());
-        console.log('swapDataAccount_bump', swapDataAccount_bump);
-
-        const firstTx = await program.methods
-            .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, fullData.items[1])
-            .accounts({
-                // accounts: {
-                swapDataAccount: swapDataAccount,
-                signer: publicKey,
-                //  },
-            })
-            .instruction();
-        if (!firstTx) throw console.error('noTx');
-        let depositTransaction: Transaction = new Transaction().add(firstTx);
-
-        // const res = program.methods
-        //     .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, fullData.items[1])
-        //     .accounts({ swapDataAccount: swapDataAccount, signer: publicKey })
-        //     .instruction();
-
-        for (let index = 2; index < fullData.items.length; index++) {
-            const element = fullData.items[index];
-            let temp_inst = await program.methods
-                .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element)
-                .accounts(
-                    {
-                        //     accounts: {
-                        swapDataAccount: swapDataAccount,
-                        signer: publicKey.toString(),
-                    }
-                    // }
-                )
-                .instruction();
-            if (!temp_inst) throw console.error('');
-
-            depositTransaction.add(
-                temp_inst
-                // await program.methods
-                //     .initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element)
-                //     .accounts({ swapDataAccount: swapDataAccount, signer: publicKey })
-                //     .instruction()
-                //    new Transaction().add()
-                // .instruction(
-
-                // program.instruction.initializeAdd(swapDataAccount_seed, swapDataAccount_bump, element, {
-                //     accounts: {
-                //         swapDataAccount: swapDataAccount,
-                //         signer: publicKey,
-                //     },
-                // })
-            );
-            // depositTransaction[index].feePayer = publicKey;
-            // depositTransaction[index].recentBlockhash = (
-            //     await program.provider.connection.getLatestBlockhash()
-            // ).blockhash;
-        }
+        let sendAllArray: Array<{
+            tx: web3.Transaction;
+            signers?: web3.Signer[] | undefined;
+        }> = await sendAllInstruction(program, addInitTransaction);
 
         try {
-            // depositTransaction.feePayer = publicKey;
-            // depositTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-            const transactionHash = await program.provider.sendAndConfirm(depositTransaction);
+            // itemAddInitTransaction.instructions.forEach((element) => {});
+            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
+            const transactionHash = await program.provider.sendAll(sendAllArray);
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
 
-            console.log('error', error);
-            const hash = String(error).slice(136, 223);
-            console.log('hash', hash);
-
-            const conftr = await program.provider.connection.getTransaction(hash);
-            console.log('conftr', conftr);
+            throw console.error(error);
         }
-    }, [publicKey, getProgram, getSeed]);
+    }, [publicKey, getProgram]);
 
     const verifyInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
@@ -222,32 +152,33 @@ const Solana: FC = () => {
         console.log('sentData', sentData);
 
         const program = await getProgram();
+        const swapData = await getSwapData(swapDataAccountGiven, program);
         // if (program.provider.sendAndConfirm) throw console.error('no provider');
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        // const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log('SwapData', swapData);
-        if (swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
+        if (swapData.swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
 
-        const tradeRef = getSeed(fullData);
-        console.log('tradeRef', tradeRef);
-        if (getSeed(fullData) !== getSeed(swapData)) {
+        const swapDataFromSeed = await getSeed(fullData, program);
+        console.log('swapDataFromSeed', swapDataFromSeed);
+        if (getSeed(fullData, program) !== getSeed(swapData.swapData, program)) {
             console.log('data missing');
         }
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
 
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
+        // const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+        //     [swapDataFromSeed.swapDataAccount_seed],
+        //     programId
+        // );
 
-        console.log('swapDataAccount', swapDataAccount.toBase58());
-        console.log('swapDataAccount_bump', swapDataAccount_bump);
+        // console.log('swapDataAccount', swapDataAccount.toBase58());
+        // console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         try {
             const transactionHash = await program.methods
-                .validateInitialize(swapDataAccount_seed, swapDataAccount_bump)
+                .validateInitialize(swapDataFromSeed.swapDataAccount_seed, swapDataFromSeed.swapDataAccount_bump)
                 .accounts({
                     // accounts: {
-                    swapDataAccount: swapDataAccount,
+                    swapDataAccount: swapDataFromSeed.swapDataAccount,
                     signer: publicKey,
                     // systemProgram: web3.SystemProgram.programId,
                     // splTokenProgram: splAssociatedTokenAccountProgramId,
@@ -261,417 +192,437 @@ const Solana: FC = () => {
     }, [publicKey, getProgram, getSeed]);
 
     const allInitialize = useCallback(async () => {
-        await addInitialize();
-        await verifyInitialize();
+        const program = await getProgram();
+        if (!publicKey) throw console.error('not connected');
+
+        const { initinitTransactionSendAllArray, verifyTransactionSendAllArray } = await NeoSwap.allInitialize({
+            program,
+            signer: publicKey,
+            swapData: fullData,
+        });
+        try {
+            // itemAddInitTransaction.instructions.forEach((element) => {});
+            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+            const initinitTransaction = await program.provider.sendAll(initinitTransactionSendAllArray);
+            console.log('initialize transactionHash', initinitTransaction);
+            const verifyTransaction = await program.provider.sendAll(verifyTransactionSendAllArray);
+            console.log('finilize init transactionHash', verifyTransaction);
+        } catch (error) {
+            programCatchError(error);
+
+            throw console.error(error);
+        }
     }, [initInitialize, addInitialize, verifyInitialize]);
 
-    const deposit = useCallback(async () => {
-        if (!publicKey) throw new WalletNotConnectedError();
+    // const deposit = useCallback(async () => {
+    //     if (!publicKey) throw new WalletNotConnectedError();
 
-        const program = await getProgram();
-        // console.log('program', program);
-        if (!program.provider.sendAndConfirm) throw console.error('no provider');
+    //     const program = await getProgram();
+    //     // console.log('program', program);
+    //     if (!program.provider.sendAndConfirm) throw console.error('no provider');
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('SwapData', swapData);
-        if (swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
+    //     const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+    //     console.log('SwapData', swapData);
 
-        const tradeRef = getSeed(swapData);
-        // console.log('tradeRef', tradeRef);
+    //     const swapDataFromSeed = await getSeed(fullData, program);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-        // console.log('swapDataAccount_seed', swapDataAccount_seed);
+    //     console.log('swapDataFromSeed', swapDataFromSeed);
+    //     if (getSeed(fullData, program) !== getSeed(swapData, program)) {
+    //         console.log('data missing');
+    //     }
 
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
+    //     const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+    //         swapDataFromSeed.swapDataAccount_seed,
+    //         programId
+    //     );
+    //     // const tradeRef = getSeed(swapData);
+    //     // // console.log('tradeRef', tradeRef);
 
-        console.log('swapDataAccount', swapDataAccount.toBase58());
-        console.log('swapDataAccount_bump', swapDataAccount_bump);
+    //     // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+    //     // // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
-        let depositInstructionTransaction = new Transaction();
-        let ataList: Array<PublicKey> = [];
-        for (let item = 0; item < swapData.items.length; item++) {
-            let e = swapData.items[item];
-            // console.log('element', item, ' \n', e);
+    //     // const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+    //     //     [swapDataAccount_seed],
+    //     //     programId
+    //     // );
 
-            switch (e.isNft) {
-                case true:
-                    if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
-                        let depositing = await cIdepositNft(
-                            program,
-                            publicKey,
-                            e.mint,
-                            swapDataAccount,
-                            swapDataAccount_seed,
-                            swapDataAccount_bump,
-                            ataList
-                        );
-                        ataList.push(depositing.ata);
-                        depositInstructionTransaction.add(depositing.transaction);
-                        console.log('ataList', ataList);
-                    }
-                    break;
-                case false:
-                    if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
-                        depositInstructionTransaction.add(
-                            await cIdepositSol(
-                                program,
-                                publicKey,
-                                swapDataAccount,
-                                swapDataAccount_seed,
-                                swapDataAccount_bump
-                            )
-                        );
-                    }
-                    break;
-            }
-        }
-        //         let arrowToDel: Array<number> = [];
-        //         for (let index1 = 0; index1 < depositInstructionTransaction.instructions.length; index1++) {
-        //             const element1 = depositInstructionTransaction.instructions[index1];
-        //             for (let index2 = index1 + 1; index2 < depositInstructionTransaction.instructions.length; index2++) {
-        //                 const element2 = depositInstructionTransaction.instructions[index2];
-        //                 console.log('element1.data ', index1, '\n', (element1.data.buffer));
-        //                 console.log('element2.keys', index2, '\n', (element2.data.buffer));
+    //     console.log('swapDataAccount', swapDataAccount.toBase58());
+    //     console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        //                 if (element1.data.buffer === element2.data.buffer) {
-        //                     console.log('elem1===elem2');
+    //     let depositInstructionTransaction = new Transaction();
+    //     let ataList: Array<PublicKey> = [];
+    //     for (let item = 0; item < swapData.items.length; item++) {
+    //         let e = swapData.items[item];
+    //         // console.log('element', item, ' \n', e);
 
-        //                     arrowToDel.push(index2);
-        //                 }
-        //             }
-        //         }
-        // console.log("arrowToDel",arrowToDel);
+    //         switch (e.isNft) {
+    //             case true:
+    //                 if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
+    //                     let depositing = await cIdepositNft(
+    //                         program,
+    //                         publicKey,
+    //                         e.mint,
+    //                         swapDataAccount,
+    //                         swapDataFromSeed.swapDataAccount_seed,
+    //                         swapDataAccount_bump,
+    //                         ataList
+    //                     );
+    //                     ataList.push(depositing.ata);
+    //                     depositInstructionTransaction.add(depositing.transaction);
+    //                     console.log('ataList', ataList);
+    //                 }
+    //                 break;
+    //             case false:
+    //                 if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
+    //                     depositInstructionTransaction.add(
+    //                         await cIdepositSol(
+    //                             program,
+    //                             publicKey,
+    //                             swapDataAccount,
+    //                             swapDataFromSeed.swapDataAccount_seed,
+    //                             swapDataAccount_bump
+    //                         )
+    //                     );
+    //                 }
+    //                 break;
+    //         }
+    //     }
+    //     //         let arrowToDel: Array<number> = [];
+    //     //         for (let index1 = 0; index1 < depositInstructionTransaction.instructions.length; index1++) {
+    //     //             const element1 = depositInstructionTransaction.instructions[index1];
+    //     //             for (let index2 = index1 + 1; index2 < depositInstructionTransaction.instructions.length; index2++) {
+    //     //                 const element2 = depositInstructionTransaction.instructions[index2];
+    //     //                 console.log('element1.data ', index1, '\n', (element1.data.buffer));
+    //     //                 console.log('element2.keys', index2, '\n', (element2.data.buffer));
 
-        //         for (let index3 = arrowToDel.length; index3 > 0; index3--) {
-        //             const element = arrowToDel[index3];
-        //             depositInstructionTransaction.instructions = [
-        //                 ...depositInstructionTransaction.instructions.slice(0, element - 1),
-        //                 ...depositInstructionTransaction.instructions.slice(element),
-        //             ];
-        //         }
-        depositInstructionTransaction.feePayer = publicKey;
-        depositInstructionTransaction.recentBlockhash = (
-            await program.provider.connection.getLatestBlockhash()
-        ).blockhash;
-        console.log(depositInstructionTransaction);
+    //     //                 if (element1.data.buffer === element2.data.buffer) {
+    //     //                     console.log('elem1===elem2');
 
-        if (depositInstructionTransaction.instructions.length > 0) {
-            try {
-                const hash = await program.provider.sendAndConfirm(depositInstructionTransaction);
-                console.log('deposit transaction hash\n', hash);
-            } catch (error) {
-                programCatchError(error);
-                const hash = String(error).slice(136, 223);
-                console.log('hash', hash);
-                const conftr = await program.provider.connection.confirmTransaction(hash, 'processed');
-                console.log('conftr', conftr);
-            }
-        } else {
-            console.log('Nothing to deposit');
-        }
-    }, [publicKey, getProgram, getSeed]);
+    //     //                     arrowToDel.push(index2);
+    //     //                 }
+    //     //             }
+    //     //         }
+    //     // console.log("arrowToDel",arrowToDel);
 
-    const read = useCallback(async () => {
-        if (!publicKey) throw new WalletNotConnectedError();
+    //     //         for (let index3 = arrowToDel.length; index3 > 0; index3--) {
+    //     //             const element = arrowToDel[index3];
+    //     //             depositInstructionTransaction.instructions = [
+    //     //                 ...depositInstructionTransaction.instructions.slice(0, element - 1),
+    //     //                 ...depositInstructionTransaction.instructions.slice(element),
+    //     //             ];
+    //     //         }
+    //     depositInstructionTransaction.feePayer = publicKey;
+    //     depositInstructionTransaction.recentBlockhash = (
+    //         await program.provider.connection.getLatestBlockhash()
+    //     ).blockhash;
+    //     console.log(depositInstructionTransaction);
 
-        const program = await getProgram();
+    //     if (depositInstructionTransaction.instructions.length > 0) {
+    //         try {
+    //             const hash = await program.provider.sendAndConfirm(depositInstructionTransaction);
+    //             console.log('deposit transaction hash\n', hash);
+    //         } catch (error) {
+    //             programCatchError(error);
+    //             const hash = String(error).slice(136, 223);
+    //             console.log('hash', hash);
+    //             const conftr = await program.provider.connection.confirmTransaction(hash, 'processed');
+    //             console.log('conftr', conftr);
+    //         }
+    //     } else {
+    //         console.log('Nothing to deposit');
+    //     }
+    // }, [publicKey, getProgram, getSeed]);
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('SwapData', swapData);
-    }, [publicKey, getProgram]);
+    // const cancel = useCallback(async () => {
+    //     if (!publicKey) throw new WalletNotConnectedError();
 
-    const cancel = useCallback(async () => {
-        if (!publicKey) throw new WalletNotConnectedError();
+    //     const program = await getProgram();
+    //     if (!program.provider.sendAndConfirm) throw console.error('no provider');
+    //     // console.log('program', program);
 
-        const program = await getProgram();
-        if (!program.provider.sendAndConfirm) throw console.error('no provider');
-        // console.log('program', program);
+    //     const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+    //     console.log('SwapData', swapData);
+    //     if (!(swapData.status === 0 || swapData.status === 90)) {
+    //         throw console.error('Trade not able to be canceled');
+    //     }
+    //     const swapDataFromSeed = await getSeed(fullData, program);
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('SwapData', swapData);
-        if (!(swapData.status === 0 || swapData.status === 90)) {
-            throw console.error('Trade not able to be canceled');
-        }
-        const tradeRef = getSeed(swapData);
-        // console.log('tradeRef', tradeRef);
+    //     console.log('swapDataFromSeed', swapDataFromSeed);
+    //     if (getSeed(fullData, program) !== getSeed(swapData, program)) {
+    //         console.log('data missing');
+    //     }
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-        // console.log('swapDataAccount_seed', swapDataAccount_seed);
+    //     const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+    //         [swapDataFromSeed.swapDataAccount_seed],
+    //         programId
+    //     );
+    //     console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
-        console.log('swapDataAccount_bump', swapDataAccount_bump);
+    //     let cancelInstructionTransaction = new Transaction();
 
-        let cancelInstructionTransaction = new Transaction();
+    //     for (let item = 0; item < swapData.items.length; item++) {
+    //         let e = swapData.items[item];
+    //         // console.log('element', item, ' \n', e);
 
-        for (let item = 0; item < swapData.items.length; item++) {
-            let e = swapData.items[item];
-            // console.log('element', item, ' \n', e);
+    //         switch (e.isNft) {
+    //             case true:
+    //                 if (e.status === 1 || e.status === 0) {
+    //                     cancelInstructionTransaction.add(
+    //                         (
+    //                             await cIcancelNft(
+    //                                 program,
+    //                                 publicKey,
+    //                                 e.owner,
+    //                                 e.mint,
+    //                                 swapDataAccount,
+    //                                 swapDataFromSeed.swapDataAccount_seed,
+    //                                 swapDataAccount_bump
+    //                             )
+    //                         ).transaction
+    //                     );
+    //                     console.log('cancelNftinstruction added');
+    //                 }
+    //                 break;
+    //             case false:
+    //                 if (e.destinary.toBase58() === publicKey.toBase58() && (e.status === 1 || e.status === 0)) {
+    //                     cancelInstructionTransaction.add(
+    //                         (
+    //                             await cIcancelSol(
+    //                                 program,
+    //                                 e.owner,
+    //                                 publicKey,
+    //                                 swapDataAccount,
+    //                                 swapDataFromSeed.swapDataAccount_seed,
+    //                                 swapDataAccount_bump
+    //                             )
+    //                         ).transaction
+    //                     );
+    //                     console.log('cancelSolinstruction added');
+    //                 }
+    //                 break;
+    //         }
+    //     }
 
-            switch (e.isNft) {
-                case true:
-                    if (e.status === 1 || e.status === 0) {
-                        cancelInstructionTransaction.add(
-                            (
-                                await cIcancelNft(
-                                    program,
-                                    publicKey,
-                                    e.owner,
-                                    e.mint,
-                                    swapDataAccount,
-                                    swapDataAccount_seed,
-                                    swapDataAccount_bump
-                                )
-                            ).transaction
-                        );
-                        console.log('cancelNftinstruction added');
-                    }
-                    break;
-                case false:
-                    if (e.destinary.toBase58() === publicKey.toBase58() && (e.status === 1 || e.status === 0)) {
-                        cancelInstructionTransaction.add(
-                            (
-                                await cIcancelSol(
-                                    program,
-                                    e.owner,
-                                    publicKey,
-                                    swapDataAccount,
-                                    swapDataAccount_seed,
-                                    swapDataAccount_bump
-                                )
-                            ).transaction
-                        );
-                        console.log('cancelSolinstruction added');
-                    }
-                    break;
-            }
-        }
+    //     cancelInstructionTransaction.feePayer = publicKey;
+    //     cancelInstructionTransaction.recentBlockhash = (
+    //         await program.provider.connection.getLatestBlockhash()
+    //     ).blockhash;
+    //     // console.log('cancelInstructionTransaction', cancelInstructionTransaction);
 
-        cancelInstructionTransaction.feePayer = publicKey;
-        cancelInstructionTransaction.recentBlockhash = (
-            await program.provider.connection.getLatestBlockhash()
-        ).blockhash;
-        // console.log('cancelInstructionTransaction', cancelInstructionTransaction);
+    //     if (cancelInstructionTransaction.instructions.length > 0) {
+    //         try {
+    //             const hash = await program.provider.sendAndConfirm(cancelInstructionTransaction);
+    //             console.log('cancel Transaction hash', hash);
+    //         } catch (error) {
+    //             programCatchError(error);
+    //         }
+    //     } else {
+    //         console.log('Nothing to cancel');
+    //     }
+    // }, [publicKey, getProgram, getSeed]);
 
-        if (cancelInstructionTransaction.instructions.length > 0) {
-            try {
-                const hash = await program.provider.sendAndConfirm(cancelInstructionTransaction);
-                console.log('cancel Transaction hash', hash);
-            } catch (error) {
-                programCatchError(error);
-            }
-        } else {
-            console.log('Nothing to cancel');
-        }
-    }, [publicKey, getProgram, getSeed]);
+    // const validateCancel = useCallback(async () => {
+    //     if (!publicKey) throw new WalletNotConnectedError();
+    //     sentData.initializer = publicKey;
+    //     // console.log('sentData', sentData);
 
-    const validateCancel = useCallback(async () => {
-        if (!publicKey) throw new WalletNotConnectedError();
-        sentData.initializer = publicKey;
-        // console.log('sentData', sentData);
+    //     const program = await getProgram();
+    //     // console.log('program', program);
 
-        const program = await getProgram();
-        // console.log('program', program);
+    //     const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+    //     console.log('swapData', swapData);
+    //     if (swapData.status !== 90) throw console.error('Trade not in waiting to be cancelled');
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('swapData', swapData);
-        if (swapData.status !== 90) throw console.error('Trade not in waiting to be cancelled');
+    //     const swapDataFromSeed = await getSeed(fullData, program);
 
-        const tradeRef = getSeed(swapData);
+    //     console.log('swapDataFromSeed', swapDataFromSeed);
+    //     if (getSeed(fullData, program) !== getSeed(swapData, program)) {
+    //         console.log('data missing');
+    //     }
 
-        // console.log('tradeRef', tradeRef);
+    //     const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+    //         [swapDataFromSeed.swapDataAccount_seed],
+    //         programId
+    //     );
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-        // console.log('swapDataAccount_seed', swapDataAccount_seed);
+    //     // console.log('swapDataAccount', swapDataAccount.toBase58());
+    //     // console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
+    //     try {
+    //         const transactionHash = await program.methods
+    //             .validateCancelled(swapDataFromSeed.swapDataAccount_seed, swapDataAccount_bump)
+    //             .accounts({
+    //                 // accounts: {
+    //                 systemProgram: web3.SystemProgram.programId,
+    //                 splTokenProgram: splAssociatedTokenAccountProgramId,
+    //                 swapDataAccount: swapDataAccount,
+    //                 signer: publicKey,
+    //                 // },
+    //             })
+    //             .rpc();
 
-        // console.log('swapDataAccount', swapDataAccount.toBase58());
-        // console.log('swapDataAccount_bump', swapDataAccount_bump);
+    //         console.log('validateCancelled transactionHash', transactionHash);
+    //     } catch (error) {
+    //         programCatchError(error);
+    //     }
+    // }, [publicKey, getProgram, getSeed]);
 
-        try {
-            const transactionHash = await program.methods
-                .validateCancelled(swapDataAccount_seed, swapDataAccount_bump)
-                .accounts({
-                    // accounts: {
-                    systemProgram: web3.SystemProgram.programId,
-                    splTokenProgram: splAssociatedTokenAccountProgramId,
-                    swapDataAccount: swapDataAccount,
-                    signer: publicKey,
-                    // },
-                })
-                .rpc();
+    // const validateDeposit = useCallback(async () => {
+    //     if (!publicKey) throw new WalletNotConnectedError();
+    //     sentData.initializer = publicKey;
+    //     // console.log('sentData', sentData);
 
-            console.log('validateCancelled transactionHash', transactionHash);
-        } catch (error) {
-            programCatchError(error);
-        }
-    }, [publicKey, getProgram, getSeed]);
+    //     const program = await getProgram();
+    //     // console.log('program', program);
 
-    const validateDeposit = useCallback(async () => {
-        if (!publicKey) throw new WalletNotConnectedError();
-        sentData.initializer = publicKey;
-        // console.log('sentData', sentData);
+    //     const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+    //     console.log('swapData', swapData);
+    //     if (swapData.status !== 0) throw console.error('Trade not in waiting to be validated');
 
-        const program = await getProgram();
-        // console.log('program', program);
+    //     const swapDataFromSeed = await getSeed(fullData, program);
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('swapData', swapData);
-        if (swapData.status !== 0) throw console.error('Trade not in waiting to be validated');
+    //     console.log('swapDataFromSeed', swapDataFromSeed);
+    //     if (getSeed(fullData, program) !== getSeed(swapData, program)) {
+    //         console.log('data missing');
+    //     }
 
-        const tradeRef = getSeed(swapData);
+    //     const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+    //         [swapDataFromSeed.swapDataAccount_seed],
+    //         programId
+    //     );
 
-        // console.log('tradeRef', tradeRef);
+    //     console.log('swapDataAccount', swapDataAccount.toBase58());
+    //     console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-        // console.log('swapDataAccount_seed', swapDataAccount_seed);
+    //     try {
+    //         const transactionHash = await program.methods
+    //             .validateDeposit(swapDataFromSeed.swapDataAccount_seed, swapDataAccount_bump)
+    //             .accounts({
+    //                 // accounts: {
+    //                 swapDataAccount: swapDataAccount,
+    //                 signer: publicKey,
+    //                 // },
+    //             })
+    //             .rpc();
 
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
+    //         console.log('transactionHash', transactionHash);
+    //     } catch (error) {
+    //         programCatchError(error);
+    //     }
+    // }, [publicKey, getProgram, getSeed]);
 
-        console.log('swapDataAccount', swapDataAccount.toBase58());
-        console.log('swapDataAccount_bump', swapDataAccount_bump);
+    // const claim = useCallback(async () => {
+    //     if (!publicKey) throw new WalletNotConnectedError();
 
-        try {
-            const transactionHash = await program.methods
-                .validateDeposit(swapDataAccount_seed, swapDataAccount_bump)
-                .accounts({
-                    // accounts: {
-                    swapDataAccount: swapDataAccount,
-                    signer: publicKey,
-                    // },
-                })
-                .rpc();
+    //     const program = await getProgram();
+    //     if (!program.provider.sendAndConfirm) throw console.error('no provider');
+    //     // console.log('program', program);
 
-            console.log('transactionHash', transactionHash);
-        } catch (error) {
-            programCatchError(error);
-        }
-    }, [publicKey, getProgram, getSeed]);
+    //     const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+    //     console.log('swapData :', swapData);
+    //     if (swapData.status !== 1) throw console.error('Trade not in waiting for claim state');
 
-    const claim = useCallback(async () => {
-        if (!publicKey) throw new WalletNotConnectedError();
+    //     const swapDataFromSeed = await getSeed(swapData, program);
+    //     // console.log('tradeRef', tradeRef);
 
-        const program = await getProgram();
-        if (!program.provider.sendAndConfirm) throw console.error('no provider');
-        // console.log('program', program);
+    //     // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+    //     // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('swapData :', swapData);
-        if (swapData.status !== 1) throw console.error('Trade not in waiting for claim state');
+    //     const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+    //         [swapDataFromSeed.swapDataAccount_seed],
+    //         programId
+    //     );
 
-        const tradeRef = getSeed(swapData);
-        // console.log('tradeRef', tradeRef);
+    //     // console.log('swapDataAccount_bump', swapDataAccount_bump);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-        // console.log('swapDataAccount_seed', swapDataAccount_seed);
+    //     let claimInstructionTransaction = new Transaction();
 
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-            [swapDataAccount_seed],
-            programId
-        );
+    //     for (let item = 0; item < swapData.items.length; item++) {
+    //         let e = swapData.items[item];
+    //         // console.log('element', item, ' \n', e);
 
-        // console.log('swapDataAccount_bump', swapDataAccount_bump);
+    //         switch (e.isNft) {
+    //             case true:
+    //                 if (e.status === 1) {
+    //                     console.log(e.destinary.toBase58());
+    //                     claimInstructionTransaction.add(
+    //                         (
+    //                             await cIclaimNft(
+    //                                 program,
+    //                                 publicKey,
+    //                                 e.destinary,
+    //                                 e.mint,
+    //                                 swapDataAccount,
+    //                                 swapDataFromSeed.swapDataAccount_seed,
+    //                                 swapDataAccount_bump
+    //                             )
+    //                         ).transaction
+    //                     );
+    //                     console.log('claimNftinstruction added');
+    //                 }
+    //                 break;
+    //             case false:
+    //                 if (e.status === 1) {
+    //                     claimInstructionTransaction.add(
+    //                         (
+    //                             await cIclaimSol({
+    //                                 program,
+    //                                 user: e.owner,
+    //                                 publicKey,
+    //                                 swapDataAccount,
+    //                                 swapDataAccount_seed: swapDataFromSeed.swapDataAccount_seed,
+    //                                 swapDataAccount_bump,
+    //                             })
+    //                         ).transaction
+    //                     );
+    //                     console.log('claimSolinstruction added');
+    //                 }
+    //                 break;
+    //         }
+    //     }
 
-        let claimInstructionTransaction = new Transaction();
+    //     claimInstructionTransaction.feePayer = publicKey;
+    //     claimInstructionTransaction.recentBlockhash = (
+    //         await program.provider.connection.getLatestBlockhash()
+    //     ).blockhash;
+    //     // console.log('claimInstructionTransaction', claimInstructionTransaction);
 
-        for (let item = 0; item < swapData.items.length; item++) {
-            let e = swapData.items[item];
-            // console.log('element', item, ' \n', e);
+    //     if (claimInstructionTransaction.instructions.length > 0) {
+    //         try {
+    //             const hash = await program.provider.sendAndConfirm(claimInstructionTransaction);
+    //             console.log('claim transaction hash', hash);
+    //         } catch (error) {
+    //             programCatchError(error);
+    //         }
+    //     } else {
+    //         console.log('Nothing to claim');
+    //     }
+    // }, [publicKey, getProgram, getSeed]);
 
-            switch (e.isNft) {
-                case true:
-                    if (e.status === 1) {
-                        console.log(e.destinary.toBase58());
-                        claimInstructionTransaction.add(
-                            (
-                                await cIclaimNft(
-                                    program,
-                                    publicKey,
-                                    e.destinary,
-                                    e.mint,
-                                    swapDataAccount,
-                                    swapDataAccount_seed,
-                                    swapDataAccount_bump
-                                )
-                            ).transaction
-                        );
-                        console.log('claimNftinstruction added');
-                    }
-                    break;
-                case false:
-                    if (e.status === 1) {
-                        claimInstructionTransaction.add(
-                            (
-                                await cIclaimSol({
-                                    program,
-                                    user: e.owner,
-                                    publicKey,
-                                    swapDataAccount,
-                                    swapDataAccount_seed,
-                                    swapDataAccount_bump,
-                                })
-                            ).transaction
-                        );
-                        console.log('claimSolinstruction added');
-                    }
-                    break;
-            }
-        }
+    // const validateClaimed = useCallback(async () => {
+    //     if (!publicKey) throw new WalletNotConnectedError();
 
-        claimInstructionTransaction.feePayer = publicKey;
-        claimInstructionTransaction.recentBlockhash = (
-            await program.provider.connection.getLatestBlockhash()
-        ).blockhash;
-        // console.log('claimInstructionTransaction', claimInstructionTransaction);
+    //     const program = await getProgram();
+    //     if (!program.provider.sendAndConfirm) throw new WalletNotConnectedError();
 
-        if (claimInstructionTransaction.instructions.length > 0) {
-            try {
-                const hash = await program.provider.sendAndConfirm(claimInstructionTransaction);
-                console.log('claim transaction hash', hash);
-            } catch (error) {
-                programCatchError(error);
-            }
-        } else {
-            console.log('Nothing to claim');
-        }
-    }, [publicKey, getProgram, getSeed]);
+    //     const { validateClaimedTransaction } = await NeoSwap.validateClaimed({
+    //         userPublickey: publicKey,
+    //         program,
+    //         // CONST_PROGRAM,
+    //         swapDataAccount: swapDataAccountGiven,
+    //     });
 
-    const validateClaimed = useCallback(async () => {
-        if (!publicKey) throw new WalletNotConnectedError();
+    //     validateClaimedTransaction.feePayer = publicKey;
+    //     validateClaimedTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
 
-        const program = await getProgram();
-        if (!program.provider.sendAndConfirm) throw new WalletNotConnectedError();
-
-        const { validateClaimedTransaction } = await NeoSwap.validateClaimed({
-            userPublickey: publicKey,
-            program,
-            programId,
-            swapDataAccount: swapDataAccountGiven,
-        });
-
-        validateClaimedTransaction.feePayer = publicKey;
-        validateClaimedTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-        try {
-            const hash = await program.provider.sendAndConfirm(validateClaimedTransaction);
-            console.log('claim transaction hash', hash);
-        } catch (error) {
-            programCatchError(error);
-        }
-
-    }, [publicKey, getProgram, getSeed]);
+    //     try {
+    //         const hash = await program.provider.sendAndConfirm(validateClaimedTransaction);
+    //         console.log('claim transaction hash', hash);
+    //     } catch (error) {
+    //         programCatchError(error);
+    //     }
+    // }, [publicKey, getProgram, getSeed]);
 
     return (
         <div>
@@ -697,7 +648,7 @@ const Solana: FC = () => {
             </div>
             <br />
             <div>
-                <button onClick={deposit} disabled={!publicKey}>
+                {/* <button onClick={deposit} disabled={!publicKey}>
                     Deposit
                 </button>
                 <button onClick={validateDeposit} disabled={!publicKey}>
@@ -720,7 +671,7 @@ const Solana: FC = () => {
                 </button>
                 <button onClick={validateCancel} disabled={!publicKey}>
                     validateCancel
-                </button>
+                </button> */}
             </div>
         </div>
     );
