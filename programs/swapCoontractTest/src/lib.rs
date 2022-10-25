@@ -145,9 +145,10 @@ pub mod swap_coontract_test {
                         ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
                         transfered = true;
 
-                    break
+                    // break
 
-                } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
+                } 
+                else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                     return  Err(error!(MYERROR::NoSend).into());
                 }
             }
@@ -247,7 +248,7 @@ pub mod swap_coontract_test {
             if !ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8()
             && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.user.key() 
-            && transfered == false {
+             {
                 
                     if  ctx.accounts.swap_data_account.items[item_id].amount.is_negative() {
                         
@@ -262,7 +263,6 @@ pub mod swap_coontract_test {
                         }else {
                             return  Err(error!(MYERROR::SumNotNull).into());
                         }
-                        
                     } else {
                         return  Err(error!(MYERROR::NotReady).into());
                     }
@@ -270,10 +270,10 @@ pub mod swap_coontract_test {
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                     transfered = true;
                     msg!("claim accepted, item status changed to claimed");
-                    break;
-                } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
-                return  Err(error!(MYERROR::NoSend).into());
-            }
+                    // break;
+                } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
+                    return  Err(error!(MYERROR::NoSend).into());
+                }
             
         }
 
