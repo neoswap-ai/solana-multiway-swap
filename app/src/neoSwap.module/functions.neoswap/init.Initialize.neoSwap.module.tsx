@@ -1,7 +1,7 @@
 import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { types } from 'secretjs';
+import { PublicKey, Signer, SystemProgram, Transaction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from '../utils.neoSwap/const.neoSwap';
+import { convertAllTransaction } from '../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSeedFromData } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { SwapData } from '../utils.neoSwap/types.neoSwap';
 
@@ -11,7 +11,12 @@ export const initInitialize = async (Data: {
     program: Program;
     // CONST_PROGRAM: string;
     // swapDataAccount: PublicKey;
-}): Promise<{ initInitTransaction: Transaction }> => {
+}): Promise<{
+    initinitSendAllArray: Array<{
+        tx: Transaction;
+        signers?: Array<Signer> | undefined;
+    }>;
+}> => {
     Data.swapData.initializer = Data.signer;
 
     const seedSwapData = await getSeedFromData({
@@ -25,9 +30,11 @@ export const initInitialize = async (Data: {
         status: Data.swapData.status,
     };
     console.log('swapDataAccount', seedSwapData.swapDataAccount.toBase58());
-    console.log('Buffer.from(seedSwapData.swapDataAccount_seed.join())', Buffer.from(seedSwapData.swapDataAccount_seed.join()));
+    console.log(
+        'Buffer.from(seedSwapData.swapDataAccount_seed.join())',
+        Buffer.from(seedSwapData.swapDataAccount_seed.join())
+    );
     console.log('seedSwapData.swapDataAccount_seed', seedSwapData.swapDataAccount_seed);
-    
 
     const initInitTransaction = new Transaction().add(
         await Data.program.methods
@@ -41,10 +48,12 @@ export const initInitialize = async (Data: {
             .accounts({
                 swapDataAccount: seedSwapData.swapDataAccount,
                 signer: Data.signer,
-                systemProgram: web3.SystemProgram.programId,
+                systemProgram: SystemProgram.programId,
                 splTokenProgram: splAssociatedTokenAccountProgramId,
             })
             .instruction()
     );
-    return { initInitTransaction };
+
+    const initinitSendAllArray = await convertAllTransaction(Data.program, [initInitTransaction]);
+    return { initinitSendAllArray };
 };

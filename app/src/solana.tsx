@@ -17,7 +17,7 @@ import {
 } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
 import NeoSwap from './neoSwap.module/neoSwap.module';
-import { sendAllInstruction } from './solana.utils';
+import { sendAllPopulateInstruction } from './solana.utils';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
 const Solana: FC = () => {
@@ -66,11 +66,15 @@ const Solana: FC = () => {
         },
         []
     );
+
     const read = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
         const program = await getProgram();
-
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(publicKey.toString() + publicKey.toString());
+        // console.log(swapDataAccount_seed);
+        // const [x, y] = await PublicKey.findProgramAddress([swapDataAccount_seed], program.programId);
+        // console.log(x);
         const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
         console.log('SwapData', swapData);
     }, [publicKey, getProgram]);
@@ -78,22 +82,20 @@ const Solana: FC = () => {
     const initInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         const program = await getProgram();
-        if (!program.provider.sendAndConfirm) throw console.error('program Incorrect');
+        if (!program.provider.sendAll) throw console.error('program Incorrect');
 
-        sentData.initializer = publicKey;
+        // sentData.initializer = publicKey;
 
         console.log('sentData', sentData);
-        const { initInitTransaction } = await NeoSwap.initInitialize({
+        const { initinitSendAllArray } = await NeoSwap.initInitialize({
             program,
             signer: publicKey,
             swapData: fullData,
-            // CONST_PROGRAM,
         });
 
-        initInitTransaction.feePayer = publicKey;
-        initInitTransaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+        const initInitTransaction = await sendAllPopulateInstruction(program, initinitSendAllArray);
         try {
-            const transactionHash = await program.provider.sendAndConfirm(initInitTransaction);
+            const transactionHash = await program.provider.sendAll(initInitTransaction);
 
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
@@ -101,119 +103,117 @@ const Solana: FC = () => {
             const hash = String(error).slice(136, 223);
             console.log('hash', hash);
 
-            const conftr = await program.provider.connection.confirmTransaction(hash, 'processed');
+            // const conftr = await program.provider.connection.confirmTransaction(hash, 'processed');
 
-            console.log('conftr', conftr);
+            // console.log('conftr', conftr);
         }
-    }, [publicKey, getProgram, getSeed]);
+    }, [publicKey, getProgram]);
 
     const addInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         const program = await getProgram();
-        // const { swapData: swapDataActual } = await NeoSwap.getSwapDataFromPDA({
-        //     swapData: fullData,
-        //     // CONST_PROGRAM,
-        //     // programId,
-        //     program,
-        // });
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
-        const { addInitTransaction } = await NeoSwap.addInitialize({
+        const { addInitSendAllArray } = await NeoSwap.addInitialize({
             program,
             signer: publicKey,
             swapData: fullData,
-            // CONST_PROGRAM,
         });
-        console.log(addInitTransaction.length);
-
-        // addInitTransaction[0].feePayer = publicKey;
-        // addInitTransaction[0].recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-        let sendAllArray: Array<{
-            tx: web3.Transaction;
-            signers?: web3.Signer[] | undefined;
-        }> = await sendAllInstruction(program, addInitTransaction);
+        let sendAllArray = await sendAllPopulateInstruction(program, addInitSendAllArray);
 
         try {
-            // itemAddInitTransaction.instructions.forEach((element) => {});
-            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
-
             const transactionHash = await program.provider.sendAll(sendAllArray);
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
-
             throw console.error(error);
         }
     }, [publicKey, getProgram]);
 
     const verifyInitialize = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
-        sentData.initializer = publicKey;
-        console.log('sentData', sentData);
-
         const program = await getProgram();
-        const swapData = await getSwapData(swapDataAccountGiven, program);
-        // if (program.provider.sendAndConfirm) throw console.error('no provider');
-        // const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('SwapData', swapData);
-        if (swapData.swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
-        const swapDataFromSeed = await getSeed(fullData, program);
-        console.log('swapDataFromSeed', swapDataFromSeed);
-        if (getSeed(fullData, program) !== getSeed(swapData.swapData, program)) {
-            console.log('data missing');
-        }
-        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
-
-        // const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
-        //     [swapDataFromSeed.swapDataAccount_seed],
-        //     programId
-        // );
-
-        // console.log('swapDataAccount', swapDataAccount.toBase58());
-        // console.log('swapDataAccount_bump', swapDataAccount_bump);
+        const { verifInitSendAllArray } = await NeoSwap.verifyInitialize({
+            program,
+            signer: publicKey,
+            swapData: fullData,
+        });
+        let sendAllArray = await sendAllPopulateInstruction(program, verifInitSendAllArray);
 
         try {
-            const transactionHash = await program.methods
-                .validateInitialize(swapDataFromSeed.swapDataAccount_seed, swapDataFromSeed.swapDataAccount_bump)
-                .accounts({
-                    // accounts: {
-                    swapDataAccount: swapDataFromSeed.swapDataAccount,
-                    signer: publicKey,
-                    // systemProgram: web3.SystemProgram.programId,
-                    // splTokenProgram: splAssociatedTokenAccountProgramId,
-                    // },
-                })
-                .rpc();
+            const transactionHash = await program.provider.sendAll(sendAllArray);
             console.log('initialize transactionHash', transactionHash);
         } catch (error) {
             programCatchError(error);
+            throw console.error(error);
         }
-    }, [publicKey, getProgram, getSeed]);
+    }, [publicKey, getProgram]);
 
     const allInitialize = useCallback(async () => {
         const program = await getProgram();
         if (!publicKey) throw console.error('not connected');
 
-        const { initinitTransactionSendAllArray, verifyTransactionSendAllArray } = await NeoSwap.allInitialize({
+        const { allInitSendAllArray } = await NeoSwap.allInitialize({
             program,
             signer: publicKey,
             swapData: fullData,
         });
+        const allinitTransactionSendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
         try {
-            // itemAddInitTransaction.instructions.forEach((element) => {});
             if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
-            const initinitTransaction = await program.provider.sendAll(initinitTransactionSendAllArray);
-            console.log('initialize transactionHash', initinitTransaction);
-            const verifyTransaction = await program.provider.sendAll(verifyTransactionSendAllArray);
-            console.log('finilize init transactionHash', verifyTransaction);
+            const allInitTransaction = await program.provider.sendAll(allinitTransactionSendAllArray);
+            console.log('initialize transactionHash', allInitTransaction);
         } catch (error) {
             programCatchError(error);
 
             throw console.error(error);
         }
-    }, [initInitialize, addInitialize, verifyInitialize]);
+    }, [getProgram, publicKey]);
+
+    const deposit = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+        const { depositSendAllArray } = await NeoSwap.deposit({
+            program,
+            signer: publicKey,
+            swapDataAccount: swapDataAccountGiven,
+        });
+        let sendAllArray = await sendAllPopulateInstruction(program, depositSendAllArray);
+
+        try {
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('initialize transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+            throw console.error(error);
+        }
+    }, [publicKey, getProgram]);
+
+    const claim = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+        const { allInitSendAllArray } = await NeoSwap.claimAndClose({
+            program,
+            signer: publicKey,
+            swapDataAccount: swapDataAccountGiven,
+        });
+        let sendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
+
+        try {
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('initialize transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+            throw console.error(error);
+        }
+    }, [publicKey, getProgram]);
 
     // const deposit = useCallback(async () => {
     //     if (!publicKey) throw new WalletNotConnectedError();
@@ -648,31 +648,31 @@ const Solana: FC = () => {
             </div>
             <br />
             <div>
-                {/* <button onClick={deposit} disabled={!publicKey}>
+                <button onClick={deposit} disabled={!publicKey}>
                     Deposit
                 </button>
-                <button onClick={validateDeposit} disabled={!publicKey}>
+                {/* <button onClick={validateDeposit} disabled={!publicKey}>
                     validateDeposit
-                </button>
+                </button> */}
                 <br />
             </div>
             <div>
                 <button onClick={claim} disabled={!publicKey}>
-                    claim
+                    claim And Close
                 </button>
-                <button onClick={validateClaimed} disabled={!publicKey}>
+                {/* <button onClick={validateClaimed} disabled={!publicKey}>
                     validateClaimed
-                </button>
+                </button> */}
                 <br />
             </div>
-            <div>
+            {/* <div>
                 <button onClick={cancel} disabled={!publicKey}>
                     Cancel
                 </button>
                 <button onClick={validateCancel} disabled={!publicKey}>
                     validateCancel
-                </button> */}
-            </div>
+                </button>
+            </div> */}
         </div>
     );
 };

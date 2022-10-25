@@ -1,72 +1,105 @@
 import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
 import { clusterApiUrl, Connection, PublicKey, Signer, Transaction } from '@solana/web3.js';
 import { types } from 'secretjs';
+import { sendAllPopulateInstruction } from '../../solana.utils';
+import { appendTransactionToArray } from '../utils.neoSwap/appendTransactionToArray.neosap';
 import { splAssociatedTokenAccountProgramId } from '../utils.neoSwap/const.neoSwap';
 import { convertAllTransaction } from '../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSeedFromData, getSwapDataFromPDA } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { NftSwapItem, SwapData } from '../utils.neoSwap/types.neoSwap';
+import { depositNft } from './createInstruction/deposit.nft.neoswap';
+import { depositSol } from './createInstruction/deposit.sol.neoswap';
 
-export const saddInitialize = async (Data: {
-    swapData: SwapData;
-    signer: PublicKey;
+export const deposit = async (Data: {
     program: Program;
-    // CONST_PROGRAM: string;
-    // swapDataAccount: PublicKey;
+    swapDataAccount: PublicKey;
+    signer: PublicKey;
 }): Promise<{
-    addInitSendAllArray: Array<{
+    depositSendAllArray: Array<{
         tx: Transaction;
         signers?: Array<Signer> | undefined;
     }>;
 }> => {
-    // if (!Data.program.provider.sendAndConfirm) throw console.error('no sendAndConfirm');
-    if (Data.swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
+    const swapData = await getSwapDataFromPDA({ program: Data.program, swapDataAccount: Data.swapDataAccount });
+    console.log('SwapData', swapData);
+    if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
 
-    const seedSwapData = await getSeedFromData({
-        swapData: Data.swapData,
-        // programId: Data.program.programId,
-        program: Data.program,
-        // CONST_PROGRAM: Data.CONST_PROGRAM,
+    // const tradeRef = getSeed(swapData);
+    // console.log('tradeRef', tradeRef);
+
+    // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+    // console.log('swapDataAccount_seed', swapDataAccount_seed);
+
+    // const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+    //     [swapData.swapDataAccount_seed],
+    //     Data.program.programId
+    // );
+
+    // console.log('swapDataAccount', swapDataAccount.toBase58());
+    // console.log('swapDataAccount_bump', swapDataAccount_bump);
+
+    let depositInstructionTransaction: Array<Transaction> = [new Transaction()];
+    // let row = 0;
+    let ataList: Array<PublicKey> = [];
+    for (let item = 0; item < swapData.swapData.items.length; item++) {
+        let e = swapData.swapData.items[item];
+        // if (item ===swapData.swapData.items.length-1){
+
+        //     console.log('element', item);
+        //     console.log('\namount :', e.amount.toNumber());
+        //     console.log('\ndestinary :', e.destinary.toBase58());
+        //     console.log('\nmint :', e.mint.toBase58());
+        //     console.log('\nowner :', e.owner.toBase58());
+        //     console.log('\nstatus :', e.status);
+        //     console.log('\nisNft :', e.isNft);
+        //     console.log('\nsigner :', Data.signer.toBase58());
+        // }
+
+        switch (e.isNft) {
+            case true:
+                if (e.owner.toBase58() === Data.signer.toBase58() && e.status === 0) {
+                    let depositing = await depositNft(
+                        Data.program,
+                        Data.signer,
+                        e.mint,
+                        Data.swapDataAccount,
+                        swapData.swapDataAccount_seed,
+                        swapData.swapDataAccount_bump,
+                        ataList
+                    );
+                    ataList.push(depositing.ata);
+
+                    depositInstructionTransaction = appendTransactionToArray(depositInstructionTransaction, [
+                        depositing.transaction,
+                    ]);
+                }
+                break;
+            case false:
+                if (e.owner.toBase58() === Data.signer.toBase58() && e.status === 0) {
+                    const solTransaction = await depositSol(
+                        Data.program,
+                        Data.signer,
+                        Data.swapDataAccount,
+                        swapData.swapDataAccount_seed,
+                        swapData.swapDataAccount_bump
+                    );
+
+                    depositInstructionTransaction = appendTransactionToArray(depositInstructionTransaction, [
+                        solTransaction,
+                    ]);
+                }
+                break;
+        }
+    }
+    let count = 0;
+    ataList.forEach((element) => {
+        console.log('ataList n°', count, '\nWith Pubkey: ', element.toBase58());
+        count++;
     });
 
-    // let itemsToSend: NftSwapItem;
-    let addInitTransaction: Array<Transaction> = [new Transaction()];
-    const maxInstructionPerTransaction = 7;
-    let row = 0;
-    for (let index = 1; index < Data.swapData.items.length; index++) {
-        // const swapDataItem = ;
-        // if (Data.swapData.items[index].status === 1) {
-        //     console.log('nothing to deposit on this item');
-        // } else {
-        const instructionToAdd = await Data.program.methods
-            .initializeAdd(
-                seedSwapData.swapDataAccount_seed,
-                seedSwapData.swapDataAccount_bump,
-                Data.swapData.items[index]
-            )
-            .accounts({
-                swapDataAccount: seedSwapData.swapDataAccount,
-                signer: Data.signer.toString(),
-            })
-            .instruction();
-
-        if (addInitTransaction[row].instructions.length < maxInstructionPerTransaction) {
-            console.log('itemAddedInstruction');
-            addInitTransaction[row].add(instructionToAdd);
-        } else if (addInitTransaction[row].instructions.length === maxInstructionPerTransaction) {
-            row = row + 1;
-            console.log('itemAddedInstruction new line');
-            addInitTransaction.push(new Transaction().add(instructionToAdd));
-        } else {
-            throw console.error('');
-        }
-        // }
-    }
-    //     }
-    // addInitTransaction = addInitTransaction.slice(1,addInitTransaction.length);
-    // }
-    const addInitSendAllArray = await convertAllTransaction(Data.program, addInitTransaction);
-
-    return { addInitSendAllArray };
+    // console.log('rkjfbhqzimejfbzmkejb', depositInstructionTransaction.length);
+    const depositSendAllArray = await convertAllTransaction(Data.program, depositInstructionTransaction);
+    return { depositSendAllArray };
 };
 
 // Data.swapData.initializer = Data.signer;

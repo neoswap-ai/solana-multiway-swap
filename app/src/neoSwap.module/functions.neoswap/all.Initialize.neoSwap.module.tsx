@@ -16,35 +16,32 @@ export const allInitialize = async (Data: {
     // CONST_PROGRAM: string;
     // swapDataAccount: PublicKey;
 }): Promise<{
-    initinitTransactionSendAllArray: Array<{
-        tx: web3.Transaction;
-        signers?: web3.Signer[] | undefined;
+    allInitSendAllArray: Array<{
+        tx: Transaction;
+        signers?: Signer[] | undefined;
     }>;
-    verifyTransactionSendAllArray: Array<{
-        tx: web3.Transaction;
-        signers?: web3.Signer[] | undefined;
-    }>;
+    
 }> => {
-    const { initInitTransaction } = await initInitialize({
+    const { initinitSendAllArray } = await initInitialize({
         program: Data.program,
         signer: Data.signer,
         swapData: Data.swapData,
     });
-    const { addInitTransaction } = await saddInitialize({
+    const { addInitSendAllArray } = await saddInitialize({
         program: Data.program,
         signer: Data.signer,
         swapData: Data.swapData,
     });
-    const { verifInitTransaction } = await verifyInitialize({
+    const { verifInitSendAllArray } = await verifyInitialize({
         program: Data.program,
         signer: Data.signer,
         swapData: Data.swapData,
     });
-    console.log('addInitTransaction.length', addInitTransaction.length);
+    console.log('initinitSendAllArray.length', initinitSendAllArray.length);
+    console.log('addInitSendAllArray.length', addInitSendAllArray.length);
+    console.log('verifInitSendAllArray.length', verifInitSendAllArray.length);
 
-    const alltransaction = [initInitTransaction, ...addInitTransaction, verifInitTransaction];
-    console.log('alltransaction.length', alltransaction.length);
-    const initinitTransactionSendAllArray = await convertAllTransaction(Data.program, alltransaction);
-    const verifyTransactionSendAllArray = await convertAllTransaction(Data.program, [verifInitTransaction]);
-    return { initinitTransactionSendAllArray, verifyTransactionSendAllArray };
+    const allInitSendAllArray = [...initinitSendAllArray, ...addInitSendAllArray, ...verifInitSendAllArray];
+    
+    return { allInitSendAllArray };
 };

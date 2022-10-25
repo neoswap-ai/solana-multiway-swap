@@ -12,7 +12,7 @@ export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGi
 // export const programId = new PublicKey('');
 
 // export const CONST_PROGRAM: string = '0121';
-export const swapDataAccountGiven = new PublicKey('AmdvrEF364nCexE38vb31F9ieKmSZwAY86P6FerFbpSn');
+export const swapDataAccountGiven = new PublicKey('FjF9Bnv98TXwoUA1wJoUqEhTzNoFcnSEkUcsRRHTytzZ');
 
 const i11: NftSwapItem = {
     isNft: false,
@@ -86,7 +86,7 @@ const i32: NftSwapItem = {
 const i33: NftSwapItem = {
     isNft: true,
     amount: new BN(1),
-    owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+    owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
     status: 0,
@@ -94,13 +94,7 @@ const i33: NftSwapItem = {
 export const fullData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: 80,
-    items: [i11, i12, 
-        // i13,
-         i21, i22, 
-        //  i23,
-          i31, i32,
-        //    i33
-        ] as Array<NftSwapItem>,
+    items: [i11, i12, i13, i21, i22, i23, i31, i32, i33] as Array<NftSwapItem>,
 };
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),

@@ -1,7 +1,8 @@
 import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { clusterApiUrl, Connection, PublicKey, Signer, Transaction } from '@solana/web3.js';
 import { types } from 'secretjs';
 import { splAssociatedTokenAccountProgramId } from '../utils.neoSwap/const.neoSwap';
+import { convertAllTransaction } from '../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSeedFromData } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { NftSwapItem, SwapData } from '../utils.neoSwap/types.neoSwap';
 
@@ -9,22 +10,22 @@ export const addInitialize = async (Data: {
     swapData: SwapData;
     signer: PublicKey;
     program: Program;
-    // CONST_PROGRAM: string;
-    // swapDataAccount: PublicKey;
-}): Promise<{ addInitTransaction: Array<Transaction> }> => {
-    // if (!Data.program.provider.sendAndConfirm) throw console.error('no sendAndConfirm');
+}): Promise<{
+    addInitSendAllArray: Array<{
+        tx: Transaction;
+        signers?: Array<Signer> | undefined;
+    }>;
+}> => {
     if (Data.swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
 
     const seedSwapData = await getSeedFromData({
         swapData: Data.swapData,
-        // programId: Data.program.programId,
         program: Data.program,
-        // CONST_PROGRAM: Data.CONST_PROGRAM,
     });
 
-    // let itemsToSend: NftSwapItem;
     let addInitTransaction: Array<Transaction> = [new Transaction()];
-    const maxInstructionPerTransaction = 7;
+
+    const maxInstructionPerTransaction = 6;
     let row = 0;
     for (let index1 = 1; index1 < Data.swapData.items.length; index1++) {
         const swapDataItem = Data.swapData.items[index1];
@@ -33,12 +34,13 @@ export const addInitialize = async (Data: {
             const seedSwapDataItem = Data.swapData.items[index2];
 
             if (
-                seedSwapDataItem.amount.toNumber() === swapDataItem.amount.toNumber() &&
-                seedSwapDataItem.destinary.toString() === swapDataItem.destinary.toString() &&
-                seedSwapDataItem.isNft === swapDataItem.isNft &&
-                seedSwapDataItem.mint.toString() === swapDataItem.mint.toString() &&
-                seedSwapDataItem.owner.toString() === swapDataItem.owner.toString() &&
-                seedSwapDataItem.status === swapDataItem.status
+                (seedSwapDataItem.amount.toNumber() === swapDataItem.amount.toNumber() &&
+                    seedSwapDataItem.destinary.toString() === swapDataItem.destinary.toString() &&
+                    seedSwapDataItem.isNft === swapDataItem.isNft &&
+                    seedSwapDataItem.mint.toString() === swapDataItem.mint.toString() &&
+                    seedSwapDataItem.owner.toString() === swapDataItem.owner.toString() &&
+                    seedSwapDataItem.status === swapDataItem.status) ||
+                swapDataItem.status === 0
             ) {
                 console.log('not this one', index1);
 
@@ -48,7 +50,7 @@ export const addInitialize = async (Data: {
         }
         console.log('number', swapDataItem.amount.toNumber());
 
-        if (addTransaction && (swapDataItem.isNft || swapDataItem.amount.toNumber() > 0)) {
+        if (addTransaction) {
             const instructionToAdd = await Data.program.methods
                 .initializeAdd(seedSwapData.swapDataAccount_seed, seedSwapData.swapDataAccount_bump, swapDataItem)
                 .accounts({
@@ -72,8 +74,9 @@ export const addInitialize = async (Data: {
         }
     }
     addInitTransaction = addInitTransaction.slice(1, addInitTransaction.length);
+    const addInitSendAllArray = await convertAllTransaction(Data.program, addInitTransaction);
 
-    return { addInitTransaction };
+    return { addInitSendAllArray };
 };
 
 // Data.swapData.initializer = Data.signer;

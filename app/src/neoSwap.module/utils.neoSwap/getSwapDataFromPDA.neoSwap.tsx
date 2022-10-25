@@ -15,21 +15,26 @@ export const getSwapDataFromPDA = async (Data: {
 }> => {
     try {
         let swapData = (await Data.program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
-        let temp_ArrayBuffer: Array<Buffer> = [Buffer.from(CONST_PROGRAM)];
 
-        for (let item = 0; item < swapData.items.length; item++) {
-            temp_ArrayBuffer = [...temp_ArrayBuffer, swapData.items[item].mint.toBuffer()];
-        }
-        const arraySize = 4 + 32 * swapData.items.length;
+        let swapDataAccount_seed = Buffer.from(CONST_PROGRAM);
 
-        let toSendSeed: Buffer = Buffer.alloc(arraySize);
+        const [__, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+            [swapDataAccount_seed],
+            Data.program.programId
+        );
+        // let temp_ArrayBuffer: Array<Buffer> = [Buffer.from(CONST_PROGRAM)];
 
-        console.log('toSendSeed', toSendSeed);
-        for (let index = 0; index < temp_ArrayBuffer.length; index++) {
-            toSendSeed.set(temp_ArrayBuffer[index], temp_ArrayBuffer.length);
-        }
-        const [__, swapDataAccount_bump] = await PublicKey.findProgramAddress(temp_ArrayBuffer, Data.program.programId);
+        // for (let item = 0; item < swapData.items.length; item++) {
+        //     temp_ArrayBuffer = [...temp_ArrayBuffer, swapData.items[item].mint.toBuffer()];
+        // }
+        // // const arraySize = 4 + 32 * swapData.items.length;
 
+        // // let toSendSeed: Buffer = Buffer.alloc(arraySize);
+
+        // console.log('toSendSeed', toSendSeed);
+        // for (let index = 0; index < temp_ArrayBuffer.length; index++) {
+        //     toSendSeed.set(temp_ArrayBuffer[index], temp_ArrayBuffer.length);
+        // }
         // console.log('Buffer.from(seedSwapData.swapDataAccount_seed.join())', Buffer.from(temp_ArrayBuffer.join()));
         // console.log('seedSwapData.temp_ArrayBuffer', temp_ArrayBuffer);
         // // const [join] = await PublicKey.findProgramAddress(
@@ -43,7 +48,7 @@ export const getSwapDataFromPDA = async (Data: {
         return {
             swapData,
             // swapDataAccount,
-            swapDataAccount_seed: toSendSeed,
+            swapDataAccount_seed,
             swapDataAccount_bump,
         };
     } catch (error) {
@@ -62,9 +67,9 @@ export const getSeedFromData = async (Data: {
 }> => {
     // let aaa = 4;
 
+    let swapDataAccount_seed = Buffer.from(CONST_PROGRAM);
     // temp_ArrayBuffer.set(Buffer.from(CONST_PROGRAM));
     // let offset = Data.swapData.items[1].mint.toBytes();
-    let swapDataAccount_seed = Buffer.from(CONST_PROGRAM);
     // swapDataAccount_seed.push(temp_ArrayBuffer);
     // Data.swapData.items.forEach((element) => {
     //     swapDataAccount_seed.push(element.mint.toBuffer());

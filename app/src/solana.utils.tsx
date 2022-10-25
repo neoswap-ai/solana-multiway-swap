@@ -65,28 +65,18 @@ export async function cIPdaAta(
     return { ix: ixCreateMintAta, mintAta: mintAta, mintAta_bump: mintAta_bump };
 }
 
-export async function sendAllInstruction(program: Program, transactionList: Array<Transaction>) {
-    transactionList[0].feePayer = program.provider.publicKey;
-    transactionList[0].recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-    let sendAllArray: Array<{
+export async function sendAllPopulateInstruction(
+    program: Program,
+    transactionList: Array<{
         tx: web3.Transaction;
         signers?: web3.Signer[] | undefined;
-    }> = [{ tx: new Transaction().add(transactionList[0]) }];
-
-    console.log('itemtransactionList length ', transactionList.length);
-
-    for (let trx = 1; trx < transactionList.length; trx++) {
-        // const itemtransactionList = ;
-        transactionList[trx].feePayer = program.provider.publicKey;
-        transactionList[trx].recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-        // for (let ind_nd = 1; ind_nd < itemtransactionList.instructions.length; ind_nd++) {
-        sendAllArray.push({
-            tx: new Transaction().add(transactionList[trx]),
-        });
-        // }
-    }
-    
+    }>
+) {
+    const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+    let sendAllArray = transactionList;
+    sendAllArray.forEach((element) => {
+        element.tx.feePayer = program.provider.publicKey;
+        element.tx.recentBlockhash = recentBlockhash;
+    });
     return sendAllArray;
 }

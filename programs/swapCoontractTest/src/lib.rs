@@ -48,11 +48,11 @@ pub mod swap_coontract_test {
         let mut item_to_add: NftSwapItem= trade_to_add;
 
         if item_to_add.is_nft {
-            item_to_add.status = TradeStatus::Initializing.to_u8()
+            item_to_add.status = TradeStatus::Pending.to_u8()
         } else {
 
-            if item_to_add.amount>0{
-                item_to_add.status = TradeStatus::Initializing.to_u8()
+            if item_to_add.amount.is_positive(){
+                item_to_add.status = TradeStatus::Pending.to_u8()
             }else{
                 item_to_add.status = TradeStatus::Deposited.to_u8()
             }
@@ -115,14 +115,11 @@ pub mod swap_coontract_test {
           let mut transfered : bool = false;
 
             for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-                require!(
-                ( ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() 
-                || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() )
-                ,MYERROR::NotReady);
+                // require!(ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8(),MYERROR::NotReady);
 
             if ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].mint == item_to_deposit.mint 
-            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
+            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8()  {
 
                     let ix = spl_token::instruction::transfer(
                         token_program.key,
@@ -148,7 +145,7 @@ pub mod swap_coontract_test {
                         ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
                         transfered = true;
 
-                    // break
+                    break
 
                 } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                     return  Err(error!(MYERROR::NoSend).into());
@@ -191,15 +188,11 @@ pub mod swap_coontract_test {
                     )?;
 
                     //update status
-                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
+                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                     transfered = true
 
                     // break;
 
-                } else if ctx.accounts.swap_data_account.items[item_id].amount <= 0 {
-                    msg!("nothing to deposit, your account was validated");
-                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
-                    // break;
                 } else {
                     return  Err(error!(MYERROR::NotReady).into());
                 }
@@ -223,7 +216,10 @@ pub mod swap_coontract_test {
         let mut counter : usize = 0;
 
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            require_eq!(ctx.accounts.swap_data_account.items[item_id].status,TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
+            if !(ctx.accounts.swap_data_account.items[item_id].status==TradeStatus::Deposited.to_u8()
+                || ctx.accounts.swap_data_account.items[item_id].status==TradeStatus::Claimed.to_u8()) {
+                return  Err(error!(MYERROR::NotReady).into())
+                }
             counter = counter.checked_add(1).unwrap()
         }
 
@@ -253,28 +249,28 @@ pub mod swap_coontract_test {
             && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.user.key() 
             && transfered == false {
                 
-                    if  ctx.accounts.swap_data_account.items[item_id].amount < 0 {
-                        msg!("claim accepted, item status changed to claimed");
-
-                        let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(0)).unwrap();
+                    if  ctx.accounts.swap_data_account.items[item_id].amount.is_negative() {
+                        
+                        let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs();//.checked_mul((10 as u64).pow(0)).unwrap();
                         
                         let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
-
+                        
                         if swap_data_lamports_initial > amount_to_send {
                             **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
                             **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
-                        
+                            
                         }else {
                             return  Err(error!(MYERROR::SumNotNull).into());
                         }
-
+                        
                     } else {
-                        msg!("nothing to claim, your account was validated");
+                        return  Err(error!(MYERROR::NotReady).into());
                     }
                     //update status
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
-                    transfered = true
-
+                    transfered = true;
+                    msg!("claim accepted, item status changed to claimed");
+                    break;
                 } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
