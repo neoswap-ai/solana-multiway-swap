@@ -6,19 +6,23 @@ import { types } from 'secretjs';
 import { CONST_PROGRAM } from '../../utils.neoSwap/const.neoSwap';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
-
-export async function cancelNft(Data:{
-    program: Program,
-    signer: PublicKey,
-    user: PublicKey,
-    mint: PublicKey,
-    swapDataAccount: PublicKey,
-    swapDataAccount_seed: Buffer,
-    swapDataAccount_bump: number}
-): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
+export async function cancelNft(Data: {
+    program: Program;
+    signer: PublicKey;
+    user: PublicKey;
+    mint: PublicKey;
+    swapDataAccount: PublicKey;
+    swapDataAccount_seed: Buffer;
+    swapDataAccount_bump: number;
+}): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
     let transaction: Transaction = new Transaction();
 
-    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(Data.program, Data.user, Data.mint, Data.signer);
+    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(
+        Data.program,
+        Data.user,
+        Data.mint,
+        Data.signer
+    );
     if (userMintAtaTx) {
         transaction.add(userMintAtaTx);
         console.log('createUserAta Cancel Nft Tx Added');

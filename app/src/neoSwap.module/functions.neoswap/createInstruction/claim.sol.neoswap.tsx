@@ -5,9 +5,6 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { types } from 'secretjs';
 import { CONST_PROGRAM } from '../../utils.neoSwap/const.neoSwap';
 
-
-
-
 export async function claimSol(Data: {
     program: Program;
     user: PublicKey;
@@ -16,7 +13,7 @@ export async function claimSol(Data: {
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
 }): Promise<{ transaction: Transaction }> {
-    console.log('claim Sol Tx added');
+    // console.log('claim Sol Tx added');
     return {
         transaction: new Transaction().add(
             await Data.program.methods

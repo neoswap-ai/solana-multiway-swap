@@ -228,13 +228,13 @@ const Solana: FC = () => {
         let sendAllArray = await sendAllPopulateInstruction(program, allCancelSendAllArray);
 
         try {
-            for (let index = 0; index < sendAllArray.length; index++) {
-                const element = sendAllArray[index];
+            // for (let index = 0; index < sendAllArray.length; index++) {
+            //     const element = sendAllArray[index];
 
-                if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
-                const transactionHash = await program.provider.sendAll([element]);
-                console.log('initialize transactionHash', transactionHash);
-            }
+            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('initialize transactionHash', transactionHash);
+            // }
         } catch (error) {
             programCatchError(error);
             throw console.error(error);

@@ -407,49 +407,57 @@ pub mod swap_coontract_test {
 
         let mut transfered : bool = false;
 
-        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+        for item_id in 0..ctx.accounts.swap_data_account.items.len()-1 {
             if !ctx.accounts.swap_data_account.items[item_id].is_nft 
-            && ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8()
-            && ctx.accounts.swap_data_account.items[item_id].owner == ctx.accounts.user.key() {
-                
-                    if  ctx.accounts.swap_data_account.items[item_id].amount.is_positive() {
-                        
-                        let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs();//.checked_mul((10 as u64).pow(0)).unwrap();
-                        
-                        let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
-                        
-                        if swap_data_lamports_initial > amount_to_send {
-                            **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
-                            **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
+            && ctx.accounts.swap_data_account.items[item_id].owner == ctx.accounts.user.key() 
+            && transfered == false {
+
+                if ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Claimed.to_u8(){
+                    
+                        if  ctx.accounts.swap_data_account.items[item_id].amount.is_positive() {
                             
-                        } else {return  Err(error!(MYERROR::SumNotNull).into());}
-
-                    } else {return  Err(error!(MYERROR::NotReady).into());}
-
+                            let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs();//.checked_mul((10 as u64).pow(0)).unwrap();
+                            
+                            let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
+                            
+                            if swap_data_lamports_initial > amount_to_send {
+                                **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
+                                **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
+                                
+                            } else {return  Err(error!(MYERROR::SumNotNull).into());}
+    
+                        } 
+                    } else if ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
+                    || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
+                    } else {
+                        return  Err(error!(MYERROR::NotReady).into());
+                    }
+    
                     //update status
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
                     transfered = true;
                     msg!("cancel accepted, item status changed to canceledRecovered");
-
+                    
                     if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
                         msg!("general status changed to cancelled");
                         ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
                     }
+                // }
 
                     // break;
-                } else if !ctx.accounts.swap_data_account.items[item_id].is_nft 
-                && ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8()
-                && ctx.accounts.swap_data_account.items[item_id].owner == ctx.accounts.user.key() {
+                // } else if !ctx.accounts.swap_data_account.items[item_id].is_nft 
+                // && ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8()
+                // && ctx.accounts.swap_data_account.items[item_id].owner == ctx.accounts.user.key() {
 
-                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
-                    msg!("cancel accepted, no trade, item status changed to canceledRecovered");
+                //     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                //     msg!("cancel accepted, no trade, item status changed to canceledRecovered");
 
-                    if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
-                        msg!("general status changed to cancelled");
-                        ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
-                    }
+                //     if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
+                //         msg!("general status changed to cancelled");
+                //         ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
+                //     }
 
-                } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
+                } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered ==false {
                     return  Err(error!(MYERROR::NoSend).into());
                 }
             

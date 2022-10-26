@@ -18,14 +18,13 @@ export const validateClaimed = async (Data: {
         signers?: web3.Signer[] | undefined;
     }[];
 }> => {
-    const { swapData, swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
+    const {  swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
         swapDataAccount: Data.swapDataAccount,
         program: Data.program,
     });
 
     // if (swapData.status !== 1) throw console.error('Trade not in waiting to be changed to claimed');
 
-    try {
         const validateClaimedTransaction = new Transaction().add(
             await Data.program.methods
                 .validateClaimed(swapDataAccount_seed, swapDataAccount_bump)
@@ -41,7 +40,4 @@ export const validateClaimed = async (Data: {
         // console.log('validateClaimedTransaction :', validateClaimedTransaction);
         const validateClaimedSendAll = await convertAllTransaction(Data.program, [validateClaimedTransaction]);
         return { validateClaimedSendAll };
-    } catch (error) {
-        throw error;
-    }
 };

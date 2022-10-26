@@ -30,13 +30,13 @@ export const cancel = async (Data: {
 
     for (let item = 0; item < swapData.swapData.items.length; item++) {
         let e = swapData.swapData.items[item];
-        console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        
+        console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
+
         // console.log('element', item, ' \n', e);
 
         switch (e.isNft) {
             case true:
-                // if (e.status === 1) {
+                // if (e.status === 1 || e.status === 0) {
                     // console.log(e.destinary.toBase58());
                     cancelInstructionTransaction.add(
                         (
@@ -55,7 +55,7 @@ export const cancel = async (Data: {
                 // }
                 break;
             case false:
-                // if (e.status === 1) {
+                // if (e.status === 1 || e.status === 0) {
                     cancelInstructionTransaction.add(
                         (
                             await cancelSol({
