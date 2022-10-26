@@ -1,11 +1,7 @@
 use anchor_lang::prelude::{AnchorDeserialize, AnchorSerialize, *};
 use anchor_lang::solana_program::{
-    // program_pack::Pack, 
-    // program_error::ProgramError::InvalidAccountData,
     pubkey::Pubkey,program::{invoke_signed, invoke}};
 use anchor_spl::token::{spl_token, TokenAccount};
-// use spl_token::state::Account as SplTokenAccount;
-// use spl_associated_token_account::solana_program::instruction::;
 
 declare_id!("6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W");
 
@@ -442,20 +438,6 @@ pub mod swap_coontract_test {
                         msg!("general status changed to cancelled");
                         ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
                     }
-                // }
-
-                    // break;
-                // } else if !ctx.accounts.swap_data_account.items[item_id].is_nft 
-                // && ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8()
-                // && ctx.accounts.swap_data_account.items[item_id].owner == ctx.accounts.user.key() {
-
-                //     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
-                //     msg!("cancel accepted, no trade, item status changed to canceledRecovered");
-
-                //     if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
-                //         msg!("general status changed to cancelled");
-                //         ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
-                //     }
 
                 } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered ==false {
                     return  Err(error!(MYERROR::NoSend).into());
@@ -465,53 +447,6 @@ pub mod swap_coontract_test {
 
         Ok(())
 
-        // require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-      
-
-   
-
-        // let mut transfered : bool = false;
-
-        // for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-        //     if !ctx.accounts.swap_data_account.items[item_id].is_nft 
-        //     && (
-        //         ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() 
-        //         || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
-        //     ) 
-        //     &&  ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.user.key() 
-        //     && transfered == false {
-        //         // msg!("claim accepted");
-
-        //         if  ctx.accounts.swap_data_account.items[item_id].amount > 0 
-        //         && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() {
-        //             msg!("money sending, item status changed to cancelled");
-
-        //           let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs().checked_mul((10 as u64).pow(0)).unwrap();
- 
-        //             **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send;
-        //             **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
-
-        //         } else {
-        //         msg!("nothing to recover, you've validated the cancel tho");
-        //         }
-
-        //         //update status
-        //         ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
-        //         transfered = true;
-
-        //         if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
-        //             ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
-        //             msg!("general status changed to cancelled")
-        //         }
-
-        //         // break
-        //     } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
-        //         return  Err(error!(MYERROR::NoSend).into());
-        //     }
-            
-        // }
-
-        // Ok(())
 
     }
 
