@@ -1,30 +1,23 @@
-import { findOrCreateAta } from "../../utils.neoSwap/findOrCreateAta.neoSwap";
-import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
-import { clusterApiUrl, Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { types } from 'secretjs';
-import { CONST_PROGRAM } from '../../utils.neoSwap/const.neoSwap';
+import { Program, web3 } from '@project-serum/anchor';
+import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 
-export async function cancelSol(Data:{
-    program: Program,
-    user: PublicKey,
-    signer: PublicKey,
-    swapDataAccount: PublicKey,
-    swapDataAccount_seed: Buffer,
-    swapDataAccount_bump: number}
-): Promise<{ transaction: Transaction }> {
-    // console.log('cancel Sol Tx added');
+export async function cancelSol(Data: {
+    program: Program;
+    user: PublicKey;
+    signer: PublicKey;
+    swapDataAccount: PublicKey;
+    swapDataAccount_seed: Buffer;
+    swapDataAccount_bump: number;
+}): Promise<{ instruction: TransactionInstruction }> {
     return {
-        transaction: new Transaction().add(
-            await Data.program.methods
-                .cancelSol(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
-                .accounts({
-                    systemProgram: web3.SystemProgram.programId,
-                    swapDataAccount: Data.swapDataAccount,
-                    user: Data.user,
-                    signer: Data.signer,
-                })
-                .instruction()
-        ),
+        instruction: await Data.program.methods
+            .cancelSol(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
+            .accounts({
+                systemProgram: web3.SystemProgram.programId,
+                swapDataAccount: Data.swapDataAccount,
+                user: Data.user,
+                signer: Data.signer,
+            })
+            .instruction(),
     };
 }

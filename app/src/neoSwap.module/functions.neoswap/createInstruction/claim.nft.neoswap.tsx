@@ -1,9 +1,6 @@
 import { findOrCreateAta } from '../../utils.neoSwap/findOrCreateAta.neoSwap';
-import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
-
-import { types } from 'secretjs';
-import { CONST_PROGRAM } from '../../utils.neoSwap/const.neoSwap';
+import { Program, web3 } from '@project-serum/anchor';
+import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 export async function claimNft(Data: {
@@ -14,31 +11,52 @@ export async function claimNft(Data: {
     swapDataAccount: PublicKey;
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
-}): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
-    let transaction: Transaction = new Transaction();
+    ataList: Array<PublicKey>;
+}): Promise<{ instruction: TransactionInstruction[]; mintAta: PublicKey[] }> {
+    let instruction: TransactionInstruction[] = [];
     if (!Data.program.provider.sendAndConfirm) throw console.error('no provider');
+    let mintAta: PublicKey[] = [];
 
-    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(
-        Data.program,
-        Data.user,
-        Data.mint,
-        Data.signer
-    );
+    const { mintAta: userMintAta, instruction: userMintAtaTx } = await findOrCreateAta({
+        program: Data.program,
+        owner: Data.user,
+        mint: Data.mint,
+        signer: Data.signer,
+    });
+    mintAta.push(userMintAta);
 
-    if (userMintAtaTx) {
-        transaction.add(userMintAtaTx);
+    let addUserTx = true;
+    Data.ataList.forEach((ata) => {
+        if (ata.toString() === userMintAta.toString()) {
+            addUserTx = false;
+        }
+    });
+    if (userMintAtaTx && addUserTx) {
+        userMintAtaTx.forEach((userMintAtaTxItem) => {
+            instruction.push(userMintAtaTxItem);
+        });
         console.log('createUserAta ClaimNft Tx Added');
     }
 
-    const { mintAta: swapDataAta, transaction: pdaMintAtaTx } = await findOrCreateAta(
-        Data.program,
-        Data.swapDataAccount,
-        Data.mint,
-        Data.signer
-    );
+    const { mintAta: pdaMintAta, instruction: pdaMintAtaTx } = await findOrCreateAta({
+        program: Data.program,
+        owner: Data.swapDataAccount,
+        mint: Data.mint,
+        signer: Data.signer,
+    });
+    mintAta.push(pdaMintAta);
 
-    if (pdaMintAtaTx) {
-        transaction.add(pdaMintAtaTx);
+    let addPdaTx = true;
+    Data.ataList.forEach((ata) => {
+        if (ata.toString() === pdaMintAta.toString()) {
+            addPdaTx = false;
+        }
+    });
+    if (pdaMintAtaTx && addPdaTx) {
+        pdaMintAtaTx.forEach((pdaMintAtaTxItem) => {
+            instruction.push(pdaMintAtaTxItem);
+        });
+
         console.log('createPdaAta ClaimNft Tx Added');
     }
 
@@ -50,19 +68,11 @@ export async function claimNft(Data: {
             swapDataAccount: Data.swapDataAccount,
             user: Data.user,
             signer: Data.signer,
-            itemFromDeposit: swapDataAta,
+            itemFromDeposit: pdaMintAta,
             itemToDeposit: userMintAta,
         })
         .instruction();
 
-    transaction.add(claimNftTx);
-    console.log('claim NFT Tx added');
-
-    //    transaction.feePayer = publicKey;
-    // transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-    // const hash = await program.provider.sendAndConfirm(transaction);
-    // console.log('claim NFT transaction hash\n', hash);
-
-    return { transaction, userMintAta };
+    instruction.push(claimNftTx);
+    return { instruction, mintAta };
 }

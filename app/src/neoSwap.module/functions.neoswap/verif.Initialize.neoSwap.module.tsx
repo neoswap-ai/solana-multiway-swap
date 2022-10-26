@@ -1,9 +1,7 @@
-import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { types } from 'secretjs';
-import { splAssociatedTokenAccountProgramId } from '../utils.neoSwap/const.neoSwap';
+import { Program, web3 } from '@project-serum/anchor';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { convertAllTransaction } from '../utils.neoSwap/convertAllTransaction.neoswap';
-import { getSeedFromData, getSwapDataFromPDA } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
+import { getSeedFromData } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { SwapData } from '../utils.neoSwap/types.neoSwap';
 
 export const verifyInitialize = async (Data: {

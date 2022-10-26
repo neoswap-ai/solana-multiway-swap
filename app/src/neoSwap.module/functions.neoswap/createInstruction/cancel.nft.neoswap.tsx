@@ -1,9 +1,6 @@
 import { findOrCreateAta } from '../../utils.neoSwap/findOrCreateAta.neoSwap';
-import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
-
-import { types } from 'secretjs';
-import { CONST_PROGRAM } from '../../utils.neoSwap/const.neoSwap';
+import { Program, web3 } from '@project-serum/anchor';
+import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 export async function cancelNft(Data: {
@@ -14,28 +11,48 @@ export async function cancelNft(Data: {
     swapDataAccount: PublicKey;
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
-}): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
-    let transaction: Transaction = new Transaction();
+    ataList: Array<PublicKey>;
+}): Promise<{ instruction: TransactionInstruction[]; mintAta: PublicKey[] }> {
+    let instruction: TransactionInstruction[] = [];
+    let mintAta: PublicKey[] = [];
 
-    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(
-        Data.program,
-        Data.user,
-        Data.mint,
-        Data.signer
-    );
-    if (userMintAtaTx) {
-        transaction.add(userMintAtaTx);
+    const { mintAta: userMintAta, instruction: userMintAtaTx } = await findOrCreateAta({
+        program: Data.program,
+        owner: Data.user,
+        mint: Data.mint,
+        signer: Data.signer,
+    });
+    mintAta.push(userMintAta);
+    let addUserTx = true;
+    Data.ataList.forEach((ata) => {
+        if (ata.toString() === userMintAta.toString()) {
+            addUserTx = false;
+        }
+    });
+    if (userMintAtaTx && addUserTx) {
+        userMintAtaTx.forEach((userMintAtaTxItem) => {
+            instruction.push(userMintAtaTxItem);
+        });
         console.log('createUserAta Cancel Nft Tx Added');
     }
 
-    const { mintAta: swapDataAta, transaction: pdaMintAtaTx } = await findOrCreateAta(
-        Data.program,
-        Data.swapDataAccount,
-        Data.mint,
-        Data.signer
-    );
-    if (pdaMintAtaTx) {
-        transaction.add(pdaMintAtaTx);
+    const { mintAta: pdaMintAta, instruction: pdaMintAtaTx } = await findOrCreateAta({
+        program: Data.program,
+        owner: Data.swapDataAccount,
+        mint: Data.mint,
+        signer: Data.signer,
+    });
+    mintAta.push(pdaMintAta);
+    let addPdaTx = true;
+    Data.ataList.forEach((ata) => {
+        if (ata.toString() === pdaMintAta.toString()) {
+            addPdaTx = false;
+        }
+    });
+    if (pdaMintAtaTx && addPdaTx) {
+        pdaMintAtaTx.forEach((pdaMintAtaTxItem) => {
+            instruction.push(pdaMintAtaTxItem);
+        });
         console.log('createPdaAta Cancel Nft Tx Added');
     }
 
@@ -47,13 +64,11 @@ export async function cancelNft(Data: {
             swapDataAccount: Data.swapDataAccount,
             user: Data.user,
             signer: Data.signer,
-            itemFromDeposit: swapDataAta,
+            itemFromDeposit: pdaMintAta,
             itemToDeposit: userMintAta,
         })
         .instruction();
 
-    transaction.add(cancelNftTx);
-    // console.log('cancel NFT Tx added');
-
-    return { transaction, userMintAta };
+    instruction.push(cancelNftTx);
+    return { instruction, mintAta };
 }

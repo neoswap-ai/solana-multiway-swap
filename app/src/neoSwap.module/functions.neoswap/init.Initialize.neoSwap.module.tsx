@@ -1,4 +1,4 @@
-import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
+import { Program } from '@project-serum/anchor';
 import { PublicKey, Signer, SystemProgram, Transaction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from '../utils.neoSwap/const.neoSwap';
 import { convertAllTransaction } from '../utils.neoSwap/convertAllTransaction.neoswap';
@@ -9,8 +9,6 @@ export const initInitialize = async (Data: {
     swapData: SwapData;
     signer: PublicKey;
     program: Program;
-    // CONST_PROGRAM: string;
-    // swapDataAccount: PublicKey;
 }): Promise<{
     initinitSendAllArray: Array<{
         tx: Transaction;
@@ -29,18 +27,11 @@ export const initInitialize = async (Data: {
         items: [Data.swapData.items[0]],
         status: Data.swapData.status,
     };
-    console.log('swapDataAccount', seedSwapData.swapDataAccount.toBase58());
-    console.log(
-        'Buffer.from(seedSwapData.swapDataAccount_seed.join())',
-        Buffer.from(seedSwapData.swapDataAccount_seed.join())
-    );
-    console.log('seedSwapData.swapDataAccount_seed', seedSwapData.swapDataAccount_seed);
 
     const initInitTransaction = new Transaction().add(
         await Data.program.methods
             .initInitialize(
                 seedSwapData.swapDataAccount_seed,
-                // Buffer.from(seedSwapData.swapDataAccount_seed.join()),
                 seedSwapData.swapDataAccount_bump,
                 sentData,
                 Data.swapData.items.length

@@ -11,17 +11,17 @@ export async function cIdepositNft(
     seed: Buffer,
     bump: number,
     ataList?: Array<PublicKey>
-): Promise<{ transaction: Transaction; ata: PublicKey }> {
+): Promise<{ transaction: Transaction; ata: Array<PublicKey> }> {
     let transaction: Transaction = new Transaction();
     if (!program.provider.sendAndConfirm) throw console.error('no provider');
-
+    let mintAta = [];
     const { mintAta: userMintAta, transaction: ixCreateUserMintAta } = await findOrCreateAta(
         program,
         publicKey,
         mint,
         publicKey
     );
-
+    mintAta.push(userMintAta);
     let addUserTx = true;
     ataList?.forEach((ata) => {
         if (ata === userMintAta) {
@@ -40,6 +40,7 @@ export async function cIdepositNft(
         mint,
         publicKey
     );
+    mintAta.push(pdaMintAta);
 
     let addPdaTx = true;
     ataList?.forEach((ata) => {
@@ -72,7 +73,7 @@ export async function cIdepositNft(
 
     transaction.add(depositIx);
     console.log('deposit NFT Tx added');
-    return { transaction, ata: pdaMintAta };
+    return { transaction, ata: mintAta };
 }
 
 export async function cIdepositSol(
