@@ -6,6 +6,7 @@ import { verifyInitialize } from './functions.neoswap/verif.Initialize.neoSwap.m
 import { getSwapDataFromPDA, getSeedFromData } from './utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { deposit } from './functions.neoswap/deposit.neoSwap.module';
 import { claimAndClose } from './functions.neoswap/claimAndClose.neoSwap.module';
+import { cancelAndClose } from './functions.neoswap/cancelAndClose.neoSwap.module';
 
 const NeoSwap = {
     validateClaimed,
@@ -16,7 +17,8 @@ const NeoSwap = {
     getSeedFromData,
     verifyInitialize,
     deposit,
-    claimAndClose
+    claimAndClose,
+    cancelAndClose
 };
 
 export default NeoSwap;

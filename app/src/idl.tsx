@@ -411,7 +411,7 @@ export const idl = {
             ],
         },
         {
-            name: 'validateCancelled',
+            name: 'validateCancel',
             accounts: [
                 {
                     name: 'systemProgram',

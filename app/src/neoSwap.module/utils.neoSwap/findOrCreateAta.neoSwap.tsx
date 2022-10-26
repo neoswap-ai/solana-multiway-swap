@@ -23,14 +23,14 @@ export async function findOrCreateAta(
                 console.log('mintAtaData n°', count, ' pubkey: ', element.pubkey.toBase58());
             });
         } else {
-            console.log('mintAtaData', mintAtaData[0].pubkey.toBase58());
+            console.log('mintAta', mintAtaData[0].pubkey.toBase58());
         }
         return { mintAta: mintAtaData[0].pubkey };
     } catch (error) {
         const res = await createPdaAta(mint, payer, owner);
         mintAta = res.mintAta;
         ixCreateMintAta = res.ix;
-        console.log('mintAta other + txadd', mintAta.toBase58());
+        console.log('mintAta', mintAta.toBase58());
 
         txCreate.add(ixCreateMintAta);
         return { mintAta, transaction: txCreate };

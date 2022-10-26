@@ -4,40 +4,38 @@ import { types } from 'secretjs';
 import { claim } from './claim.neoSwap.module';
 import { validateDeposit } from './validateDeposit.neoSwap.module';
 import { validateClaimed } from './validateClaimed.neoSwap.module';
+import { cancel } from './cancel.neoSwap.module';
+import { validateCancel } from './validateCancel.neoSwap.module';
 
-export const claimAndClose = async (Data: {
+export const cancelAndClose = async (Data: {
     swapDataAccount: PublicKey;
     signer: PublicKey;
     program: Program;
     // CONST_PROGRAM: string;
     // swapDataAccount: PublicKey;
 }): Promise<{
-    allClaimSendAllArray: Array<{
+    allCancelSendAllArray: Array<{
         tx: Transaction;
         signers?: Signer[] | undefined;
     }>;
 }> => {
-    const { validateDepositSendAll } = await validateDeposit({
-        program: Data.program,
-        signer: Data.signer,
-        swapDataAccount: Data.swapDataAccount,
-    });
-    const { claimSendAllArray } = await claim({
-        program: Data.program,
-        signer: Data.signer,
-        swapDataAccount: Data.swapDataAccount,
-    });
-    const { validateClaimedSendAll } = await validateClaimed({
+    const { cancelSendAllArray } = await cancel({
         program: Data.program,
         signer: Data.signer,
         swapDataAccount: Data.swapDataAccount,
     });
 
-    console.log('validateDepositSendAll.length', validateDepositSendAll[0].tx.instructions.length);
-    console.log('claimSendAllArray.length', claimSendAllArray.length);
-    console.log('validateClaimedSendAll.length', validateClaimedSendAll.length);
+    const { validateCancelSendAll } = await validateCancel({
+        program: Data.program,
+        signer: Data.signer,
+        swapDataAccount: Data.swapDataAccount,
+    });
 
-    const allClaimSendAllArray = [...validateDepositSendAll, ...claimSendAllArray, ...validateClaimedSendAll];
+    console.log('cancelSendAllArray.length', cancelSendAllArray.length);
+    // console.log('claimSendAllArray.length', claimSendAllArray.length);
+    console.log('validateCancelSendAll.length', validateCancelSendAll.length);
 
-    return { allClaimSendAllArray };
+    const allCancelSendAllArray = [...cancelSendAllArray, ...validateCancelSendAll];
+
+    return { allCancelSendAllArray };
 };

@@ -12,7 +12,7 @@ export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGi
 // export const programId = new PublicKey('');
 
 // export const CONST_PROGRAM: string = '0121';
-export const swapDataAccountGiven = new PublicKey('FjF9Bnv98TXwoUA1wJoUqEhTzNoFcnSEkUcsRRHTytzZ');
+export const swapDataAccountGiven = new PublicKey('FeHJfjAnCxg5uyNWfEj112WqGFTsYWEMgG6G8mRQTF58');
 
 const i11: NftSwapItem = {
     isNft: false,

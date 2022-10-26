@@ -199,16 +199,42 @@ const Solana: FC = () => {
         const program = await getProgram();
         if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
-        const { allInitSendAllArray } = await NeoSwap.claimAndClose({
+        const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
             program,
             signer: publicKey,
             swapDataAccount: swapDataAccountGiven,
         });
-        let sendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
+
+        let sendAllArray = await sendAllPopulateInstruction(program, allClaimSendAllArray);
 
         try {
             const transactionHash = await program.provider.sendAll(sendAllArray);
             console.log('initialize transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+            throw console.error(error);
+        }
+    }, [publicKey, getProgram]);
+
+    const cancel = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+
+        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+            program,
+            signer: publicKey,
+            swapDataAccount: swapDataAccountGiven,
+        });
+        let sendAllArray = await sendAllPopulateInstruction(program, allCancelSendAllArray);
+
+        try {
+            for (let index = 0; index < sendAllArray.length; index++) {
+                const element = sendAllArray[index];
+
+                if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+                const transactionHash = await program.provider.sendAll([element]);
+                console.log('initialize transactionHash', transactionHash);
+            }
         } catch (error) {
             programCatchError(error);
             throw console.error(error);
@@ -665,14 +691,14 @@ const Solana: FC = () => {
                 </button> */}
                 <br />
             </div>
-            {/* <div>
+            <div>
                 <button onClick={cancel} disabled={!publicKey}>
                     Cancel
                 </button>
-                <button onClick={validateCancel} disabled={!publicKey}>
+                {/* <button onClick={validateCancel} disabled={!publicKey}>
                     validateCancel
-                </button>
-            </div> */}
+                </button> */}
+            </div>
         </div>
     );
 };
