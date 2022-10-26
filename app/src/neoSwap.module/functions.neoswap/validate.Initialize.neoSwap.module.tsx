@@ -4,13 +4,13 @@ import { convertAllTransaction } from '../utils.neoSwap/convertAllTransaction.ne
 import { getSeedFromData } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { SwapData } from '../utils.neoSwap/types.neoSwap';
 
-export const verifyInitialize = async (Data: {
+export const validateInitialize = async (Data: {
     signer: PublicKey;
     program: Program;
     swapData: SwapData;
     // swapDataAccount: PublicKey;
 }): Promise<{
-    verifInitSendAllArray: Array<{
+    validateInitSendAllArray: Array<{
         tx: web3.Transaction;
         signers?: Array<web3.Signer> | undefined;
     }>;
@@ -32,7 +32,8 @@ export const verifyInitialize = async (Data: {
 
     let verifInitTransaction: Transaction = new Transaction().add(firstTx);
 
-    const verifInitSendAllArray = await convertAllTransaction(Data.program, [verifInitTransaction]);
+    const validateInitSendAllArray = await convertAllTransaction(Data.program, [verifInitTransaction]);
+    console.log("validateInitTransaction Added");
 
-    return { verifInitSendAllArray };
+    return { validateInitSendAllArray };
 };

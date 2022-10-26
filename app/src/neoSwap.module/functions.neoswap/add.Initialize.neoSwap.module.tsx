@@ -29,7 +29,7 @@ import { Program } from '@project-serum/anchor';
 //     for (let item = 1; item < Data.swapData.items.length; item++) {
 //         const swapDataItem = Data.swapData.items[item];
 //         let addTransaction = true;
-//         console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
+//         console.log('XXXXXXX - item n° ', item -1, ' XXXXXXX');
 //         for (let index2 = 0; index2 < Data.swapData.items.length; index2++) {
 //             const seedSwapDataItem = Data.swapData.items[index2];
 

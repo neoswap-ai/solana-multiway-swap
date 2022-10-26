@@ -25,11 +25,10 @@ export const claim = async (Data: {
 
     for (let item = 0; item < swapData.swapData.items.length; item++) {
         let swapDataItem = swapData.swapData.items[item];
-        console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
         switch (swapDataItem.isNft) {
             case true:
                 if (swapDataItem.status === 1) {
-                    console.log(swapDataItem.destinary.toBase58());
+                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
                     let claimingNft = await claimNft({
                         program: Data.program,
                         signer: Data.signer,
@@ -58,6 +57,7 @@ export const claim = async (Data: {
                 break;
             case false:
                 if (swapDataItem.status === 1) {
+                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
                     const claimingSol = await claimSol({
                         program: Data.program,
                         user: swapDataItem.owner,

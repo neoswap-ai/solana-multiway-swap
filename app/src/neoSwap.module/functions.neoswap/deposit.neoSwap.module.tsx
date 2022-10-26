@@ -29,6 +29,8 @@ export const deposit = async (Data: {
         switch (swapDataItem.isNft) {
             case true:
                 if (swapDataItem.owner.toBase58() === Data.signer.toBase58() && swapDataItem.status === 0) {
+                    console.log('XXXXXXX - Deposit item n° ', item, ' XXXXXXX');
+
                     let depositing = await depositNft({
                         program: Data.program,
                         signer: Data.signer,
@@ -54,10 +56,12 @@ export const deposit = async (Data: {
                     // depositInstruction = appendTransactionToArray(depositInstructionTransaction, [
                     //     depositing.instruction,
                     // ]);
+                    console.log('depositNftInstruction added');
                 }
                 break;
             case false:
                 if (swapDataItem.owner.toBase58() === Data.signer.toBase58() && swapDataItem.status === 0) {
+                    console.log('XXXXXXX - Deposit item n° ', item, ' XXXXXXX');
                     const { instruction: depositSolInstruction } = await depositSol({
                         program: Data.program,
                         from: Data.signer,
@@ -70,7 +74,9 @@ export const deposit = async (Data: {
                     // depositInstructionTransaction = appendTransactionToArray(depositInstructionTransaction, [
                     //     solTransaction,
                     // ]);
+                    console.log('depositSolinstruction added');
                 }
+
                 break;
         }
     }

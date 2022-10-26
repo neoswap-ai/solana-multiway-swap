@@ -3,7 +3,7 @@ import { PublicKey, Signer, Transaction } from '@solana/web3.js';
 import { SwapData } from '../utils.neoSwap/types.neoSwap';
 import { saddInitialize } from './sadd.Initialize.neoSwap.module';
 import { initInitialize } from './init.Initialize.neoSwap.module';
-import { verifyInitialize } from './verif.Initialize.neoSwap.module';
+import { validateInitialize } from './validate.Initialize.neoSwap.module';
 
 export const allInitialize = async (Data: {
     swapData: SwapData;
@@ -25,7 +25,7 @@ export const allInitialize = async (Data: {
         signer: Data.signer,
         swapData: Data.swapData,
     });
-    const { verifInitSendAllArray } = await verifyInitialize({
+    const { validateInitSendAllArray } = await validateInitialize({
         program: Data.program,
         signer: Data.signer,
         swapData: Data.swapData,
@@ -34,7 +34,7 @@ export const allInitialize = async (Data: {
     // console.log('addInitSendAllArray.length', addInitSendAllArray.length);
     // console.log('verifInitSendAllArray.length', verifInitSendAllArray.length);
 
-    const allInitSendAllArray = [...initinitSendAllArray, ...addInitSendAllArray, ...verifInitSendAllArray];
+    const allInitSendAllArray = [...initinitSendAllArray, ...addInitSendAllArray, ...validateInitSendAllArray];
 
     return { allInitSendAllArray };
 };

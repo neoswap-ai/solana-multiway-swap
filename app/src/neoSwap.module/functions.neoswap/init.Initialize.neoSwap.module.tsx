@@ -46,5 +46,7 @@ export const initInitialize = async (Data: {
     );
 
     const initinitSendAllArray = await convertAllTransaction(Data.program, [initInitTransaction]);
+    console.log("initInitTransaction Added");
+    
     return { initinitSendAllArray };
 };

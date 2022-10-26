@@ -17,20 +17,20 @@ export async function findOrCreateAta(Data: {
     // Solana.
     try {
         const mintAtaData = await findAtaFromMint(Data.program, Data.mint, Data.owner);
-        if (mintAtaData.length > 1) {
-            let count = 0;
-            mintAtaData.forEach((element) => {
-                console.log('mintAtaData n°', count, ' pubkey: ', element.pubkey.toBase58());
-            });
-        } else {
-            console.log('mintAta', mintAtaData[0].pubkey.toBase58());
-        }
+        // if (mintAtaData.length > 1) {
+        //     let count = 0;
+        //     mintAtaData.forEach((element) => {
+        //         console.log('mintAtaData n°', count, ' pubkey: ', element.pubkey.toBase58());
+        //     });
+        // } else {
+        //     console.log('mintAta', mintAtaData[0].pubkey.toBase58());
+        // }
         return { mintAta: mintAtaData[0].pubkey };
     } catch (error) {
         const res = await createPdaAta(Data.mint, Data.signer, Data.owner);
         mintAta = res.mintAta;
         ixCreateMintAta = res.ix;
-        console.log('mintAta', mintAta.toBase58());
+        // console.log('mintAta', mintAta.toBase58());
 
         txCreate.push(ixCreateMintAta);
         return { mintAta, instruction: txCreate };

@@ -25,10 +25,10 @@ export const cancel = async (Data: {
 
     for (let item = 0; item < swapData.swapData.items.length; item++) {
         let swapDataItem = swapData.swapData.items[item];
-        console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
 
         switch (swapDataItem.isNft) {
             case true:
+                console.log('XXXXXXX - cancelling item n° ', item, ' XXXXXXX');
                 let cancelingNft = await cancelNft({
                     program: Data.program,
                     signer: Data.signer,
@@ -55,6 +55,7 @@ export const cancel = async (Data: {
                 console.log('cancelNftinstruction added');
                 break;
             case false:
+                console.log('XXXXXXX - cancelling item n° ', item, ' XXXXXXX');
                 let cancelingSol = await cancelSol({
                     program: Data.program,
                     user: swapDataItem.owner,

@@ -145,12 +145,12 @@ const Solana: FC = () => {
         const program = await getProgram();
         if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
-        const { verifInitSendAllArray } = await NeoSwap.verifyInitialize({
+        const { validateInitSendAllArray } = await NeoSwap.validateInitialize({
             program,
             signer: publicKey,
             swapData: fullData,
         });
-        let sendAllArray = await sendAllPopulateInstruction(program, verifInitSendAllArray);
+        let sendAllArray = await sendAllPopulateInstruction(program, validateInitSendAllArray);
 
         try {
             const transactionHash = await program.provider.sendAll(sendAllArray);
@@ -238,7 +238,6 @@ const Solana: FC = () => {
         let sendAllArray = await sendAllPopulateInstruction(program, allCancelSendAllArray);
 
         try {
-
             if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
             const transactionHash = await program.provider.sendAll(sendAllArray);
             console.log('cancel transactionHash', transactionHash);
