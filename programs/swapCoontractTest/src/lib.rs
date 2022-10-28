@@ -116,7 +116,6 @@ pub mod swap_coontract_test {
             if ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].mint == item_to_deposit.mint 
             && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8()  {
-
                     let ix = spl_token::instruction::transfer(
                         token_program.key,
                         &item_from_deposit.key(),
@@ -244,8 +243,7 @@ pub mod swap_coontract_test {
             if !ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8()
             && ctx.accounts.swap_data_account.items[item_id].destinary == ctx.accounts.user.key() 
-             {
-                
+             {                
                     if  ctx.accounts.swap_data_account.items[item_id].amount.is_negative() {
                         
                         let amount_to_send = ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs();//.checked_mul((10 as u64).pow(0)).unwrap();

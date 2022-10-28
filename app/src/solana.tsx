@@ -178,7 +178,7 @@ const Solana: FC = () => {
             console.log('initialize transactionHash', allInitTransaction);
         } catch (error) {
             programCatchError(error);
-
+            
             throw console.error(error);
         }
     }, [getProgram, publicKey]);
@@ -225,6 +225,7 @@ const Solana: FC = () => {
             throw console.error(error);
         }
     }, [publicKey, getProgram]);
+
 
     const cancel = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
