@@ -38,15 +38,15 @@ export async function programCatchError(error: any) {
         console.error('incorect seed given to PDA \n', error);
     } else if (String(error).includes('Account does not exist')) {
         console.error("Account haven't been initialized \n", error);
-    } else if (String(error).includes('0x0')) {
+    } else if (String(error).includes('0x0 ')) {
         console.error('PDA is already existing with this tradeRef \n', error);
-    } else if (String(error).includes('0x1')) {
+    } else if (String(error).includes('0x1 ')) {
         console.error('Not enough funds \n', error);
     } else {
         console.error('unsupported \n', error);
     }
 }
-// ERROR {0xbc4
+// ERROR {0xbc4 ransaction was not confirmed in 30.00 seconds
 //     #[msg("User not part oof the trade")]
 //     UserNotPartOfTrade,
 //     #[msg("Mint not found")]

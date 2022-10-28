@@ -9,7 +9,8 @@ export async function cIdepositNft(
     mint: PublicKey,
     swapDataAccount: PublicKey,
     seed: Buffer,
-    bump: number
+    bump: number,
+    ataList?: Array<PublicKey>
 ): Promise<{ transaction: Transaction; ata: PublicKey }> {
     let transaction: Transaction = new Transaction();
     if (!program.provider.sendAndConfirm) throw console.error('no provider');
@@ -21,7 +22,14 @@ export async function cIdepositNft(
         publicKey
     );
 
-    if (ixCreateUserMintAta) {
+    let addUserTx = true;
+    ataList?.forEach((ata) => {
+        if (ata === userMintAta) {
+            addUserTx = false;
+        }
+    });
+
+    if (ixCreateUserMintAta && addUserTx) {
         console.log('CreateUserAta Deposit Tx added');
         transaction.add(ixCreateUserMintAta);
     }
@@ -33,7 +41,17 @@ export async function cIdepositNft(
         publicKey
     );
 
-    if (ixCreatePdaMintAta) {
+    let addPdaTx = true;
+    ataList?.forEach((ata) => {
+        console.log(pdaMintAta.toString());
+        console.log(ata.toString());
+
+        if (ata.toString() === pdaMintAta.toString()) {
+            addPdaTx = false;
+            console.log('already added earlier');
+        }
+    });
+    if (ixCreatePdaMintAta && addPdaTx) {
         console.log('CreatePdaAta Deposit Tx added');
         transaction.add(ixCreatePdaMintAta);
     }
@@ -42,12 +60,12 @@ export async function cIdepositNft(
         await program.methods
             .depositNft(seed, bump)
             .accounts({
-                    systemProgram: web3.SystemProgram.programId,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                    swapDataAccount: swapDataAccount,
-                    signer: publicKey,
-                    itemFromDeposit: userMintAta,
-                    itemToDeposit: pdaMintAta,
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                swapDataAccount: swapDataAccount,
+                signer: publicKey,
+                itemFromDeposit: userMintAta,
+                itemToDeposit: pdaMintAta,
             })
             .instruction()
     );
@@ -61,19 +79,17 @@ export async function cIdepositSol(
     program: Program,
     from: PublicKey,
     to: PublicKey,
-    seed: Buffer,
-    bump: number
+    swapDataAccount_seed: Buffer,
+    swapDataAccount_bump: number
 ): Promise<Transaction> {
     console.log('deposit Sol Tx added');
     return new Transaction().add(
         await program.methods
-            .depositSol(seed, bump)
+            .depositSol(swapDataAccount_seed, swapDataAccount_bump)
             .accounts({
-                // accounts: {
-                    systemProgram: web3.SystemProgram.programId,
-                    swapDataAccount: to,
-                    signer: from,
-                // },
+                systemProgram: web3.SystemProgram.programId,
+                swapDataAccount: to,
+                signer: from,
             })
             .instruction()
     );
@@ -82,6 +98,7 @@ export async function cIdepositSol(
 export async function cIclaimNft(
     program: Program,
     publicKey: PublicKey,
+    user: PublicKey,
     mint: PublicKey,
     swapDataAccount: PublicKey,
     swapDataAccount_seed: Buffer,
@@ -90,12 +107,7 @@ export async function cIclaimNft(
     let transaction: Transaction = new Transaction();
     if (!program.provider.sendAndConfirm) throw console.error('no provider');
 
-    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(
-        program,
-        publicKey,
-        mint,
-        publicKey
-    );
+    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(program, user, mint, publicKey);
 
     if (userMintAtaTx) {
         transaction.add(userMintAtaTx);
@@ -117,36 +129,46 @@ export async function cIclaimNft(
     const claimNftTx = await program.methods
         .claimNft(swapDataAccount_seed, swapDataAccount_bump)
         .accounts({
-                systemProgram: web3.SystemProgram.programId,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                swapDataAccount: swapDataAccount,
-                signer: publicKey,
-                itemFromDeposit: swapDataAta,
-                itemToDeposit: userMintAta,
+            systemProgram: web3.SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            swapDataAccount: swapDataAccount,
+            user: user,
+            signer: publicKey,
+            itemFromDeposit: swapDataAta,
+            itemToDeposit: userMintAta,
         })
         .instruction();
 
     transaction.add(claimNftTx);
     console.log('claim NFT Tx added');
+
+    //    transaction.feePayer = publicKey;
+    // transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+    // const hash = await program.provider.sendAndConfirm(transaction);
+    // console.log('claim NFT transaction hash\n', hash);
+
     return { transaction, userMintAta };
 }
 
-export async function cIclaimSol(
-    program: Program,
-    publicKey: PublicKey,
-    swapDataAccount: PublicKey,
-    seed: Buffer,
-    bump: number
-): Promise<{ transaction: Transaction }> {
+export async function cIclaimSol(claimSolData: {
+    program: Program;
+    user: PublicKey;
+    publicKey: PublicKey;
+    swapDataAccount: PublicKey;
+    swapDataAccount_seed: Buffer;
+    swapDataAccount_bump: number;
+}): Promise<{ transaction: Transaction }> {
     console.log('claim Sol Tx added');
     return {
         transaction: new Transaction().add(
-            await program.methods
-                .claimSol(seed, bump)
+            await claimSolData.program.methods
+                .claimSol(claimSolData.swapDataAccount_seed, claimSolData.swapDataAccount_bump)
                 .accounts({
-                        systemProgram: web3.SystemProgram.programId,
-                        swapDataAccount: swapDataAccount,
-                        signer: publicKey,
+                    systemProgram: web3.SystemProgram.programId,
+                    swapDataAccount: claimSolData.swapDataAccount,
+                    user: claimSolData.user,
+                    signer: claimSolData.publicKey,
                 })
                 .instruction()
         ),
@@ -156,6 +178,7 @@ export async function cIclaimSol(
 export async function cIcancelNft(
     program: Program,
     publicKey: PublicKey,
+    user: PublicKey,
     mint: PublicKey,
     swapDataAccount: PublicKey,
     swapDataAccount_seed: Buffer,
@@ -163,12 +186,7 @@ export async function cIcancelNft(
 ): Promise<{ transaction: Transaction; userMintAta: PublicKey }> {
     let transaction: Transaction = new Transaction();
 
-    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(
-        program,
-        publicKey,
-        mint,
-        publicKey
-    );
+    const { mintAta: userMintAta, transaction: userMintAtaTx } = await findOrCreateAta(program, user, mint, publicKey);
     if (userMintAtaTx) {
         transaction.add(userMintAtaTx);
         console.log('createUserAta Cancel Nft Tx Added');
@@ -188,12 +206,13 @@ export async function cIcancelNft(
     const cancelNftTx = await program.methods
         .cancelNft(swapDataAccount_seed, swapDataAccount_bump)
         .accounts({
-                systemProgram: web3.SystemProgram.programId,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                swapDataAccount: swapDataAccount,
-                signer: publicKey,
-                itemFromDeposit: swapDataAta,
-                itemToDeposit: userMintAta,
+            systemProgram: web3.SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            swapDataAccount: swapDataAccount,
+            user: user,
+            signer: publicKey,
+            itemFromDeposit: swapDataAta,
+            itemToDeposit: userMintAta,
         })
         .instruction();
 
@@ -205,20 +224,22 @@ export async function cIcancelNft(
 
 export async function cIcancelSol(
     program: Program,
+    user: PublicKey,
     publicKey: PublicKey,
     swapDataAccount: PublicKey,
-    seed: Buffer,
-    bump: number
+    swapDataAccount_seed: Buffer,
+    swapDataAccount_bump: number
 ): Promise<{ transaction: Transaction }> {
     console.log('cancel Sol Tx added');
     return {
         transaction: new Transaction().add(
             await program.methods
-                .cancelSol(seed, bump)
+                .cancelSol(swapDataAccount_seed, swapDataAccount_bump)
                 .accounts({
-                        systemProgram: web3.SystemProgram.programId,
-                        swapDataAccount: swapDataAccount,
-                        signer: publicKey,
+                    systemProgram: web3.SystemProgram.programId,
+                    swapDataAccount: swapDataAccount,
+                    user: user,
+                    signer: publicKey,
                 })
                 .instruction()
         ),

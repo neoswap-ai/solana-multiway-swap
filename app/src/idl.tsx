@@ -218,6 +218,11 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'user',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
                     name: 'signer',
                     isMut: true,
                     isSigner: true,
@@ -249,6 +254,11 @@ export const idl = {
                 },
                 {
                     name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'user',
                     isMut: true,
                     isSigner: false,
                 },
@@ -328,6 +338,11 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'user',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
                     name: 'signer',
                     isMut: true,
                     isSigner: true,
@@ -359,6 +374,11 @@ export const idl = {
                 },
                 {
                     name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'user',
                     isMut: true,
                     isSigner: false,
                 },

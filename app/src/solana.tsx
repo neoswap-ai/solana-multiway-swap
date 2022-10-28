@@ -1,4 +1,4 @@
-import { AnchorProvider, Program, Provider, utils, web3 } from '@project-serum/anchor';
+import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
@@ -261,10 +261,8 @@ export const Solana: FC = () => {
     }, [publicKey, getProgram, getSeed]);
 
     const allInitialize = useCallback(async () => {
-        await initInitialize()
-        await addInitialize()
-        await verifyInitialize()
-
+        await addInitialize();
+        await verifyInitialize();
     }, [initInitialize, addInitialize, verifyInitialize]);
 
     const deposit = useCallback(async () => {
@@ -293,7 +291,7 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         let depositInstructionTransaction = new Transaction();
-
+        let ataList: Array<PublicKey>  = [];
         for (let item = 0; item < swapData.items.length; item++) {
             let e = swapData.items[item];
             // console.log('element', item, ' \n', e);
@@ -301,18 +299,19 @@ export const Solana: FC = () => {
             switch (e.isNft) {
                 case true:
                     if (e.owner.toBase58() === publicKey.toBase58() && e.status === 0) {
-                        depositInstructionTransaction.add(
-                            (
-                                await cIdepositNft(
-                                    program,
-                                    publicKey,
-                                    e.mint,
-                                    swapDataAccount,
-                                    swapDataAccount_seed,
-                                    swapDataAccount_bump
-                                )
-                            ).transaction
+                        let depositing = await cIdepositNft(
+                            program,
+                            publicKey,
+                            e.mint,
+                            swapDataAccount,
+                            swapDataAccount_seed,
+                            swapDataAccount_bump,
+                            ataList
                         );
+                        ataList.push(depositing.ata);
+                        depositInstructionTransaction.add(depositing.transaction);
+                        console.log("ataList",ataList);
+                        
                     }
                     break;
                 case false:
@@ -330,11 +329,35 @@ export const Solana: FC = () => {
                     break;
             }
         }
+        //         let arrowToDel: Array<number> = [];
+        //         for (let index1 = 0; index1 < depositInstructionTransaction.instructions.length; index1++) {
+        //             const element1 = depositInstructionTransaction.instructions[index1];
+        //             for (let index2 = index1 + 1; index2 < depositInstructionTransaction.instructions.length; index2++) {
+        //                 const element2 = depositInstructionTransaction.instructions[index2];
+        //                 console.log('element1.data ', index1, '\n', (element1.data.buffer));
+        //                 console.log('element2.keys', index2, '\n', (element2.data.buffer));
 
+        //                 if (element1.data.buffer === element2.data.buffer) {
+        //                     console.log('elem1===elem2');
+
+        //                     arrowToDel.push(index2);
+        //                 }
+        //             }
+        //         }
+        // console.log("arrowToDel",arrowToDel);
+
+        //         for (let index3 = arrowToDel.length; index3 > 0; index3--) {
+        //             const element = arrowToDel[index3];
+        //             depositInstructionTransaction.instructions = [
+        //                 ...depositInstructionTransaction.instructions.slice(0, element - 1),
+        //                 ...depositInstructionTransaction.instructions.slice(element),
+        //             ];
+        //         }
         depositInstructionTransaction.feePayer = publicKey;
         depositInstructionTransaction.recentBlockhash = (
             await program.provider.connection.getLatestBlockhash()
         ).blockhash;
+        console.log(depositInstructionTransaction);
 
         if (depositInstructionTransaction.instructions.length > 0) {
             try {
@@ -393,12 +416,13 @@ export const Solana: FC = () => {
 
             switch (e.isNft) {
                 case true:
-                    if (e.owner.toBase58() === publicKey.toBase58() && (e.status === 1 || e.status === 0)) {
+                    if (e.status === 1 || e.status === 0) {
                         cancelInstructionTransaction.add(
                             (
                                 await cIcancelNft(
                                     program,
                                     publicKey,
+                                    e.owner,
                                     e.mint,
                                     swapDataAccount,
                                     swapDataAccount_seed,
@@ -415,6 +439,7 @@ export const Solana: FC = () => {
                             (
                                 await cIcancelSol(
                                     program,
+                                    e.owner,
                                     publicKey,
                                     swapDataAccount,
                                     swapDataAccount_seed,
@@ -568,12 +593,14 @@ export const Solana: FC = () => {
 
             switch (e.isNft) {
                 case true:
-                    if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
+                    if (e.status === 1) {
+                        console.log(e.destinary.toBase58())
                         claimInstructionTransaction.add(
                             (
                                 await cIclaimNft(
                                     program,
                                     publicKey,
+                                    e.destinary,
                                     e.mint,
                                     swapDataAccount,
                                     swapDataAccount_seed,
@@ -585,16 +612,17 @@ export const Solana: FC = () => {
                     }
                     break;
                 case false:
-                    if (e.destinary.toBase58() === publicKey.toBase58() && e.status === 1) {
+                    if (e.status === 1) {
                         claimInstructionTransaction.add(
                             (
-                                await cIclaimSol(
+                                await cIclaimSol({
                                     program,
+                                    user: e.owner,
                                     publicKey,
                                     swapDataAccount,
                                     swapDataAccount_seed,
-                                    swapDataAccount_bump
-                                )
+                                    swapDataAccount_bump,
+                                })
                             ).transaction
                         );
                         console.log('claimSolinstruction added');
