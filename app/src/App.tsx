@@ -4,7 +4,7 @@ import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-r
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
 import { FC, ReactNode, useMemo } from 'react';
-import { Solana } from './solana';
+import Solana from './solana';
 
 require('./App.css');
 require('@solana/wallet-adapter-react-ui/styles.css');

@@ -28,6 +28,7 @@ export const idl = {
                 },
             ],
             args: [
+               
                 {
                     name: 'seed',
                     type: 'bytes',
@@ -410,7 +411,7 @@ export const idl = {
             ],
         },
         {
-            name: 'validateCancelled',
+            name: 'validateCancel',
             accounts: [
                 {
                     name: 'systemProgram',

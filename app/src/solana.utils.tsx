@@ -2,6 +2,7 @@ import { Program, web3 } from '@project-serum/anchor';
 import { createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from './solana.const';
+import Solana from './solana';
 
 export async function findAtaUserFromMint(
     program: Program,
@@ -29,7 +30,7 @@ export async function findOrCreateAta(
     let mintAta;
     let txCreate = new Transaction();
     let ixCreateMintAta;
-
+    // Solana.
     try {
         const mintAtaData = await findAtaUserFromMint(program, mint, owner);
         console.log('mintAtaData', mintAtaData[0].pubkey.toBase58());
@@ -62,4 +63,20 @@ export async function cIPdaAta(
 
     const ixCreateMintAta = createAssociatedTokenAccountInstruction(payer, mintAta, owner, mint);
     return { ix: ixCreateMintAta, mintAta: mintAta, mintAta_bump: mintAta_bump };
+}
+
+export async function sendAllPopulateInstruction(
+    program: Program,
+    transactionList: Array<{
+        tx: web3.Transaction;
+        signers?: web3.Signer[] | undefined;
+    }>
+) {
+    const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+    let sendAllArray = transactionList;
+    sendAllArray.forEach((element) => {
+        element.tx.feePayer = program.provider.publicKey;
+        element.tx.recentBlockhash = recentBlockhash;
+    });
+    return sendAllArray;
 }
