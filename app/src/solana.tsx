@@ -1,7 +1,14 @@
 import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
-import { clusterApiUrl, Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
+import {
+    clusterApiUrl,
+    Connection,
+    GetVersionedTransactionConfig,
+    PublicKey,
+    Transaction,
+    VersionedTransaction,
+} from '@solana/web3.js';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
 import { splAssociatedTokenAccountProgramId, opts } from './solana.const';
@@ -116,8 +123,12 @@ export const Solana: FC = () => {
             programCatchError(error);
             const hash = String(error).slice(136, 223);
             console.log('hash', hash);
-
-            const conftr = await program.provider.connection.confirmTransaction(hash, 'processed');
+            const blocks = await program.provider.connection.getLatestBlockhash();
+            const conftr = await program.provider.connection.confirmTransaction({
+                signature: hash,
+                blockhash: blocks.blockhash,
+                lastValidBlockHeight: blocks.lastValidBlockHeight,
+            });
 
             console.log('conftr', conftr);
         }
@@ -209,10 +220,14 @@ export const Solana: FC = () => {
 
             console.log('error', error);
             const hash = String(error).slice(136, 223);
-            console.log('hash', hash);
-
-            const conftr = await program.provider.connection.getTransaction(hash);
-            console.log('conftr', conftr);
+            // console.log('hash', hash);
+            // const conftr = await program.provider.connection.confirmTransaction({signature:hash,blockhash:,lastValidBlockHeight:},
+            //  {
+            //     commitment: 'confirmed',
+            //     maxSupportedTransactionVersion: 1,
+            // } as GetVersionedTransactionConfig
+            // );
+            // console.log('conftr', conftr);
         }
     }, [publicKey, getProgram, getSeed]);
 
@@ -291,7 +306,7 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         let depositInstructionTransaction = new Transaction();
-        let ataList: Array<PublicKey>  = [];
+        let ataList: Array<PublicKey> = [];
         for (let item = 0; item < swapData.items.length; item++) {
             let e = swapData.items[item];
             // console.log('element', item, ' \n', e);
@@ -310,8 +325,7 @@ export const Solana: FC = () => {
                         );
                         ataList.push(depositing.ata);
                         depositInstructionTransaction.add(depositing.transaction);
-                        console.log("ataList",ataList);
-                        
+                        console.log('ataList', ataList);
                     }
                     break;
                 case false:
@@ -380,8 +394,19 @@ export const Solana: FC = () => {
 
         const program = await getProgram();
 
-        const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
-        console.log('SwapData', swapData);
+        // const swapData: SwapData = (await program.account.swapData.fetch(swapDataAccountGiven)) as SwapData;
+        // console.log('SwapData', swapData);
+        const hash = 'uTLxH8fAhhb9bnqaz8B5C2hCNDdFATPSZ8zAvbYXrRQkyCwHWXNL5AHCX6FYY9vx5yseDFVBz5cUTRCS2nzZWee';
+
+        // check timeout
+        const blocks = await program.provider.connection.getLatestBlockhash();
+
+        const conftr = await program.provider.connection.getTransaction(hash, {
+            commitment: 'confirmed',
+            maxSupportedTransactionVersion: 1,
+        } as GetVersionedTransactionConfig);
+
+        console.log('confirming tr :', conftr);
     }, [publicKey, getProgram]);
 
     const cancel = useCallback(async () => {
@@ -594,7 +619,7 @@ export const Solana: FC = () => {
             switch (e.isNft) {
                 case true:
                     if (e.status === 1) {
-                        console.log(e.destinary.toBase58())
+                        console.log(e.destinary.toBase58());
                         claimInstructionTransaction.add(
                             (
                                 await cIclaimNft(
