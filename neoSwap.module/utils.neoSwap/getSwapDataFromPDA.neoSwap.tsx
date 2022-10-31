@@ -1,4 +1,5 @@
 import { AnchorProvider, Program, utils, web3 } from '@project-serum/anchor';
+import { hash } from '@project-serum/anchor/dist/cjs/utils/sha256';
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { types } from 'secretjs';
 import { CONST_PROGRAM } from './const.neoSwap';
@@ -16,7 +17,14 @@ export const getSwapDataFromPDA = async (Data: {
     try {
         let swapData = (await Data.program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
 
-        let swapDataAccount_seed = Buffer.from(CONST_PROGRAM);
+        let preSeed = CONST_PROGRAM;
+        swapData.items.forEach((item) => {
+            preSeed += item.mint;
+            preSeed += item.owner;
+            preSeed += item.destinary;
+        });
+
+        let swapDataAccount_seed = Buffer.from(hash(preSeed)).subarray(0, 32);
 
         const [__, swapDataAccount_bump] = await PublicKey.findProgramAddress(
             [swapDataAccount_seed],
@@ -41,9 +49,14 @@ export const getSeedFromData = async (Data: {
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
 }> => {
-    let swapDataAccount_seed = Buffer.from(CONST_PROGRAM);
+    let preSeed = CONST_PROGRAM;
+    Data.swapData.items.forEach((item) => {
+        preSeed += item.mint;
+        preSeed += item.owner;
+        preSeed += item.destinary;
+    });
 
-    // console.log('swapDataAccount_seed', swapDataAccount_seed);
+    let swapDataAccount_seed = Buffer.from(hash(preSeed)).subarray(0, 32);
 
     try {
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(

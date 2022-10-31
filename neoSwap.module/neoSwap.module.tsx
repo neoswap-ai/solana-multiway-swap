@@ -7,6 +7,7 @@ import { deposit } from './functions.neoswap/deposit.neoSwap.module';
 import { claimAndClose } from './functions.neoswap/claimAndClose.neoSwap.module';
 import { cancelAndClose } from './functions.neoswap/cancelAndClose.neoSwap.module';
 import { saddInitialize as addInitialize } from './functions.neoswap/sadd.Initialize.neoSwap.module';
+import { findOrCreateAta } from '../app/src/solana.utils';
 
 const NeoSwap = {
     initInitialize,
@@ -19,6 +20,7 @@ const NeoSwap = {
     cancelAndClose,
     getSwapDataFromPDA,
     getSeedFromData,
+    findOrCreateAta
 };
 
 export default NeoSwap;

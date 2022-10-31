@@ -14,6 +14,7 @@ export const allInitialize = async (Data: {
         tx: Transaction;
         signers?: Signer[] | undefined;
     }>;
+    pda: PublicKey;
 }> => {
     const { initinitSendAllArray } = await initInitialize({
         program: Data.program,
@@ -36,5 +37,5 @@ export const allInitialize = async (Data: {
 
     const allInitSendAllArray = [...initinitSendAllArray, ...addInitSendAllArray, ...validateInitSendAllArray];
 
-    return { allInitSendAllArray };
+    return { allInitSendAllArray, pda: allInitSendAllArray[0].tx.instructions[0]?.keys[0].pubkey };
 };

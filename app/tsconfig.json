@@ -1,5 +1,5 @@
 {
-    "include": ["src"],
+    "include": ["src", "../neoSwap.module"],
     "compilerOptions": {
         "target": "es5",
         "lib": ["dom", "dom.iterable", "esnext"],

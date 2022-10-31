@@ -1,6 +1,6 @@
 import { NftSwapItem, SwapData } from './solana.types';
 import { BN } from '@project-serum/anchor';
-import { PublicKey } from '@solana/web3.js';
+import { Keypair, PublicKey } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 /// DEV
@@ -12,9 +12,9 @@ export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGi
 // export const programId = new PublicKey('');
 
 // export const CONST_PROGRAM: string = '0121';
-export const swapDataAccountGiven = new PublicKey('FeHJfjAnCxg5uyNWfEj112WqGFTsYWEMgG6G8mRQTF58');
+export const swapDataAccountGiven = new PublicKey('9gxEYk9C8qZhDJMn1cXi8zApjTREejARUj3xzUZxUiHF');
 
-const i11: NftSwapItem = {
+const i0101: NftSwapItem = {
     isNft: false,
     amount: new BN(-2 * 10 ** 9),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
@@ -23,7 +23,7 @@ const i11: NftSwapItem = {
     status: 1,
 };
 
-const i12: NftSwapItem = {
+const i0102: NftSwapItem = {
     isNft: true,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
@@ -32,7 +32,7 @@ const i12: NftSwapItem = {
     status: 0,
 };
 
-const i13: NftSwapItem = {
+const i0103: NftSwapItem = {
     isNft: true,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
@@ -41,7 +41,7 @@ const i13: NftSwapItem = {
     status: 0,
 };
 
-const i21: NftSwapItem = {
+const i0201: NftSwapItem = {
     isNft: false,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
@@ -50,7 +50,7 @@ const i21: NftSwapItem = {
     status: 0,
 };
 
-const i22: NftSwapItem = {
+const i0202: NftSwapItem = {
     isNft: true,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
@@ -59,7 +59,7 @@ const i22: NftSwapItem = {
     status: 0,
 };
 
-const i23: NftSwapItem = {
+const i0203: NftSwapItem = {
     isNft: true,
     amount: new BN(1),
     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
@@ -68,8 +68,7 @@ const i23: NftSwapItem = {
     status: 0,
 };
 
-const i31: NftSwapItem = {
-
+const i0301: NftSwapItem = {
     isNft: false,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
@@ -77,7 +76,7 @@ const i31: NftSwapItem = {
     mint: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     status: 0,
 };
-const i32: NftSwapItem = {
+const i0302: NftSwapItem = {
     isNft: true,
     amount: new BN(1),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
@@ -85,7 +84,7 @@ const i32: NftSwapItem = {
     mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
     status: 0,
 };
-const i33: NftSwapItem = {
+const i0303: NftSwapItem = {
     isNft: true,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
@@ -93,13 +92,32 @@ const i33: NftSwapItem = {
     mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
     status: 0,
 };
-export const fullData: SwapData = {
-    initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    status: 80,
-    items: [i11, i12, i13, i21, i22, i23, i31, i32, i33] as Array<NftSwapItem>,
-};
+const multiTestData: NftSwapItem[] = [];
+for (let index = 0; index < 70; index++) {
+    // const element = array[index];
+    multiTestData.push({
+        amount: new BN(1),
+        destinary: PublicKey.unique(),
+        isNft: true,
+        mint: PublicKey.unique(),
+        owner: PublicKey.unique(),
+        status: 0,
+    } as NftSwapItem);
+}
+// export const fullData: SwapData = {
+//     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+//     status: 80,
+//     items: [i11, i12, i13, i21, i22, i23, i31, i32, i33] as Array<NftSwapItem>,
+// };
+
+export const userKeypairs: Keypair[] = [];
+for (let userId = 0; userId < 4; userId++) {
+    userKeypairs.push(Keypair.generate());
+}
+
+export const fullData: SwapData = { initializer: PublicKey.unique(), status: 80, items: multiTestData };
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: 80,
-    items: [i11] as Array<NftSwapItem>,
+    items: [i0101] as Array<NftSwapItem>,
 };

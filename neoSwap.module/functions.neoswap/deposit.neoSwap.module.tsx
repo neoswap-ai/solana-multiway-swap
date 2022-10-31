@@ -17,6 +17,7 @@ export const deposit = async (Data: {
     }>;
 }> => {
     const swapData = await getSwapDataFromPDA({ program: Data.program, swapDataAccount: Data.swapDataAccount });
+    if (!swapData) throw console.error('PDA not initialized');
     console.log('SwapData', swapData);
     if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
 

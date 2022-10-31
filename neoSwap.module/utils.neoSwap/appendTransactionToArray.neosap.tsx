@@ -7,7 +7,7 @@ export function appendTransactionToArray(Data: {
     let row = Data.mainArray.length - 1;
 
     Data.itemToAdd.forEach((element) => {
-        if (Data.mainArray[row].instructions.length >= 6) {
+        if (Data.mainArray[row].instructions.length >= 5) {
             Data.mainArray.push(new Transaction());
             row++;
         }

@@ -1,12 +1,12 @@
-import { AnchorProvider, Program, web3 } from '@project-serum/anchor';
+import { AnchorProvider, BN, Program, web3 } from '@project-serum/anchor';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
-import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
+import { clusterApiUrl, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { FC, useCallback } from 'react';
 import { idl } from './idl';
 import { opts } from './solana.const';
-import { fullData, network, programId, sentData, swapDataAccountGiven } from './solana.test';
-import { SwapData } from './solana.types';
+import { fullData, network, programId, sentData, swapDataAccountGiven, userKeypairs } from './solana.test';
+import { NftSwapItem, SwapData } from './solana.types';
 // import {
 //     cIcancelNft,
 //     cIcancelSol,
@@ -16,8 +16,9 @@ import { SwapData } from './solana.types';
 //     cIdepositSol,
 // } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
-import NeoSwap from './neoSwap.module/neoSwap.module';
+import NeoSwap from 'neo-swap';
 import { sendAllPopulateInstruction } from './solana.utils';
+import { createAssociatedTokenAccount, createMint, mintToChecked } from '@solana/spl-token';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
 const Solana: FC = () => {
@@ -82,8 +83,10 @@ const Solana: FC = () => {
 
         try {
             swapData = await getSwapData(swapDataAccountGiven, program);
+            console.log('PDA exist');
         } catch (error) {
             swapData = await getSeed(fullData, program);
+            console.log('PDA not initialized');
         }
 
         console.log('SwapData', swapData);
@@ -170,10 +173,12 @@ const Solana: FC = () => {
             signer: publicKey,
             swapData: fullData,
         });
+        console.log('PDA :', allInitSendAllArray[0].tx.instructions[0]?.keys[0].pubkey.toBase58());
+
         const allinitTransactionSendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
+
         try {
             if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
-
             const allInitTransaction = await program.provider.sendAll(allinitTransactionSendAllArray);
             console.log('initialize transactionHash', allInitTransaction);
         } catch (error) {
@@ -188,19 +193,21 @@ const Solana: FC = () => {
         const program = await getProgram();
         if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
-        const { depositSendAllArray } = await NeoSwap.deposit({
-            program,
-            signer: publicKey,
-            swapDataAccount: swapDataAccountGiven,
-        });
-        let sendAllArray = await sendAllPopulateInstruction(program, depositSendAllArray);
+        {
+            const { depositSendAllArray } = await NeoSwap.deposit({
+                program,
+                signer: publicKey,
+                swapDataAccount: swapDataAccountGiven,
+            });
+            let sendAllArray = await sendAllPopulateInstruction(program, depositSendAllArray);
 
-        try {
-            const transactionHash = await program.provider.sendAll(sendAllArray);
-            console.log('deposit transactionHash', transactionHash);
-        } catch (error) {
-            programCatchError(error);
-            throw console.error(error);
+            try {
+                const transactionHash = await program.provider.sendAll(sendAllArray);
+                console.log('deposit transactionHash', transactionHash);
+            } catch (error) {
+                programCatchError(error);
+                throw console.error(error);
+            }
         }
     }, [publicKey, getProgram]);
 
@@ -247,6 +254,186 @@ const Solana: FC = () => {
         }
     }, [publicKey, getProgram]);
 
+    const all = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+        let txHashArray: string[];
+        let Daata: Array<{ userKeypair: Keypair; userNfts: Array<PublicKey>; amount?: number }> = [];
+
+        // setTimeout(async () => {
+        userKeypairs.forEach(async (userKeypair) => {
+            let userNfts: PublicKey[] = [];
+            setTimeout(async () => {
+                const airdropSignature = await program.provider.connection.requestAirdrop(
+                    userKeypair.publicKey,
+                    2 * LAMPORTS_PER_SOL
+                );
+                console.log('airdrop done');
+
+                // creating 10 Mints per user
+                for (let mintNb = 0; mintNb < 9; mintNb++) {
+                    setTimeout(async () => {
+                        let mintPubkey = await createMint(
+                            program.provider.connection, // conneciton
+                            userKeypair, // fee payer
+                            userKeypair.publicKey, // mint authority
+                            userKeypair.publicKey, // freeze authority
+                            0 // decimals
+                        );
+                        console.log('createMint done');
+
+                        setTimeout(async () => {
+                            let ata = await createAssociatedTokenAccount(
+                                program.provider.connection, // connection
+                                userKeypair, // fee payer
+                                mintPubkey, // mint
+                                userKeypair.publicKey // owner,
+                            );
+                            console.log('create ata done');
+
+                            setTimeout(async () => {
+                                let txhash = await mintToChecked(
+                                    program.provider.connection, // connection
+                                    userKeypair, // fee payer
+                                    mintPubkey, // mint
+                                    ata, // receiver (sholud be a token account)
+                                    userKeypair.publicKey, // mint authority
+                                    10, // amount. if your decimals is 8, you mint 10^8 for 1 token.
+                                    0 // decimals
+                                );
+                                console.log('minted to  done');
+
+                                txHashArray.push(txhash);
+                                userNfts.push(mintPubkey);
+                            }, 8000);
+                        }, 8000);
+                    }, 8000);
+                }
+            }, 8000);
+
+            Daata.push({ userKeypair, userNfts });
+        });
+
+        let swapData: SwapData = {
+            initializer: publicKey,
+            items: [
+                {
+                    isNft: false,
+                    amount: new BN(-1),
+                    destinary: publicKey,
+                    mint: publicKey,
+                    owner: publicKey,
+                    status: 1,
+                },
+            ],
+            status: 80,
+        };
+
+        for (let users_nb = 0; users_nb < Daata.length; users_nb++) {
+            const userData = Daata[users_nb];
+
+            let solItemToAdd: NftSwapItem = {
+                amount: new BN(1 / Daata.length),
+                destinary: userData.userKeypair.publicKey,
+                isNft: true,
+                mint: userData.userKeypair.publicKey,
+                owner: userData.userKeypair.publicKey,
+                status: 0,
+            };
+            swapData.items.push(solItemToAdd);
+
+            userData.userNfts.forEach((nftData) => {
+                for (let users_nb2 = 0; users_nb2 < Daata.length; users_nb2++) {
+                    const userData2 = Daata[users_nb2];
+
+                    let nftItemToAdd: NftSwapItem = {
+                        amount: new BN(1),
+                        destinary: userData2.userKeypair.publicKey,
+                        isNft: true,
+                        mint: nftData,
+                        owner: userData.userKeypair.publicKey,
+                        status: 0,
+                    };
+                    swapData.items.push(nftItemToAdd);
+                }
+            });
+        }
+        // }, 8000);
+
+        // Daata.forEach((userData) => {});
+
+        const { allInitSendAllArray, pda } = await NeoSwap.allInitialize({
+            program,
+            signer: publicKey,
+            swapData,
+            // swapDataAccount: swapDataAccountGiven,
+        });
+        const sendInitArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
+
+        setTimeout(async () => {
+            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+            const transactionHash = await program.provider.sendAll(sendInitArray);
+            console.log('initialized', transactionHash);
+            console.log('initialized  done');
+        }, 8000);
+
+        Daata.forEach(async (userData) => {
+            const { depositSendAllArray } = await NeoSwap.deposit({
+                program,
+                signer: userData.userKeypair.publicKey,
+                swapDataAccount: pda,
+            });
+
+            depositSendAllArray.forEach((ss) => {
+                ss.signers = [userData.userKeypair];
+            });
+
+            let sendAllArray = await sendAllPopulateInstruction(program, depositSendAllArray);
+            setTimeout(async () => {
+                // try {
+                if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+                // const signed tx = await program.provider.
+                const transactionHash = await program.provider.sendAll(sendAllArray);
+                console.log(
+                    'deposit user ',
+                    userData.userKeypair.publicKey.toBase58(),
+                    ' transactionHash',
+                    transactionHash
+                );
+            }, 8000);
+            setTimeout(() => {
+                console.log('deposited done');
+            }, 8000);
+
+            // } catch (error) {
+            //     programCatchError(error);
+            //     throw console.error(error);
+            // }
+        });
+
+        const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
+            program,
+            signer: publicKey,
+            swapDataAccount: pda,
+        });
+
+        let claimAndCloseArraysendAllArray = await sendAllPopulateInstruction(program, allClaimSendAllArray);
+
+        // try {
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+        // const signed tx = await program.provider.
+        const claimAndCloseHash = await program.provider.sendAll(claimAndCloseArraysendAllArray);
+        setTimeout(() => {
+            console.log('deposited done');
+        }, 8000);
+
+        console.log('claimAndCloseHash :', claimAndCloseHash);
+    }, [publicKey, getProgram]);
     return (
         <div>
             <div>
@@ -293,9 +480,9 @@ const Solana: FC = () => {
                 <button onClick={cancel} disabled={!publicKey}>
                     Cancel
                 </button>
-                {/* <button onClick={validateCancel} disabled={!publicKey}>
-                    validateCancel
-                </button> */}
+                <button onClick={all} disabled={!publicKey}>
+                    all
+                </button>
             </div>
         </div>
     );

@@ -8,7 +8,7 @@ export async function depositSol(Data: {
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
 }): Promise<{ instruction: TransactionInstruction }> {
-    console.log('deposit Sol Tx added');
+    // console.log('deposit Sol Tx added');
     return {
         instruction: await Data.program.methods
             .depositSol(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
