@@ -3,7 +3,7 @@ use anchor_lang::solana_program::{
     pubkey::Pubkey,program::{invoke_signed, invoke}};
 use anchor_spl::token::{spl_token, TokenAccount};
 
-declare_id!("6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W");
+declare_id!("EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu");
 
 #[program]
 pub mod swap_coontract_test {
@@ -401,7 +401,7 @@ pub mod swap_coontract_test {
 
         let mut transfered : bool = false;
 
-        for item_id in 0..ctx.accounts.swap_data_account.items.len()-1 {
+        for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if !ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].owner == ctx.accounts.user.key() 
             && transfered == false {
