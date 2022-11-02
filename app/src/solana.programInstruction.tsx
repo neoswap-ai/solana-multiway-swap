@@ -21,12 +21,14 @@ export async function cIdepositNft(
         mint,
         publicKey
     );
+
     let addUserTx = true;
     ataList?.forEach((ata) => {
         if (ata === userMintAta) {
             addUserTx = false;
         }
     });
+
     if (ixCreateUserMintAta && addUserTx) {
         console.log('CreateUserAta Deposit Tx added');
         transaction.add(ixCreateUserMintAta);
@@ -38,6 +40,7 @@ export async function cIdepositNft(
         mint,
         publicKey
     );
+
     let addPdaTx = true;
     ataList?.forEach((ata) => {
         console.log(pdaMintAta.toString());
@@ -69,11 +72,6 @@ export async function cIdepositNft(
 
     transaction.add(depositIx);
     console.log('deposit NFT Tx added');
-    // transaction.feePayer = publicKey;
-    // transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-    // const hash = await program.provider.sendAndConfirm(transaction);
-    // console.log('deposit transaction hash\n', hash);
     return { transaction, ata: pdaMintAta };
 }
 
