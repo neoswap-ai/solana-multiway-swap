@@ -23,9 +23,23 @@ pub mod swap_coontract_test {
 
         require!(sent_data.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
         require!(sent_data.items.len() == 1, MYERROR::IncorrectLength);
+     
+        let mut item_to_add: Vec<NftSwapItem>= sent_data.items;
+
+        if item_to_add[0].is_nft {
+            item_to_add[0].status = TradeStatus::Pending.to_u8()
+        } else {
+
+            if item_to_add[0].amount.is_positive(){
+                item_to_add[0].status = TradeStatus::Pending.to_u8()
+            }else{
+                item_to_add[0].status = TradeStatus::Deposited.to_u8()
+            }
+
+        }
 
         ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
-        ctx.accounts.swap_data_account.items = sent_data.items;
+        ctx.accounts.swap_data_account.items = item_to_add;
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
         Ok(())
     }
