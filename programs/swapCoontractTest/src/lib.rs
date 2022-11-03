@@ -3,7 +3,7 @@ use anchor_lang::solana_program::{
     pubkey::Pubkey,program::{invoke_signed, invoke}};
 use anchor_spl::token::{spl_token, TokenAccount};
 
-declare_id!("EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu");
+declare_id!("EBwKXJ7MM2WYSxRJQJMA76h7Exgr3mjUddcNq152bExw");
 
 #[program]
 pub mod swap_coontract_test {
