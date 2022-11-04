@@ -1,49 +1,49 @@
-## solana-multiway-swap
+# solana-multiway-swap
 
-# Front -> in folder/app:
+## Front -> in folder/app:
 
 >npm i
 
 >npm start
 
-# Program deployment -> in folder:
+## Program deployment -> in folder:
 
 >anchor build
 >
 > -> follow the depolyment program
 
-# Program testing 
+## Program testing 
 > -> in folder: open and copy the content of goodIdl.json
 > -> in folder/target/idl/neo_swap.json: open and select the content
 > -> in folder: open CLI, enter "anchor test"
 > -> in folder/target/idl/neo_swap.json: as soon as the content is updated, paste and save the content of goodIdl.json
 > -> back to CLI for results
 
-## Audit Readyness
+# Audit Readyness
 
 This Repo holds the solana program and module for NeoSwap multi-user multi-item swap.
 
 the PDA acts as an escrow to gather and redistribute all assets
 
-## Versionning
+# Versionning
 
-> # solana version
+> ## solana version
 >
 > solana-cli 1.13.5 (src:959b760c; feat:1365939126)
 
-> # npm version
+> ## npm version
 >
 > 8.18.0
 
-> # rustc --version
+> ## rustc --version
 >
 > rustc 1.62.1 (e092d0b6b 2022-07-16)
 
-> # rustup --version
+> ## rustup --version
 >
 > rustup 1.25.1 (bb60b1e89 2022-07-12)
 
-## Assumptions
+# Assumptions
 
 **Only Deposit is the function triggered by user**.
 for development, the initializer is being a parameter but will be changed to fixed data in later versions.
@@ -51,15 +51,15 @@ for development, the initializer is being a parameter but will be changed to fix
 
 **All NFTs are supported**
 
-## Schemes
+# Schemes
 
 Program functions & User Trade:
 
 [NeoSwap Functionning Schemes](https://)
 
-## Librairies
+# Librairies
 
-# FrontEnd    
+## FrontEnd    
 "@project-serum/anchor": "^0.25.0",
 "@solana/wallet-adapter-base": "^0.9.17",
 "@solana/wallet-adapter-react": "^0.15.19",
@@ -73,7 +73,7 @@ Program functions & User Trade:
 "ts-mocha": "^8.0.0",
 "typescript": "^4.3.5"
 
-# BackEnd
+## BackEnd
 
 > anchor-lang = "0.25.0"
 > anchor-spl= "0.25.0"
