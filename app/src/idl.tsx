@@ -28,7 +28,6 @@ export const idl = {
                 },
             ],
             args: [
-               
                 {
                     name: 'seed',
                     type: 'bytes',
@@ -606,4 +605,7 @@ export const idl = {
             },
         },
     ],
+    metadata: {
+        address: 'EBwKXJ7MM2WYSxRJQJMA76h7Exgr3mjUddcNq152bExw',
+    },
 } as Idl;

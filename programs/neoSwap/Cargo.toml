@@ -1,12 +1,12 @@
 [package]
-name = "swapCoontractTest"
+name = "neoSwap"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "swap_coontract_test"
+name = "neo_swap"
 
 [features]
 no-entrypoint = []

@@ -13,10 +13,10 @@
 > -> follow the depolyment program
 
 ### Program testing 
-> -> in folder: open and copy the content of goodIdl.json
+> -> in folder: open and copy the content of good_idl.json
 > -> in folder/target/idl/neo_swap.json: open and select the content
 > -> in folder: open CLI, enter "anchor test"
-> -> in folder/target/idl/neo_swap.json: as soon as the content is updated, paste and save the content of goodIdl.json
+> -> in folder/target/idl/neo_swap.json: as soon as the content is updated, paste and save the content of good_idl.json
 > -> back to CLI for results
 
 # Audit Readyness

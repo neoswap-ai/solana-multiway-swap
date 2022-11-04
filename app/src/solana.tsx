@@ -16,7 +16,8 @@ import { SwapData } from './solana.types';
 //     cIdepositSol,
 // } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
-import NeoSwap from '../../neoSwap.module.v4.12';
+// import  NeoSwap  from 'neo-swap';
+import NeoSwap from './neoSwap.module.v4.12';
 import { getSeed, getSwapData, sendAllPopulateInstruction } from './solana.utils';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -66,16 +67,17 @@ const Solana: FC = () => {
         const program = await getProgram();
         if (!publicKey) throw console.error('not connected');
 
-        const { allInitSendAllArray } = await NeoSwap.allInitialize({
+        const { allInitSendAllArray, pda, swapData } = await NeoSwap.allInitialize({
             program,
             signer: publicKey,
-            swapData: fullData,
+            swapDataGiven: fullData,
             CONST_PROGRAM: CONST_PROGRAM,
         });
+
+        console.log('pda', pda.toBase58());
         const allinitTransactionSendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
         try {
             if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
-
             const allInitTransaction = await program.provider.sendAll(allinitTransactionSendAllArray);
             console.log('initialize transactionHash', allInitTransaction);
         } catch (error) {
@@ -97,10 +99,13 @@ const Solana: FC = () => {
             CONST_PROGRAM,
         });
         let sendAllArray = await sendAllPopulateInstruction(program, depositSendAllArray);
+        console.log('nb deposit item', sendAllArray.length);
 
         try {
-            const transactionHash = await program.provider.sendAll(sendAllArray);
-            console.log('deposit transactionHash', transactionHash);
+            for await (const iterator of sendAllArray) {
+                const transactionHash = await program.provider.sendAll([iterator]);
+                console.log('deposit transactionHash', transactionHash);
+            }
         } catch (error) {
             programCatchError(error);
             throw console.error(error);

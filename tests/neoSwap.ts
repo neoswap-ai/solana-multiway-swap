@@ -1,10 +1,9 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
+import { NeoSwap as NeoSwapType } from "../target/types/neo_swap";
 
 import SwapData from "../neoSwap.module.v4.12/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
 import NftSwapItem from "../neoSwap.module.v4.12/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
-import { SwapCoontractTest } from "../target/types/swap_coontract_test";
-import { splAssociatedTokenAccountProgramId } from "../neoSwap.module.v4.12/utils.neoSwap/const.neoSwap";
 import {
   createAssociatedTokenAccount,
   getAssociatedTokenAddress,
@@ -35,10 +34,11 @@ describe("swapCoontractTest", () => {
   anchor.setProvider(anchor.AnchorProvider.env());
 
   const anchorProgram = anchor.workspace
-    .SwapCoontractTest as Program<SwapCoontractTest>;
+    .SwapCoontractTest as Program<NeoSwapType>;
   const program = anchor.workspace.SwapCoontractTest as Program;
-  const CONST_PROGRAM = "0000";
-  const nbuser = 4;
+  const CONST_PROGRAM = "0002";
+  const nbuser = 2;
+  const nftNb = [0, 1];
   let userKeypairs: Keypair[] = [];
 
   let signer = Keypair.generate();
@@ -87,6 +87,8 @@ describe("swapCoontractTest", () => {
   it("users instruction", async () => {
     for await (const userKeypair of userKeypairs) {
       // }
+      console.log("XXXXXXXXXXXXXXX - user ", userKeypair.publicKey.toBase58());
+
       swapData.items.push({
         isNft: false,
         amount: new BN(0.25 * 10 ** 9),
@@ -98,20 +100,7 @@ describe("swapCoontractTest", () => {
 
       // let userNfts: PublicKey[] = [];
 
-      for await (let mintNb of [0, 1]) {
-        const mint = Keypair.generate();
-        // userNfts.push(mint.publicKey);
-        console.log("mint ", mint.publicKey.toBase58());
-
-        const [userMintAta, mintAta_bump] = await PublicKey.findProgramAddress(
-          [
-            userKeypair.publicKey.toBuffer(),
-            TOKEN_PROGRAM_ID.toBuffer(),
-            mint.publicKey.toBuffer(),
-          ],
-          splAssociatedTokenAccountProgramId
-        );
-
+      for await (let mintNb of nftNb) {
         let mintPubkey = await createMint(
           program.provider.connection, // conneciton
           userKeypair, // fee payer
@@ -142,14 +131,24 @@ describe("swapCoontractTest", () => {
             swapData.items.push({
               isNft: true,
               amount: new BN(1),
-              mint: mint.publicKey,
+              mint: mintPubkey,
               status: 0,
               owner: userKeypair.publicKey,
               destinary: userKeypairs[index].publicKey,
             } as NftSwapItem);
           }
         }
-        console.log("user init");
+        // console.log("user init");
+        const ataBalance =
+          await program.provider.connection.getTokenAccountBalance(ata);
+        console.log(
+          "mint ",
+          mintPubkey.toBase58(),
+          // "\nwith balance: ",
+          // ataBalance.value.amount,
+          "\nwith ata: ",
+          ata.toBase58()
+        );
       }
     }
   });
@@ -158,13 +157,14 @@ describe("swapCoontractTest", () => {
     const allInitData = await NeoSwap.allInitialize({
       program: program,
       signer: signer.publicKey,
-      swapData,
+      swapDataGiven: swapData,
       CONST_PROGRAM,
       // swapDataAccount: swapDataAccountGiven,
     });
-
-    const allInitSendAllArray = allInitData.allInitSendAllArray;
+    swapData = allInitData.swapData;
     pda = allInitData.pda;
+    const allInitSendAllArray = allInitData.allInitSendAllArray;
+    console.log("XXXXXXXXXXXXXXXXX-XXXXXXXXXX pda", pda.toBase58());
 
     const recentBlockhash = (
       await program.provider.connection.getLatestBlockhash()
@@ -187,6 +187,10 @@ describe("swapCoontractTest", () => {
   });
 
   it("Deposit", async () => {
+    let sendAllArray: {
+      tx: anchor.web3.Transaction;
+      signers?: anchor.web3.Signer[];
+    }[] = [];
     for await (const userKeypair of userKeypairs) {
       const { depositSendAllArray } = await NeoSwap.deposit({
         program: program,
@@ -195,29 +199,26 @@ describe("swapCoontractTest", () => {
         CONST_PROGRAM,
       });
 
+      depositSendAllArray.forEach((transactionDeposit) => {
+        transactionDeposit.signers = [userKeypair];
+        transactionDeposit.tx.feePayer = userKeypair.publicKey;
+      });
+      sendAllArray.push(...depositSendAllArray);
+    }
+
+    for await (const item of sendAllArray) {
       const recentBlockhash = (
         await program.provider.connection.getLatestBlockhash()
       ).blockhash;
 
-      depositSendAllArray.forEach((transactionDeposit) => {
-        transactionDeposit.signers = [userKeypair];
-        transactionDeposit.tx.feePayer = userKeypair.publicKey;
-        transactionDeposit.tx.recentBlockhash = recentBlockhash;
-      });
+      item.tx.recentBlockhash = recentBlockhash;
 
-      const transactionHash = await program.provider.sendAll(
-        depositSendAllArray
-      );
+      const transactionHash = await program.provider.sendAll([item]);
 
       for await (const txhash of transactionHash) {
         program.provider.connection.confirmTransaction(txhash);
       }
-      console.log(
-        "deposit user ",
-        userKeypair.publicKey.toBase58(),
-        " transactionHash",
-        transactionHash
-      );
+      console.log("deposited users");
     }
   });
 

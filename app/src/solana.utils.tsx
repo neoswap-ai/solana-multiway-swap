@@ -3,7 +3,7 @@ import { createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@sola
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from './solana.const';
 import { SwapData } from './solana.types';
-import NeoSwap from '../../neoSwap.module.v4.12';
+import NeoSwap from './neoSwap.module.v4.12';
 import { CONST_PROGRAM } from './solana.test';
 
 export async function findAtaUserFromMint(
@@ -107,7 +107,7 @@ export async function getSeed(
     swapDataAccount_bump: number;
 }> {
     return await NeoSwap.getSeedFromData({
-        swapData: sentData,
+        swapDataGiven: sentData,
         program: program,
         CONST_PROGRAM: CONST_PROGRAM,
     });
