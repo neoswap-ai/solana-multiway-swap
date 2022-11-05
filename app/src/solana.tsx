@@ -17,7 +17,7 @@ import { SwapData } from './solana.types';
 // } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
 // import  NeoSwap  from 'neo-swap';
-import NeoSwap from './neoSwap.module.v4.12';
+import NeoSwap from './neoSwap.module.v4.12 old';
 import { getSeed, getSwapData, sendAllPopulateInstruction } from './solana.utils';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -102,10 +102,10 @@ const Solana: FC = () => {
         console.log('nb deposit item', sendAllArray.length);
 
         try {
-            for await (const iterator of sendAllArray) {
-                const transactionHash = await program.provider.sendAll([iterator]);
-                console.log('deposit transactionHash', transactionHash);
-            }
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('deposit transactionHash', transactionHash);
+            // for await (const iterator of sendAllArray) {
+            // }
         } catch (error) {
             programCatchError(error);
             throw console.error(error);

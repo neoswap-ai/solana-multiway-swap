@@ -185,7 +185,7 @@ pub mod neo_swap {
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
                 transfered = true;
             } 
-            else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered == false {
+            else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
@@ -236,7 +236,7 @@ pub mod neo_swap {
                     return  Err(error!(MYERROR::NotReady).into());
                 }
 
-            } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered ==false {
+            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
@@ -315,7 +315,7 @@ pub mod neo_swap {
                     return  Err(error!(MYERROR::NotReady).into());
                 }
 
-            } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered ==false {
+            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
             
@@ -396,7 +396,7 @@ pub mod neo_swap {
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                 transfered = true;
 
-             } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered == false {
+             } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
             }
         }
@@ -493,7 +493,7 @@ pub mod neo_swap {
                         ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
                     }
 
-                } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered ==false {
+                } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
                     return  Err(error!(MYERROR::NoSend).into());
                 }
             

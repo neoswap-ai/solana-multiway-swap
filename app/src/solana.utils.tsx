@@ -3,7 +3,7 @@ import { createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@sola
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from './solana.const';
 import { SwapData } from './solana.types';
-import NeoSwap from './neoSwap.module.v4.12';
+import NeoSwap from './neoSwap.module.v4.12 old';
 import { CONST_PROGRAM } from './solana.test';
 
 export async function findAtaUserFromMint(
