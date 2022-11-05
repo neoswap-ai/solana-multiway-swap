@@ -5,14 +5,14 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 /// DEV
 export const network = WalletAdapterNetwork.Devnet;
-export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W');
+export const programId = new PublicKey('5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9');
 
 /// MAIN
 // export const network = WalletAdapterNetwork.Mainnet;
 // export const programId = new PublicKey('');
 
-export const CONST_PROGRAM: String = '0114';
-export const swapDataAccountGiven = new PublicKey('EdfKs6vRG6bDgSL4zYrinGyR35ozPLwd9WwiaEHi3epD');
+export const CONST_PROGRAM: string = '0144';
+export const swapDataAccountGiven = new PublicKey('FaZU82fieNSRVWe6Tr79oXFx6ydB6vHUmsm6suSfWhMV');
 
 const i1: NftSwapItem = {
     isNft: false,
@@ -78,7 +78,6 @@ export const fullData: SwapData = {
     items: [
         i1,
         i2,
-        i2,
         // i2,
         // i2,
         // i2,
@@ -94,7 +93,8 @@ export const fullData: SwapData = {
         // i2,
         // i2,
         // i2,
-        i3,
+        // i2,
+        // i3,
         i4,
         i5,
         i6,

@@ -39,21 +39,18 @@ export const Solana: FC = () => {
         return new Program(idl, programId, await getProvider());
     }, [getProvider]);
 
-    const getSeed = useCallback((sentData: SwapData): string => {
-        let addSeed_temp: string = '';
-        let temp_count: number = 0;
+    const getSeed = useCallback((sentData: SwapData): Buffer => {
+        let addSeed_temp: string = CONST_PROGRAM;
         let temp_string: string = '';
         for (let item = 0; item < sentData.items.length; item++) {
-            if (temp_count < 3) {
-                temp_count += 1;
-                temp_string += sentData.items[item].mint.toString().slice(0, 1);
-            } else {
-                addSeed_temp += temp_string + sentData.items[item].mint.toString().slice(0, 1);
-                temp_count = 0;
-                temp_string = '';
-            }
+            temp_string += sentData.items[item].mint.toString();
+            temp_string += sentData.items[item].owner.toString();
+            temp_string += sentData.items[item].destinary.toString();
         }
-        return CONST_PROGRAM + addSeed_temp;
+        addSeed_temp += temp_string;
+        const swapDataAccount_seed: Buffer = Buffer.from(utils.sha256.hash(addSeed_temp)).subarray(0, 32);
+
+        return swapDataAccount_seed;
 
         // return new Program(idl, programId, await getProvider());
     }, []);
@@ -83,10 +80,8 @@ export const Solana: FC = () => {
         // );
         // console.log('confirm tr', res);
 
-        const tradeRef = getSeed(fullData);
-        console.log('tradeRef', tradeRef);
-
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        const swapDataAccount_seed = getSeed(fullData);
+        console.log('swapDataAccount_seed', swapDataAccount_seed);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
             [swapDataAccount_seed],
@@ -133,8 +128,8 @@ export const Solana: FC = () => {
         console.log('SwapData', swapData);
         if (swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
 
-        const tradeRef = getSeed(fullData);
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        const swapDataAccount_seed = getSeed(fullData);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
             [swapDataAccount_seed],
@@ -227,12 +222,12 @@ export const Solana: FC = () => {
         console.log('SwapData', swapData);
         if (swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
 
-        const tradeRef = getSeed(fullData);
-        console.log('tradeRef', tradeRef);
+        const swapDataAccount_seed = getSeed(fullData);
+        // console.log('tradeRef', tradeRef);
         if (getSeed(fullData) !== getSeed(swapData)) {
             console.log('data missing');
         }
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
             [swapDataAccount_seed],
@@ -261,6 +256,7 @@ export const Solana: FC = () => {
     }, [publicKey, getProgram, getSeed]);
 
     const allInitialize = useCallback(async () => {
+        
         await addInitialize();
         await verifyInitialize();
     }, [initInitialize, addInitialize, verifyInitialize]);
@@ -276,10 +272,10 @@ export const Solana: FC = () => {
         console.log('SwapData', swapData);
         if (swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
 
-        const tradeRef = getSeed(swapData);
+        const swapDataAccount_seed = getSeed(swapData);
         // console.log('tradeRef', tradeRef);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
         // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
@@ -291,7 +287,7 @@ export const Solana: FC = () => {
         console.log('swapDataAccount_bump', swapDataAccount_bump);
 
         let depositInstructionTransaction = new Transaction();
-        let ataList: Array<PublicKey>  = [];
+        let ataList: Array<PublicKey> = [];
         for (let item = 0; item < swapData.items.length; item++) {
             let e = swapData.items[item];
             // console.log('element', item, ' \n', e);
@@ -310,8 +306,7 @@ export const Solana: FC = () => {
                         );
                         ataList.push(depositing.ata);
                         depositInstructionTransaction.add(depositing.transaction);
-                        console.log("ataList",ataList);
-                        
+                        console.log('ataList', ataList);
                     }
                     break;
                 case false:
@@ -396,10 +391,10 @@ export const Solana: FC = () => {
         if (!(swapData.status === 0 || swapData.status === 90)) {
             throw console.error('Trade not able to be canceled');
         }
-        const tradeRef = getSeed(swapData);
+        const swapDataAccount_seed = getSeed(swapData);
         // console.log('tradeRef', tradeRef);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
         // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
@@ -483,11 +478,11 @@ export const Solana: FC = () => {
         console.log('swapData', swapData);
         if (swapData.status !== 90) throw console.error('Trade not in waiting to be cancelled');
 
-        const tradeRef = getSeed(swapData);
+        const swapDataAccount_seed = getSeed(swapData);
 
         // console.log('tradeRef', tradeRef);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
         // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
@@ -529,11 +524,11 @@ export const Solana: FC = () => {
         console.log('swapData', swapData);
         if (swapData.status !== 0) throw console.error('Trade not in waiting to be validated');
 
-        const tradeRef = getSeed(swapData);
+        const swapDataAccount_seed = getSeed(swapData);
 
         // console.log('tradeRef', tradeRef);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
         // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
@@ -572,10 +567,10 @@ export const Solana: FC = () => {
         console.log('swapData :', swapData);
         if (swapData.status !== 1) throw console.error('Trade not in waiting for claim state');
 
-        const tradeRef = getSeed(swapData);
+        const swapDataAccount_seed = getSeed(swapData);
         // console.log('tradeRef', tradeRef);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
         // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
@@ -594,7 +589,7 @@ export const Solana: FC = () => {
             switch (e.isNft) {
                 case true:
                     if (e.status === 1) {
-                        console.log(e.destinary.toBase58())
+                        console.log(e.destinary.toBase58());
                         claimInstructionTransaction.add(
                             (
                                 await cIclaimNft(
@@ -659,10 +654,10 @@ export const Solana: FC = () => {
         console.log('swapData', swapData);
         if (swapData.status !== 1) throw console.error('Trade not in waiting to be changed to claimed');
 
-        const tradeRef = getSeed(swapData);
+        const swapDataAccount_seed = getSeed(swapData);
         // console.log('tradeRef', tradeRef);
 
-        const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
+        // const swapDataAccount_seed: Buffer = utils.bytes.base64.decode(tradeRef);
         // console.log('swapDataAccount_seed', swapDataAccount_seed);
 
         const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(

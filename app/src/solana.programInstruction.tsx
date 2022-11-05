@@ -32,6 +32,7 @@ export async function cIdepositNft(
     if (ixCreateUserMintAta && addUserTx) {
         console.log('CreateUserAta Deposit Tx added');
         transaction.add(ixCreateUserMintAta);
+        ataList?.push(userMintAta);
     }
 
     const { mintAta: pdaMintAta, transaction: ixCreatePdaMintAta } = await findOrCreateAta(
@@ -54,6 +55,7 @@ export async function cIdepositNft(
     if (ixCreatePdaMintAta && addPdaTx) {
         console.log('CreatePdaAta Deposit Tx added');
         transaction.add(ixCreatePdaMintAta);
+        ataList?.push(pdaMintAta);
     }
 
     const depositIx = new Transaction().add(
