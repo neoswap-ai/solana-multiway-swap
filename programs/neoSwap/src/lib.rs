@@ -18,8 +18,13 @@ pub mod neo_swap {
 
     /// @notice Initialize Swap's PDA. /!\ Signer will be Initializer
     /// @dev First function to trigger to initialize Swap's PDA with according space, define admin and add Neoswap Fees. /!\ Signer will be Initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA", sent_data: SwapData: {initializer: Pubkey => admin of the trade, status: u8 = 80 => "status of the trade", items: NftSwapItem = Neoswap_fees [length=1]}, nb_of_items: u32 => number of items engaged in the trade}
-    /// @accounts {swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer, system_program: Pubkey = system_program_id, spl_token_program: Pubkey = spl_associated_token_program_id}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @param sent_data: SwapData: {initializer: Pubkey => admin of the trade, status: u8 = 80 => "status of the trade", items: NftSwapItem = Neoswap_fees [length=1]}, nb_of_items: u32 => number of items engaged in the trade}
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts signer: Pubkey => initializer
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
     pub fn init_initialize(
         ctx: Context<InitInitialize>,
@@ -57,8 +62,11 @@ pub mod neo_swap {
   
     /// @notice add item to Swap's PDA. /!\ initializer function
     /// @dev Function to add an item to the PDA. /!\ status of item is rewritten to according value in program.  /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA", trade_to_add: NftSwapItem: { is_nft: bool => "return true if the item is en NFT (true)/(false)", mint: Pubkey => "(Mint address)/(Owner address)", amount: i64 => (nbr of NFT engaged in this trade)/(number of lamports the user will exchange with the smart contract if_positive(user will give lamports), if_negative(user will receive lamports)), owner: Pubkey => owner of the NFT or lamports , destinary: Pubkey => (user who should receive the NFT)/(Owner address), status : u8 => /!\ will be rewritten by program, }}
-    /// @accounts {swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @param trade_to_add: NftSwapItem: {is_nft: bool => "return true if the item is en NFT (true)/(false)", mint: Pubkey => "(Mint address)/(Owner address)", amount: i64 => (nbr of NFT engaged in this trade)/(number of lamports the user will exchange with the smart contract if_positive(user will give lamports), if_negative(user will receive lamports)), owner: Pubkey => owner of the NFT or lamports , destinary: Pubkey => (user who should receive the NFT)/(Owner address), status : u8 => /!\ will be rewritten by program, }
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts signer: Pubkey => initializer
     /// @return Void
     pub fn initialize_add(
         ctx: Context<InitializeAdd>,
@@ -102,8 +110,10 @@ pub mod neo_swap {
 
     /// @notice Verify Swap's PDA items to proceed to waiting for deposit state. /!\ initializer function
     /// @dev Function verify each item status and sum of lamports to mutate the smart contract status to 0 (waiting for deposit).  /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts signer: Pubkey => initializer
     /// @return Void
     pub fn validate_initialize(
         ctx: Context<VerifyInitialize>,
@@ -133,7 +143,8 @@ pub mod neo_swap {
 
     /// @notice Deposit NFT to escrow. 
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposit the NFT into the escrow. 
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits,  item_from_deposit: Pubkey => User ATA related to mint, item_to_deposit: Pubkey => Swap's PDA ATA related to mint}
     /// @return Void
     pub fn deposit_nft(
@@ -194,8 +205,11 @@ pub mod neo_swap {
 
     /// @notice Deposit lamports to escrow. 
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposits lamports to escrow. /!\ user that should only receive lamports don't have to deposit.
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {system_program: Pubkey = system_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts signer: Pubkey => User that deposits
     /// @return Void
     pub fn deposit_sol(
         ctx: Context<DepositSol>,
@@ -245,8 +259,10 @@ pub mod neo_swap {
 
     /// @notice Verify Swap's PDA items to proceed to waiting for claiming state. /!\ initializer function
     /// @dev Function verify each item status to mutate the smart contract status to 1 (waiting for claim).  /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts signer: Pubkey => initializer
     /// @return Void
     pub fn validate_deposit(
         ctx: Context<Validate>,
@@ -273,8 +289,12 @@ pub mod neo_swap {
 
     /// @notice Claims lamports from escrow. /!\ initializer function
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary. /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {system_program: Pubkey = system_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, user: Pubkey => User that will receive lamports, signer: Pubkey => Initializer}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts user: Pubkey => User that will receive lamports
+    /// @accounts signer: Pubkey => Initializer
     /// @return Void
     pub fn claim_sol(
         ctx: Context<ClaimSol>,
@@ -327,8 +347,15 @@ pub mod neo_swap {
 
     /// @notice Claim NFT from escrow. /!\ initializer function
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfers the NFT from the escrow to the shared user. If no more NFT is held by the PDA, close PDA ATA and send rent fund to user. /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, user: Pubkey => User that will receive the NFT, signer: Pubkey => Initializer, item_from_deposit: Pubkey => Swap's PDA ATA related to mint, item_to_deposit: Pubkey => User ATA related to mint}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts token_program: Pubkey = token_program_id
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts user: Pubkey => User that will receive the NFT, signer: Pubkey => Initializer
+    /// @accounts signer: Pubkey => Initializer
+    /// @accounts item_from_deposit: Pubkey => Swap's PDA ATA related to mint
+    /// @accounts item_to_deposit: Pubkey => User ATA related to mint
     /// @return Void
     pub fn claim_nft(
         ctx: Context<ClaimNft>,
@@ -406,8 +433,12 @@ pub mod neo_swap {
 
     /// @notice Verify Swap's PDA items to proceed to closed state. /!\ initializer function
     /// @dev Function verify each item status to mutate the smart contract status to 3 (closed) then close the Swap's PDA.  /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer, system_program: Pubkey = system_program_id, spl_token_program: Pubkey = spl_associated_token_program_id}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer
+    /// @accounts signer: Pubkey => initializer
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
     pub fn validate_claimed(
         ctx: Context<ValidateAndClose>,
@@ -437,8 +468,12 @@ pub mod neo_swap {
 
     /// @notice Cancels an item from escrow, retrieving funds if deposited previously. /!\ initializer function
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary if needed, change the item status to cancelled and Swap's status to 90 (cancelled) if not already. /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {system_program: Pubkey = system_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, user: Pubkey => User that will receive lamports, signer: Pubkey => Initializer}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts user: Pubkey => User that will receive lamports
+    /// @accounts signer: Pubkey => Initializer
     /// @return Void
     pub fn cancel_sol(
         ctx: Context<ClaimSol>,
@@ -506,8 +541,15 @@ pub mod neo_swap {
 
     /// @notice Cancel NFT from escrow, retrieving it if previously deposited. /!\ initializer function
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfers the NFT from the shared user to the escrow. If no more NFT is held by the PDA, close PDA ATA and send rent fund to user. /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, user: Pubkey => User that will potentially receive the NFT, signer: Pubkey => Initializer, item_from_deposit: Pubkey => Swap's PDA ATA related to mint, item_to_deposit: Pubkey => User ATA related to mint}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id
+    /// @accounts token_program: Pubkey = token_program_id
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts user: Pubkey => User that will potentially receive the NFT
+    /// @accounts signer: Pubkey => Initializer
+    /// @accounts item_from_deposit: Pubkey => Swap's PDA ATA related to mint
+    /// @accounts item_to_deposit: Pubkey => User ATA related to mint
     /// @return Void
     pub fn cancel_nft(
         ctx: Context<ClaimNft>,
@@ -607,8 +649,12 @@ pub mod neo_swap {
 
     /// @notice Verify Swap's PDA items to proceed to closed state. /!\ initializer function
     /// @dev Function verify each item status to mutate the smart contract status to 3 (closed) then close the Swap's PDA.  /!\ this function can only be triggered by initializer
-    /// @param {seed: u8[] => Seed buffer corresponding to Swap's PDA, bump: u8 => "Bump corresponding to Swap's PDA"}
-    /// @accounts {swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer, system_program: Pubkey = system_program_id, spl_token_program: Pubkey = spl_associated_token_program_id}
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts signer: Pubkey => initializer
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
     pub fn validate_cancel(
         ctx: Context<ValidateAndClose>,

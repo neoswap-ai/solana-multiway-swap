@@ -7,17 +7,8 @@ import { idl } from './idl';
 import { opts } from './solana.const';
 import { CONST_PROGRAM, fullData, network, programId, swapDataAccountGiven } from './solana.test';
 import { SwapData } from './solana.types';
-// import {
-//     cIcancelNft,
-//     cIcancelSol,
-//     cIclaimNft,
-//     cIclaimSol,
-//     cIdepositNft,
-//     cIdepositSol,
-// } from './solana.programInstruction';
 import { programCatchError } from './solana.errors';
-// import  NeoSwap  from 'neo-swap';
-import NeoSwap from './neoSwap.module.v4.12 old';
+import NeoSwap from './neoSwap.module.v4.2';
 import { getSeed, getSwapData, sendAllPopulateInstruction } from './solana.utils';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
@@ -41,6 +32,7 @@ const Solana: FC = () => {
         return new Program(idl, programId, await getProvider());
     }, [getProvider]);
 
+    /// fetch data from swap's PDA or construct the relevant seed according to Data to send
     const read = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
 
@@ -57,24 +49,25 @@ const Solana: FC = () => {
         try {
             swapData = await getSwapData(swapDataAccountGiven, program);
         } catch (error) {
-            swapData = await getSeed(fullData, program);
+            swapData = await getSeed(fullData);
         }
 
         console.log('SwapData', swapData);
     }, [publicKey, getProgram]);
 
+    /// Triggers initializing PDA and Setting up Swap's data
     const allInitialize = useCallback(async () => {
         const program = await getProgram();
         if (!publicKey) throw console.error('not connected');
 
-        const { allInitSendAllArray, pda, swapData } = await NeoSwap.allInitialize({
-            program,
+        const { allInitSendAllArray, pda } = await NeoSwap.allInitialize({
+            provider: program.provider as AnchorProvider,
             signer: publicKey,
             swapDataGiven: fullData,
             CONST_PROGRAM: CONST_PROGRAM,
         });
 
-        console.log('pda', pda.toBase58());
+        console.log('Save pda into solana.test.tsx as swapDataAccountGiven: ', pda.toBase58());
         const allinitTransactionSendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
         try {
             if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
@@ -87,38 +80,37 @@ const Solana: FC = () => {
         }
     }, [getProgram, publicKey]);
 
+    /// Triggers depositing all assets the connected user should deposit
     const deposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         const program = await getProgram();
         if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
         const { depositSendAllArray } = await NeoSwap.deposit({
-            program,
+            provider: program.provider as AnchorProvider,
             signer: publicKey,
             swapDataAccount: swapDataAccountGiven,
             CONST_PROGRAM,
         });
         let sendAllArray = await sendAllPopulateInstruction(program, depositSendAllArray);
-        console.log('nb deposit item', sendAllArray.length);
 
         try {
             const transactionHash = await program.provider.sendAll(sendAllArray);
             console.log('deposit transactionHash', transactionHash);
-            // for await (const iterator of sendAllArray) {
-            // }
         } catch (error) {
             programCatchError(error);
             throw console.error(error);
         }
     }, [publicKey, getProgram]);
 
+    /// Triggers sending expected assets and closing the PDA
     const claim = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         const program = await getProgram();
         if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
 
         const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
-            program,
+            provider: program.provider as AnchorProvider,
             signer: publicKey,
             swapDataAccount: swapDataAccountGiven,
             CONST_PROGRAM,
@@ -135,12 +127,13 @@ const Solana: FC = () => {
         }
     }, [publicKey, getProgram]);
 
+    /// Triggers cancelling the trade sending back locked assets and closing the PDA
     const cancel = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
         const program = await getProgram();
 
         const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
-            program,
+            provider: program.provider as AnchorProvider,
             signer: publicKey,
             swapDataAccount: swapDataAccountGiven,
             CONST_PROGRAM,
@@ -161,7 +154,7 @@ const Solana: FC = () => {
         <div>
             <div>
                 <button onClick={read} disabled={!publicKey}>
-                    read
+                    read swapData
                 </button>
             </div>
             <br />

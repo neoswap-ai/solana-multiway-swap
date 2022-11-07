@@ -1,9 +1,9 @@
-import { Program, web3 } from '@project-serum/anchor';
+import { AnchorProvider, Program, web3 } from '@project-serum/anchor';
 import { createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from './solana.const';
 import { SwapData } from './solana.types';
-import NeoSwap from './neoSwap.module.v4.12 old';
+import NeoSwap from './neoSwap.module.v4.2';
 import { CONST_PROGRAM } from './solana.test';
 
 export async function findAtaUserFromMint(
@@ -93,14 +93,13 @@ export async function getSwapData(
 }> {
     return await NeoSwap.getSwapDataFromPDA({
         swapDataAccount,
-        program,
+        provider: program.provider as AnchorProvider,
         CONST_PROGRAM,
     });
 }
 
 export async function getSeed(
     sentData: SwapData,
-    program: Program
 ): Promise<{
     swapDataAccount: web3.PublicKey;
     swapDataAccount_seed: Buffer;
@@ -108,7 +107,6 @@ export async function getSeed(
 }> {
     return await NeoSwap.getSeedFromData({
         swapDataGiven: sentData,
-        program: program,
         CONST_PROGRAM: CONST_PROGRAM,
     });
 }

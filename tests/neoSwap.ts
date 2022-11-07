@@ -1,9 +1,8 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
-import { NeoSwap as NeoSwapType } from "../target/types/neo_swap";
 const { assert } = require("chai");
-import SwapData from "../neoSwap.module.v4.12/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
-import NftSwapItem from "../neoSwap.module.v4.12/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
+import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
+import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
 import {
   createAssociatedTokenAccount,
   getAssociatedTokenAddress,
@@ -27,7 +26,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import NeoSwap from "../neoSwap.module.v4.12";
+import NeoSwap from "../app/src/neoSwap.module.v4.2";
 
 describe("swapCoontractTest", () => {
   // Configure the client to use the local cluster.
@@ -156,7 +155,7 @@ describe("swapCoontractTest", () => {
 
   it("initialize", async () => {
     const allInitData = await NeoSwap.allInitialize({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
@@ -194,7 +193,7 @@ describe("swapCoontractTest", () => {
     }[] = [];
     for await (const userKeypair of userKeypairs) {
       const { depositSendAllArray } = await NeoSwap.deposit({
-        program: program,
+        provider: program.provider as anchor.AnchorProvider,
         signer: userKeypair.publicKey,
         swapDataAccount: pda,
         CONST_PROGRAM,
@@ -222,7 +221,7 @@ describe("swapCoontractTest", () => {
 
   it("claim and close", async () => {
     const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataAccount: pda,
       CONST_PROGRAM,
@@ -251,7 +250,7 @@ describe("swapCoontractTest", () => {
 
   it("initialize for cancel", async () => {
     const allInitData = await NeoSwap.allInitialize({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
@@ -288,7 +287,7 @@ describe("swapCoontractTest", () => {
     }[] = [];
     for await (const userKeypair of userKeypairs) {
       const { depositSendAllArray } = await NeoSwap.deposit({
-        program: program,
+        provider: program.provider as anchor.AnchorProvider,
         signer: userKeypair.publicKey,
         swapDataAccount: pda,
         CONST_PROGRAM,
@@ -315,7 +314,7 @@ describe("swapCoontractTest", () => {
   });
   it("cancel and close", async () => {
     const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataAccount: pda,
       CONST_PROGRAM,
@@ -344,7 +343,7 @@ describe("swapCoontractTest", () => {
 
   it("initialize for mishandling", async () => {
     const allInitData = await NeoSwap.allInitialize({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
@@ -377,7 +376,7 @@ describe("swapCoontractTest", () => {
 
   it("reinitialize mishandling", async () => {
     const allInitData = await NeoSwap.allInitialize({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
@@ -420,7 +419,7 @@ describe("swapCoontractTest", () => {
 
   it("wrong reinitialize mishandling", async () => {
     const allInitData = await NeoSwap.allInitialize({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: userKeypairs[0].publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
@@ -462,7 +461,7 @@ describe("swapCoontractTest", () => {
 
   it("wrong claim and close", async () => {
     const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataAccount: pda,
       CONST_PROGRAM,
@@ -497,7 +496,7 @@ describe("swapCoontractTest", () => {
 
   it("cancel and close before deposit", async () => {
     const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
-      program: program,
+      provider: program.provider as anchor.AnchorProvider,
       signer: signer.publicKey,
       swapDataAccount: pda,
       CONST_PROGRAM,
@@ -529,18 +528,27 @@ describe("swapCoontractTest", () => {
     }[] = [];
     try {
       for await (const userKeypair of userKeypairs) {
-        const { depositSendAllArray } = await NeoSwap.deposit({
-          program: program,
-          signer: userKeypair.publicKey,
-          swapDataAccount: pda,
-          CONST_PROGRAM,
-        });
+        try {
+          const { depositSendAllArray } = await NeoSwap.deposit({
+            provider: program.provider as anchor.AnchorProvider,
+            signer: userKeypair.publicKey,
+            swapDataAccount: pda,
+            CONST_PROGRAM,
+          });
 
-        depositSendAllArray.forEach((transactionDeposit) => {
-          transactionDeposit.signers = [userKeypair];
-          transactionDeposit.tx.feePayer = userKeypair.publicKey;
-        });
-        sendAllArray.push(...depositSendAllArray);
+          depositSendAllArray.forEach((transactionDeposit) => {
+            transactionDeposit.signers = [userKeypair];
+            transactionDeposit.tx.feePayer = userKeypair.publicKey;
+          });
+          sendAllArray.push(...depositSendAllArray);
+        } catch (error) {
+          console.log("error1\n", error);
+
+          assert.strictEqual(
+            String(error).toLowerCase().includes("PDA not initialized"),
+            true
+          );
+        }
       }
       const recentBlockhash = (
         await program.provider.connection.getLatestBlockhash()
@@ -555,7 +563,7 @@ describe("swapCoontractTest", () => {
       }
       console.log("XXXXXXXXXXXXX deposited user ");
     } catch (error) {
-      console.log(error);
+      console.log("error2\n", error);
 
       assert.strictEqual(
         String(error).toLowerCase().includes("PDA not initialized"),
