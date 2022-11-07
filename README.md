@@ -89,8 +89,8 @@ Program functions & User Trade:
 "@testing-library/react": "^13.3.0"
 "@testing-library/user-event": "^14.4.3"
 "@types/jest": "^28.1.7"
-"@types/react": "^18.2.0"
-"@types/react-dom": "^18.2.0"
+"@types/react": "^18.0.0"
+"@types/react-dom": "^18.0.0"
 "@types/testing-library__jest-dom": "^5.14.5"
       
 

@@ -33,6 +33,8 @@ export const deposit = async (Data: {
         provider: program.provider as AnchorProvider,
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
+    }).catch((error) => {
+        throw console.error(error);
     });
 
     if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');

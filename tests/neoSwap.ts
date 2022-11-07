@@ -29,10 +29,8 @@ import {
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
 
 describe("swapCoontractTest", () => {
-  // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
-  // const anchorProgram = anchor.workspace
-  //   .SwapCoontractTest as Program<NeoSwapType>;
+
   const program = anchor.workspace.NeoSwap as Program;
   const CONST_PROGRAM = "0002";
   const nbuser = 3;
@@ -57,13 +55,10 @@ describe("swapCoontractTest", () => {
   };
 
   it("Initializing accounts", async () => {
-    // Add your test here.
-
     const airdropSignature = await program.provider.connection.requestAirdrop(
       signer.publicKey,
       2 * LAMPORTS_PER_SOL
     );
-    // .then(async airdropSignatureSigner=>{
 
     console.log("signer airdrop done", signer.publicKey.toBase58());
 
@@ -84,7 +79,6 @@ describe("swapCoontractTest", () => {
 
   it("users instruction", async () => {
     for await (const userKeypair of userKeypairs) {
-      // }
       console.log("XXXXXXXXXXXXXXX - user ", userKeypair.publicKey.toBase58());
 
       swapData.items.push({
@@ -95,8 +89,6 @@ describe("swapCoontractTest", () => {
         owner: userKeypair.publicKey,
         destinary: userKeypair.publicKey,
       } as NftSwapItem);
-
-      // let userNfts: PublicKey[] = [];
 
       for await (let mintNb of nftNb) {
         let mintPubkey = await createMint(
@@ -134,17 +126,13 @@ describe("swapCoontractTest", () => {
               owner: userKeypair.publicKey,
               destinary: userKeypairs[index].publicKey,
             } as NftSwapItem);
-            // console.log("nft Item Added");
           }
         }
-        // console.log("user init");
         const ataBalance =
           await program.provider.connection.getTokenAccountBalance(ata);
         console.log(
           "mint ",
           mintPubkey.toBase58(),
-          // "\nwith balance: ",
-          // ataBalance.value.amount,
           "\nwith ata: ",
           ata.toBase58(),
           "\n"
@@ -159,12 +147,11 @@ describe("swapCoontractTest", () => {
       signer: signer.publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
-      // swapDataAccount: swapDataAccountGiven,
     });
     swapData = allInitData.swapData;
     pda = allInitData.pda;
     const allInitSendAllArray = allInitData.allInitSendAllArray;
-    console.log("XXXXXXXXXXXXXXXXX-XXXXXXXXXX pda", pda.toBase58());
+    console.log("XXX-XXX pda", pda.toBase58());
 
     const recentBlockhash = (
       await program.provider.connection.getLatestBlockhash()
@@ -176,7 +163,6 @@ describe("swapCoontractTest", () => {
       transactionDeposit.tx.recentBlockhash = recentBlockhash;
     }
 
-    // if (!program.provider.sendAll) throw console.error("no sendAndConfirm");
     const txhashs = await program.provider.sendAll(allInitSendAllArray);
 
     for await (const hash of txhashs) {
@@ -216,7 +202,7 @@ describe("swapCoontractTest", () => {
     for await (const transactionHash of transactionHashs) {
       await program.provider.connection.confirmTransaction(transactionHash);
     }
-    console.log("XXXXXXXXXXXXX deposited user ");
+    console.log("deposited users ", transactionHashs);
   });
 
   it("claim and close", async () => {
@@ -259,7 +245,7 @@ describe("swapCoontractTest", () => {
     swapData = allInitData.swapData;
     pda = allInitData.pda;
     const allInitSendAllArray = allInitData.allInitSendAllArray;
-    console.log("XXXXXXXXXXXXXXXXX-XXXXXXXXXX pda", pda.toBase58());
+    console.log("XXX-XXX pda", pda.toBase58());
 
     const recentBlockhash = (
       await program.provider.connection.getLatestBlockhash()
@@ -271,7 +257,6 @@ describe("swapCoontractTest", () => {
       transactionDeposit.tx.recentBlockhash = recentBlockhash;
     }
 
-    // if (!program.provider.sendAll) throw console.error("no sendAndConfirm");
     const txhashs = await program.provider.sendAll(allInitSendAllArray);
 
     for await (const hash of txhashs) {
@@ -310,8 +295,9 @@ describe("swapCoontractTest", () => {
     for await (const transactionHash of transactionHashs) {
       await program.provider.connection.confirmTransaction(transactionHash);
     }
-    console.log("XXXXXXXXXXXXX deposited user ");
+    console.log("deposited user ", transactionHashs);
   });
+
   it("cancel and close", async () => {
     const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
       provider: program.provider as anchor.AnchorProvider,
@@ -347,7 +333,6 @@ describe("swapCoontractTest", () => {
       signer: signer.publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
-      // swapDataAccount: swapDataAccountGiven,
     });
     swapData = allInitData.swapData;
     pda = allInitData.pda;
@@ -364,14 +349,13 @@ describe("swapCoontractTest", () => {
       transactionDeposit.tx.recentBlockhash = recentBlockhash;
     }
 
-    // if (!program.provider.sendAll) throw console.error("no sendAndConfirm");
     const txhashs = await program.provider.sendAll(allInitSendAllArray);
 
     for await (const hash of txhashs) {
       program.provider.connection.confirmTransaction(hash);
     }
 
-    console.log("initialized");
+    console.log("initialized", txhashs);
   });
 
   it("reinitialize mishandling", async () => {
@@ -380,12 +364,11 @@ describe("swapCoontractTest", () => {
       signer: signer.publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
-      // swapDataAccount: swapDataAccountGiven,
     });
     swapData = allInitData.swapData;
     pda = allInitData.pda;
     const allInitSendAllArray = allInitData.allInitSendAllArray;
-    console.log("XXXXXXXXXXXXXXXXX-XXXXXXXXXX pda", pda.toBase58());
+    console.log("XXX-XXX pda", pda.toBase58());
 
     const recentBlockhash = (
       await program.provider.connection.getLatestBlockhash()
@@ -404,10 +387,8 @@ describe("swapCoontractTest", () => {
         program.provider.connection.confirmTransaction(hash);
       }
 
-      console.log("initialized");
+      console.log("initialized", txhashs);
     } catch (error) {
-      console.log("fails");
-
       assert.strictEqual(
         String(error).toLowerCase().includes("custom program error: 0x0"),
         true
@@ -423,12 +404,11 @@ describe("swapCoontractTest", () => {
       signer: userKeypairs[0].publicKey,
       swapDataGiven: swapData,
       CONST_PROGRAM,
-      // swapDataAccount: swapDataAccountGiven,
     });
     swapData = allInitData.swapData;
     pda = allInitData.pda;
     const allInitSendAllArray = allInitData.allInitSendAllArray;
-    console.log("XXXXXXXXXXXXXXXXX-XXXXXXXXXX pda", pda.toBase58());
+    console.log("XXX-XXX pda", pda.toBase58());
 
     const recentBlockhash = (
       await program.provider.connection.getLatestBlockhash()
@@ -440,7 +420,6 @@ describe("swapCoontractTest", () => {
       transactionDeposit.tx.recentBlockhash = recentBlockhash;
     }
 
-    // if (!program.provider.sendAll) throw console.error("no sendAndConfirm");
     try {
       const txhashs = await program.provider.sendAll(allInitSendAllArray);
 
@@ -448,10 +427,8 @@ describe("swapCoontractTest", () => {
         program.provider.connection.confirmTransaction(hash);
       }
 
-      console.log("initialized");
+      console.log("initialized", txhashs);
     } catch (error) {
-      console.log("fails");
-
       assert.strictEqual(
         String(error).toLowerCase().includes("custom program error: 0x0"),
         true
@@ -483,10 +460,8 @@ describe("swapCoontractTest", () => {
         program.provider.connection.confirmTransaction(hash);
       }
 
-      console.log("initialized");
+      console.log("initialized", txhashs);
     } catch (error) {
-      console.log("fails");
-
       assert.strictEqual(
         String(error).toLowerCase().includes("custom program error: 0x1776"),
         true
@@ -518,7 +493,7 @@ describe("swapCoontractTest", () => {
       program.provider.connection.confirmTransaction(hash);
     }
 
-    console.log("initialized");
+    console.log("initialized", txhashs);
   });
 
   it("Deposit for misshandling", async () => {
@@ -526,49 +501,19 @@ describe("swapCoontractTest", () => {
       tx: anchor.web3.Transaction;
       signers?: anchor.web3.Signer[];
     }[] = [];
-    try {
-      for await (const userKeypair of userKeypairs) {
-        try {
-          const { depositSendAllArray } = await NeoSwap.deposit({
-            provider: program.provider as anchor.AnchorProvider,
-            signer: userKeypair.publicKey,
-            swapDataAccount: pda,
-            CONST_PROGRAM,
-          });
+    for await (const userKeypair of userKeypairs) {
+      try {
+        const { depositSendAllArray } = await NeoSwap.deposit({
+          provider: program.provider as anchor.AnchorProvider,
+          signer: userKeypair.publicKey,
+          swapDataAccount: pda,
+          CONST_PROGRAM,
+        });
 
-          depositSendAllArray.forEach((transactionDeposit) => {
-            transactionDeposit.signers = [userKeypair];
-            transactionDeposit.tx.feePayer = userKeypair.publicKey;
-          });
-          sendAllArray.push(...depositSendAllArray);
-        } catch (error) {
-          console.log("error1\n", error);
-
-          assert.strictEqual(
-            String(error).toLowerCase().includes("PDA not initialized"),
-            true
-          );
-        }
+        assert.strictEqual(!depositSendAllArray, true);
+      } catch (error) {
+        assert.strictEqual(true, true);
       }
-      const recentBlockhash = (
-        await program.provider.connection.getLatestBlockhash()
-      ).blockhash;
-
-      sendAllArray.forEach((transactionDeposit) => {
-        transactionDeposit.tx.recentBlockhash = recentBlockhash;
-      });
-      const transactionHashs = await program.provider.sendAll(sendAllArray);
-      for await (const transactionHash of transactionHashs) {
-        await program.provider.connection.confirmTransaction(transactionHash);
-      }
-      console.log("XXXXXXXXXXXXX deposited user ");
-    } catch (error) {
-      console.log("error2\n", error);
-
-      assert.strictEqual(
-        String(error).toLowerCase().includes("PDA not initialized"),
-        true
-      );
     }
   });
 });
