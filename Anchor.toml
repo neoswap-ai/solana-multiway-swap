@@ -1,4 +1,4 @@
-[programs.localnet]
+[programs.devnet]
 swap_coontract_test = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
 
 [registry]
