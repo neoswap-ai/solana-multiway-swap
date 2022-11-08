@@ -5,14 +5,14 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 /// DEV
 export const network = WalletAdapterNetwork.Devnet;
-export const programId = new PublicKey('6jHJ2KFfGNLXJhni2VYQFTy7gBQ2QoAxLDRekqGiqK6W');
+export const programId = new PublicKey('5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9');
 
 /// MAIN
 // export const network = WalletAdapterNetwork.Mainnet;
 // export const programId = new PublicKey('');
 
-// export const CONST_PROGRAM: string = '0121';
-export const swapDataAccountGiven = new PublicKey('FeHJfjAnCxg5uyNWfEj112WqGFTsYWEMgG6G8mRQTF58');
+export const CONST_PROGRAM: string = '0131';
+export const swapDataAccountGiven = new PublicKey('8inLXxbPiQoZNHfsJB6P9tCn6SQWsL7TXn91bj5pCrj6');
 
 const i11: NftSwapItem = {
     isNft: false,
@@ -25,7 +25,7 @@ const i11: NftSwapItem = {
 
 const i12: NftSwapItem = {
     isNft: true,
-    amount: new BN(1 * 10 ** 9),
+    amount: new BN(1),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
     mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
@@ -34,7 +34,7 @@ const i12: NftSwapItem = {
 
 const i13: NftSwapItem = {
     isNft: true,
-    amount: new BN(1 * 10 ** 9),
+    amount: new BN(1),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
@@ -52,7 +52,7 @@ const i21: NftSwapItem = {
 
 const i22: NftSwapItem = {
     isNft: true,
-    amount: new BN(1 * 10 ** 9),
+    amount: new BN(1),
     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
     destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     mint: new PublicKey('DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew'),
@@ -69,7 +69,6 @@ const i23: NftSwapItem = {
 };
 
 const i31: NftSwapItem = {
-
     isNft: false,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
@@ -87,7 +86,7 @@ const i32: NftSwapItem = {
 };
 const i33: NftSwapItem = {
     isNft: true,
-    amount: new BN(1 * 10 ** 9),
+    amount: new BN(1),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
