@@ -75,65 +75,37 @@ for development, the initializer is being a parameter but will be changed to fix
 #### Dependencies
 
 > "@project-serum/anchor": "^0.25.0"
->
 > "@solana/wallet-adapter-base": "^0.9.17"
->
 > "@solana/wallet-adapter-react": "^0.15.19"
->
 > "@solana/wallet-adapter-react-ui": "^0.9.17"
->
 > "@solana/wallet-adapter-wallets": "^0.19.0"
->
 > "@solana/web3.js": "^1.63.1"
->
 > "@solana/spl-token": "^0.3.5"
->
 > "react": "^18.2.0"
->
 > "react-dom": "^18.2.0"
->
-> "react-scripts": "^5.0.1"
-
+> "react-scripts": "^5.0.1
 #### Dev Dependencies
 
 > "mocha": "^10.1.0"
->
 > "ts-mocha": "^10.0.0"
->
 > "chai": "^4.3.4"
->
 > "typescript": "^4.3.5"
->
 > "react-app-rewired": "^2.2.1"
->
 > "process": "^0.11.10"
->
 > "shx": "^0.3.4"
->
 > "source-map-loader": "^4.0.0"
->
 > "@types/mocha": "^10.0.0"
->
 > "@testing-library/jest-dom": "^5.16.5"
->
 > "@testing-library/react": "^13.3.0"
->
 > "@testing-library/user-event": "^14.4.3"
->
 > "@types/jest": "^28.1.7"
->
 > "@types/react": "^18.0.0"
->
 > "@types/react-dom": "^18.0.0"
->
-> "@types/testing-library__jest-dom": "^5.14.5"
-      
+> "@types/testing-library__jest-dom": "^5.14.5"    
 
 ### BackEnd
 
 > anchor-lang = "0.25.0"
->
 > anchor-spl= "0.25.0"
->
 > spl-associated-token-account = "~1.0.3"
 
