@@ -1,14 +1,14 @@
 [programs.localnet]
-swap_coontract_test = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
+neo_swap = "5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
-wallet = "/home/kwiscion/.config/solana/id.json"
-# cluster = "localnet"
-# wallet = "/home/biboux/.config/solana/id.json"
+# cluster = "devnet"
+# wallet = "/home/kwiscion/.config/solana/id.json"
+cluster = "localnet"
+wallet = "/home/biboux/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
