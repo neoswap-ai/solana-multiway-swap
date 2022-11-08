@@ -22,7 +22,7 @@
 >
 > -> in *folder/target/idl/neo_swap.json*: as soon as the content is updated, paste and save the content of good_idl.json. /!\ quick action needed.
 >
-> -> back to CLI for results
+> -> back to CLI for results.
 
 Because of anchor recent changes, the IDL isn't supported as intended so the newly created IDL isn't compliant to the new way anchor sets up JS objects.
 
