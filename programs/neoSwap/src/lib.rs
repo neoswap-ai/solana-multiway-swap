@@ -700,8 +700,10 @@ pub struct InitInitialize<'info> {
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
+    /// CHECK: checked in the function
     #[account(executable)]
-    system_program: AccountInfo<'info>,
+    system_program: AccountInfo<'info>, 
+    /// CHECK: checked in the function
     #[account(executable)]
     spl_token_program: AccountInfo<'info>,
 }
@@ -730,8 +732,10 @@ pub struct VerifyInitialize<'info> {
 #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct DepositNft<'info> {
+    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
+    /// CHECK: checked in the function
     #[account(executable)]
     token_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
@@ -748,6 +752,7 @@ pub struct DepositNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct DepositSol<'info> {
+    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
@@ -769,8 +774,10 @@ pub struct Validate<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ValidateAndClose<'info> {
+    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
+    /// CHECK: checked in the function
     #[account(executable)]
     spl_token_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump, close = signer)]
@@ -785,8 +792,10 @@ pub struct ValidateAndClose<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimNft<'info> {
+    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
+    /// CHECK: checked in the function
     #[account(executable)]
     token_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
@@ -805,6 +814,7 @@ pub struct ClaimNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimSol<'info> {
+    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
