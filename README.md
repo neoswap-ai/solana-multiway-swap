@@ -26,7 +26,7 @@
 
 Because of anchor recent changes, the IDL isn't supported as intended so the newly created IDL isn't compliant to the new way anchor sets up JS objects.
 
-We then need to quickly overwrite the content of the IDL with the accurate one before testing starts.
+/!\ We then need to quickly overwrite the content of the IDL with the accurate one before testing starts.
 
 # Audit Readyness
 
