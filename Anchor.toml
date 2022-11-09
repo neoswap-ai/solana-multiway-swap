@@ -1,3 +1,5 @@
+[programs.devnet]
+neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
 [programs.localnet]
 neo_swap = "5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9"
 
@@ -5,8 +7,6 @@ neo_swap = "5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9"
 url = "https://anchor.projectserum.com"
 
 [provider]
-# cluster = "devnet"
-# wallet = "/home/kwiscion/.config/solana/id.json"
 cluster = "localnet"
 wallet = "/home/biboux/.config/solana/id.json"
 

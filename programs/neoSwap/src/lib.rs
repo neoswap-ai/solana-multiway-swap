@@ -8,7 +8,7 @@ anchor_lang::{
 anchor_spl::token::{spl_token, TokenAccount}
 };
 
-declare_id!("5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9");
+declare_id!("EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
