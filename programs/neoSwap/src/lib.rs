@@ -944,12 +944,4 @@ pub enum MYERROR {
     InvalidAccountData,
     #[msg("Incorrect init data length")]
     IncorrectLength,
-    // #[msg("g")]
-    // GG,
-    // #[msg("h")]
-    // HH,
-    // #[msg("i")]
-    // II,
-    // #[msg("j")]
-    // JJ
 }
