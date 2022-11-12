@@ -48,7 +48,8 @@ pub mod neo_swap {
             if item_to_add[0].amount.is_positive(){
                 item_to_add[0].status = TradeStatus::Pending.to_u8()
             }else{
-                item_to_add[0].status = TradeStatus::Deposited.to_u8()
+                item_to_add[0].status = TradeStatus::Deposited.to_u8();
+                msg!("item added with status deposited");
             }
 
         }
@@ -85,6 +86,7 @@ pub mod neo_swap {
         if item_to_add.is_nft {
             item_to_add.status = TradeStatus::Pending.to_u8();
             if item_to_add.amount.is_negative(){return  Err(error!(MYERROR::UnexpectedData).into());}
+            msg!("NFT item added with status pending");
 
         } else {
             //Check if already one user has Sol item
@@ -95,9 +97,11 @@ pub mod neo_swap {
                 }
             };
             if item_to_add.amount.is_positive(){
-                item_to_add.status = TradeStatus::Pending.to_u8()
+                item_to_add.status = TradeStatus::Pending.to_u8();
+                msg!("SOL item added with status Pending");
             }else{
-                item_to_add.status = TradeStatus::Deposited.to_u8()
+                item_to_add.status = TradeStatus::Deposited.to_u8();
+                msg!("SOL item added with status Deposited");
             }
 
         }
@@ -195,6 +199,8 @@ pub mod neo_swap {
                 //update item status to 1 (Deposited)
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
                 transfered = true;
+                msg!("NFT item Deposited");
+
             } 
             else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
                 return  Err(error!(MYERROR::NoSend).into());
@@ -245,7 +251,9 @@ pub mod neo_swap {
 
                     //update status to 2 (Claimed)
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
-                    transfered = true
+                    transfered = true;
+                    msg!("SOL item Deposited");
+
                 } else {
                     return  Err(error!(MYERROR::NotReady).into());
                 }
@@ -327,6 +335,7 @@ pub mod neo_swap {
                         //update item status to 2 (Claimed)
                         ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                         transfered = true;
+                        msg!("SOL item Claimed");
 
                     } else {
                         return  Err(error!(MYERROR::SumNotNull).into());
@@ -397,6 +406,7 @@ pub mod neo_swap {
                     ],
                     &[&[&seed[..],&[bump]]],
                 )?;
+                msg!("NFT item Claimed");
 
                     // if no more NFT held, closes the Swap's PDA ATA
                     if ctx.accounts.item_from_deposit.amount == 0 {
@@ -417,6 +427,8 @@ pub mod neo_swap {
                                 ],
                                 &[&[&seed[..], &[bump]]],
                             )?;
+                        msg!("ATA closed");
+
                         }
                         
                 //Change status to 2 (Claimed)
@@ -509,12 +521,14 @@ pub mod neo_swap {
                             if swap_data_lamports_initial > amount_to_send {
                                 **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
                                 **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
+                                msg!("SOL item Cancelled");
                                 
                             } else {return  Err(error!(MYERROR::SumNotNull).into());}
     
                         } 
                     } else if ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
                     || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
+                        msg!("Item status changed to Cancelled, nothing to recover");
                     } else {
                         return  Err(error!(MYERROR::NotReady).into());
                     }
@@ -526,6 +540,7 @@ pub mod neo_swap {
                     // if not already, Swap status changed to 90 (Cancelled)
                     if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
                         ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
+                        msg!("General status changed to Cancelled");
                     }
 
                 } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
@@ -580,6 +595,7 @@ pub mod neo_swap {
                 // Change item status to 91 (CancelRecovered)
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
                 transfered = true;
+                msg!("Item status changed to Cancelled, nothing to recover");
 
             } else if ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].status == 1 
@@ -607,6 +623,7 @@ pub mod neo_swap {
                     ],
                     &[&[&seed[..], &[bump]]],
                 )?;
+                msg!("NFT item Cancelled");
                 
                 // If Swap's PDA ATA balance is null, closes the account and send the rent to user
                 if swap_data_ata.amount == 0 {
@@ -628,6 +645,8 @@ pub mod neo_swap {
                         ],
                         &[&[&seed[..], &[bump]]],
                     )?;
+                    msg!("ATA closed");
+
                 }
 
                 // Update item status to 91 (CancelRecovered)
@@ -636,6 +655,7 @@ pub mod neo_swap {
                 // If not already, update Swap's status to 90 (Cancelled)
                 if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
                     ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
+                    msg!("General status changed to Cancelled");
                 }
                 transfered = true;
             } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered == false {
@@ -700,10 +720,8 @@ pub struct InitInitialize<'info> {
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    /// CHECK: checked in the function
     #[account(executable)]
-    system_program: AccountInfo<'info>, 
-    /// CHECK: checked in the function
+    system_program: AccountInfo<'info>,
     #[account(executable)]
     spl_token_program: AccountInfo<'info>,
 }
@@ -732,10 +750,8 @@ pub struct VerifyInitialize<'info> {
 #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct DepositNft<'info> {
-    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
-    /// CHECK: checked in the function
     #[account(executable)]
     token_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
@@ -752,7 +768,6 @@ pub struct DepositNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct DepositSol<'info> {
-    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
@@ -774,10 +789,8 @@ pub struct Validate<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ValidateAndClose<'info> {
-    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
-    /// CHECK: checked in the function
     #[account(executable)]
     spl_token_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump, close = signer)]
@@ -792,10 +805,8 @@ pub struct ValidateAndClose<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimNft<'info> {
-    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
-    /// CHECK: checked in the function
     #[account(executable)]
     token_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
@@ -814,7 +825,6 @@ pub struct ClaimNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimSol<'info> {
-    /// CHECK: checked in the function
     #[account(executable)]
     system_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
@@ -934,12 +944,4 @@ pub enum MYERROR {
     InvalidAccountData,
     #[msg("Incorrect init data length")]
     IncorrectLength,
-    // #[msg("g")]
-    // GG,
-    // #[msg("h")]
-    // HH,
-    // #[msg("i")]
-    // II,
-    // #[msg("j")]
-    // JJ
 }
