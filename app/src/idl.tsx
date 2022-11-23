@@ -1,7 +1,7 @@
 import { Idl } from '@project-serum/anchor';
 export const idl = {
     version: '0.1.0',
-    name: 'swap_coontract_test',
+    name: 'neo_swap',
     instructions: [
         {
             name: 'initInitialize',
@@ -444,6 +444,41 @@ export const idl = {
                 },
             ],
         },
+        {
+            name: 'forceClose',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splTokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+            ],
+        },
     ],
     accounts: [
         {
@@ -606,6 +641,6 @@ export const idl = {
         },
     ],
     metadata: {
-        address: 'EBwKXJ7MM2WYSxRJQJMA76h7Exgr3mjUddcNq152bExw',
+        address: '5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9',
     },
 } as Idl;
