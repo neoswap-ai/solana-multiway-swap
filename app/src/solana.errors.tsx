@@ -17,7 +17,7 @@ export async function programCatchError(error: any) {
     } else if (String(error).includes('0x1775')) {
         console.error('Sum of amounts is Not Null\n', error);
     } else if (String(error).includes('0x1776')) {
-        console.error('Not ready for claim\n', error);
+        console.error('Status not in the according state\n', error);
     } else if (String(error).includes('0x1777')) {
         console.error("Given data isn't fitting", error);
     } else if (String(error).includes('0x1778')) {
@@ -32,6 +32,8 @@ export async function programCatchError(error: any) {
         console.error('wrong bump\n', error);
     } else if (String(error).includes('0x177d')) {
         console.error('The status given is not correct \n', error);
+    } else if (String(error).includes('0x1004')) {
+        console.error('"The declared program id does not match the actual program id" \n', error);
     } else if (String(error).includes('0x7d3')) {
         console.error('incorect owner ATA \n', error);
     } else if (String(error).includes('0xbc4')) {

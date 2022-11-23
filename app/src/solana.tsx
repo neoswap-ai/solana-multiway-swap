@@ -68,9 +68,10 @@ const Solana: FC = () => {
         });
 
         console.log('Save pda into solana.test.tsx as swapDataAccountGiven: ', pda.toBase58());
-        const allinitTransactionSendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
+        let allinitTransactionSendAllArray = await sendAllPopulateInstruction(program, allInitSendAllArray);
         try {
             if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
             const allInitTransaction = await program.provider.sendAll(allinitTransactionSendAllArray);
             console.log('initialize transactionHash', allInitTransaction);
         } catch (error) {
@@ -150,6 +151,28 @@ const Solana: FC = () => {
         }
     }, [publicKey, getProgram]);
 
+    /// Triggers cancelling the trade sending back locked assets and closing the PDA
+    const forceClose = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+
+        const { forceCancelSendAll } = await NeoSwap.forceClose({
+            program: program,
+            signer: publicKey,
+            swapDataAccount: swapDataAccountGiven,
+            CONST_PROGRAM,
+        });
+        let sendAllArray = await sendAllPopulateInstruction(program, forceCancelSendAll);
+
+        try {
+            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('force cancel transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+            throw console.error(error);
+        }
+    }, [publicKey, getProgram]);
     return (
         <div>
             <div>
@@ -179,6 +202,12 @@ const Solana: FC = () => {
             <div>
                 <button onClick={cancel} disabled={!publicKey}>
                     Cancel
+                </button>
+            </div>
+            <br />
+            <div>
+                <button onClick={forceClose} disabled={!publicKey}>
+                    Force Close
                 </button>
             </div>
         </div>

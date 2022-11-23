@@ -310,7 +310,7 @@ pub mod neo_swap {
         _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.signer.key(),ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
+        require_keys_eq!(ctx.accounts.signer.key(), ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
 
@@ -373,6 +373,8 @@ pub mod neo_swap {
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
+
+        require_keys_eq!(ctx.accounts.signer.key(), ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::Deposited.to_u8(),MYERROR::NotReady);
 
@@ -493,7 +495,7 @@ pub mod neo_swap {
         _bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.signer.key(),ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
+        require_keys_eq!(ctx.accounts.signer.key(), ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
 
         let is_in_pending_or_cancelled_state : bool = 
         ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() || 
@@ -574,6 +576,8 @@ pub mod neo_swap {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
     
+        require_keys_eq!(ctx.accounts.signer.key(), ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
+
         let user_ata = &ctx.accounts.item_to_deposit;
         let swap_data_ata = &ctx.accounts.item_from_deposit;
 
@@ -684,7 +688,7 @@ pub mod neo_swap {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
       
-        require_eq!(ctx.accounts.swap_data_account.status, TradeStatus::Cancelled.to_u8(),MYERROR::NotReady);
+        require_keys_eq!(ctx.accounts.signer.key(), ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
 
         let nbr_items = ctx.accounts.swap_data_account.items.len();
         
@@ -703,6 +707,43 @@ pub mod neo_swap {
         Ok(())  
     }
 
+        /// @notice Verify Swap's PDA items to proceed to closed state. /!\ initializer function
+    /// @dev Function verify each item status to mutate the smart contract status to 3 (closed) then close the Swap's PDA.  /!\ this function can only be triggered by initializer
+    /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
+    /// @param bump: u8 => "Bump corresponding to Swap's PDA"
+    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
+    /// @accounts signer: Pubkey => initializer
+    /// @accounts system_program: Pubkey = system_program_id
+    /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
+    /// @return Void
+    pub fn force_close(
+        ctx: Context<ValidateAndClose>,
+        _seed: Vec<u8>,
+        _bump: u8
+    ) -> Result<()>  {
+        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
+        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
+
+        require_keys_eq!(ctx.accounts.signer.key(), ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
+
+        require_eq!(ctx.accounts.swap_data_account.status, TradeStatus::Initializing.to_u8(),MYERROR::NotReady);
+
+        let nbr_items = ctx.accounts.swap_data_account.items.len();
+        
+        // Checks all items are Cancelled
+        for item_id in 0..nbr_items{
+            ctx.accounts.swap_data_account.items[item_id].status=TradeStatus::CancelledRecovered.to_u8()
+        }
+
+        // Changing Swap status to 91 (CancelledRecovered)
+        ctx.accounts.swap_data_account.status = TradeStatus::CancelledRecovered.to_u8();
+
+        // Emptying Swap's PDA
+        **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + ctx.accounts.swap_data_account.to_account_info().lamports();
+        **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = 0;
+
+        Ok(())  
+    }
 
 }
 
