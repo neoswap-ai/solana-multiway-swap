@@ -10,7 +10,7 @@ import { getSwapDataFromPDA } from '../../utils.neoSwap/getSwapDataFromPDA.neoSw
  * @param {PublicKey} signer /!\ signer should be initializer
  * @param {string} CONST_PROGRAM 4 character string to initialize the seed
  * @param {Program} program program linked to NeoSwap
- * @return {Array<{tx: Transaction; signers?: web3.Signer[] | undefined;}>}validateClaimedSendAll => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
+ * @return {Array<{tx: Transaction; signers?: web3.Signer[] | undefined;}>}forceCancelSendAll => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
  */
 export const forceClose = async (Data: {
     swapDataAccount: PublicKey;
