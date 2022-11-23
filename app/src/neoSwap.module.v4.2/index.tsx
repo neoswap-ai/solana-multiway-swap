@@ -4,6 +4,7 @@ import claimAndClose from './functions.neoswap/claimAndClose.neoSwap.module';
 import cancelAndClose from './functions.neoswap/cancelAndClose.neoSwap.module';
 import { getSwapDataFromPDA } from './utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { getSeedFromData } from './utils.neoSwap/getSeedfromData.neoswap';
+import forceClose from './functions.neoswap/createInstruction/forceClose.neoswap';
 
 const NeoSwap = {
     /// Main
@@ -11,6 +12,7 @@ const NeoSwap = {
     deposit, /// creates instruction for depositing all items related to the signer
     claimAndClose, /// creates instruction for sending all assets to users
     cancelAndClose, /// creates instruction for cancelingthe trade and sending back all assets
+    forceClose,
     /// Utils
     getSwapDataFromPDA, /// fetch and deserialize data from PDA
     getSeedFromData, /// reconstruct seed and
