@@ -1,14 +1,28 @@
 use {
-anchor_lang::{
-    prelude::*,
-    solana_program::{
-        pubkey::Pubkey,
-        program::{invoke_signed, invoke}
-    }},
-anchor_spl::token::{spl_token, TokenAccount}
+    anchor_lang::{
+        prelude::*,
+        solana_program::{
+            pubkey::Pubkey,
+            program::{invoke_signed, invoke},
+            // system_instruction,
+            // example_mocks::{
+            //     // solana_client::rpc_client::RpcClient,
+            // },
+        }
+    },
+    anchor_spl::token::{spl_token, TokenAccount}
 };
+// use solana_client::rpc_client::RpcClient;
+// use solana_sdk::{commitment_config::CommitmentConfig};
+// use  solana_sdk::{
+//     transaction::Transaction,
+//     // commitment_config::CommitmentConfig,
+//     // native_token::LAMPORTS_PER_SOL,
+//     // signature::{Keypair, Signer}
+// };
 
 declare_id!("EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu");
+// declare_id!("5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -306,8 +320,8 @@ pub mod neo_swap {
     /// @return Void
     pub fn claim_sol(
         ctx: Context<ClaimSol>,
-        _seed: Vec<u8>,
-        _bump: u8
+        seed: Vec<u8>,
+        bump: u8
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.signer.key(), ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
@@ -329,6 +343,37 @@ pub mod neo_swap {
                     let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
                     
                     if swap_data_lamports_initial > amount_to_send {
+
+                  
+
+                    //         let seeds = &[&seed[..],&[bump]];
+                    //         let ix = anchor_lang::solana_program::system_instruction::transfer(
+                    //             &ctx.accounts.swap_data_account.key(),
+                    //             &ctx.accounts.user.key(),
+                    //             amount_to_send,
+                    //         );
+                    
+                    //    invoke_signed(
+                    //             &ix,
+                    //             &[ctx.accounts.swap_data_account.to_account_info(), ctx.accounts.user.to_account_info()],
+                    //             &[&seeds[..]],
+                    //         )?;
+                        
+
+                        // invoke_signed(                                                            
+                        //     &anchor_lang::solana_program::system_instruction::transfer(
+                        //         &ctx.accounts.swap_data_account.key(),
+                        //         &ctx.accounts.user.key(),
+                        //         amount_to_send,
+                        //     ),                                 
+                        //     &[                          
+                        //         ctx.accounts.swap_data_account.to_account_info(),
+                        //         ctx.accounts.user.to_account_info(),
+                        //     ],
+                        //     &[&[&seed[..],&[bump]]],
+                        // )?;
+
+                      // Working version
                         **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
                         **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
                         
@@ -965,7 +1010,7 @@ pub enum MYERROR {
     NoSend,
     #[msg("Sum of trade isn't null")]
     SumNotNull,
-    #[msg("Not ready for claim")]
+    #[msg("Status not in the according state")]
     NotReady,
     #[msg("Given data isn't fitting")]
     UnexpectedData,
@@ -994,3 +1039,6 @@ pub enum MYERROR {
     // #[msg("j")]
     // JJ
 }
+
+// seeds 
+// #[account( mut, seeds=[b"bid".as_ref(), user_sending.key().as_ref(), mint_of_token_being_sent.key().as_ref(), application_idx.to_le_bytes().as_ref()], bump , )] bid_state: Account<'info, Bid>

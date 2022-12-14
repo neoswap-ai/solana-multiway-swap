@@ -11,92 +11,61 @@ export const programId = new PublicKey('5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DAr
 // export const network = WalletAdapterNetwork.Mainnet;
 // export const programId = new PublicKey('');
 
-export const CONST_PROGRAM: string = '0131';
-export const swapDataAccountGiven = new PublicKey('8inLXxbPiQoZNHfsJB6P9tCn6SQWsL7TXn91bj5pCrj6');
+export const CONST_PROGRAM: string = '0013';
+export const swapDataAccountGiven = new PublicKey('FNxg7sUfvCzjuPnSs2JH4x91A2GWmEAmGpLugfNqSBRJ');
 
-const i11: NftSwapItem = {
+// const persvoNft = new PublicKey('986QZarnBgBZcyuW7HsQuoxm5eN8m28Ho6Ue3iXbA7LH');
+// const persAddress = new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW');
+// const bibouxAddress = new PublicKey('7vMRz58y5JUe3tpEiWdNMfzLmqusG5mtdMPxYehahZWL');
+// const bibouxNft = new PublicKey('7uVCii3LzvuZK5xWh6mEjFsznwgEiPSwSuPsNzWUMNRh');
+
+const bibouxNft = new PublicKey('986QZarnBgBZcyuW7HsQuoxm5eN8m28Ho6Ue3iXbA7LH');
+const bibouxAddress = new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW');
+const persAddress = new PublicKey('7vMRz58y5JUe3tpEiWdNMfzLmqusG5mtdMPxYehahZWL');
+const persvoNft = new PublicKey('7uVCii3LzvuZK5xWh6mEjFsznwgEiPSwSuPsNzWUMNRh');
+
+const i11 = {
     isNft: false,
-    amount: new BN(-2 * 10 ** 9),
-    owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    mint: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+    amount: new BN(0.5 * 10 ** 9),
+    owner: bibouxAddress,
+    destinary: bibouxAddress,
+    mint: bibouxAddress,
     status: 1,
 };
 
-const i12: NftSwapItem = {
+const i12 = {
     isNft: true,
     amount: new BN(1),
-    owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
+    owner: bibouxAddress,
+    destinary: persAddress,
+    mint: bibouxNft,
     status: 0,
 };
 
-const i13: NftSwapItem = {
-    isNft: true,
-    amount: new BN(1),
-    owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
-    status: 0,
-};
-
-const i21: NftSwapItem = {
+const i21 = {
     isNft: false,
-    amount: new BN(1 * 10 ** 9),
-    owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    mint: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+    amount: new BN(-0.5 * 10 ** 9),
+    owner: persAddress,
+    destinary: persAddress,
+    mint: persAddress,
     status: 0,
 };
 
-const i22: NftSwapItem = {
+const i22 = {
     isNft: true,
     amount: new BN(1),
-    owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    mint: new PublicKey('DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew'),
+    owner: persAddress,
+    destinary: bibouxAddress,
+    mint: persvoNft,
     status: 0,
 };
 
-const i23: NftSwapItem = {
-    isNft: true,
-    amount: new BN(1),
-    owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    mint: new PublicKey('DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew'),
-    status: 0,
-};
-
-const i31: NftSwapItem = {
-    isNft: false,
-    amount: new BN(1 * 10 ** 9),
-    owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    mint: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    status: 0,
-};
-const i32: NftSwapItem = {
-    isNft: true,
-    amount: new BN(1),
-    owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
-    status: 0,
-};
-const i33: NftSwapItem = {
-    isNft: true,
-    amount: new BN(1),
-    owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
-    status: 0,
-};
-export const fullData: SwapData = {
+export const fullData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: 80,
-    items: [i11, i12, i13, i21, i22, i23, i31, i32, i33] as Array<NftSwapItem>,
+    items: [i11, i12, i21, i22],
 };
+
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: 80,

@@ -80,7 +80,38 @@ const Solana: FC = () => {
             throw console.error(error);
         }
     }, [getProgram, publicKey]);
+    const vDep = useCallback(async () => {
+        // console.log(publicKey);
 
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+        const { validateDepositSendAll } = await NeoSwap.validateDeposit({
+            program: program,
+            signer: publicKey,
+            swapDataAccount: swapDataAccountGiven,
+            CONST_PROGRAM,
+        });
+        const vSaTx = await program.provider.sendAll(validateDepositSendAll);
+        console.log(vSaTx);
+    }, [getProgram, publicKey]);
+    const cHalf = useCallback(async () => {
+        // console.log(publicKey);
+
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+        const { validateDepositSendAll } = await NeoSwap.validateDeposit({
+            program: program,
+            signer: publicKey,
+            swapDataAccount: swapDataAccountGiven,
+            CONST_PROGRAM,
+        });
+        const vSaTx = await program.provider.sendAll(validateDepositSendAll);
+        console.log(vSaTx);
+    }, [getProgram, publicKey]);
     /// Triggers depositing all assets the connected user should deposit
     const deposit = useCallback(async () => {
         if (!publicKey) throw new WalletNotConnectedError();
@@ -118,6 +149,29 @@ const Solana: FC = () => {
         });
 
         let sendAllArray = await sendAllPopulateInstruction(program, allClaimSendAllArray);
+
+        try {
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('claim transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+            throw console.error(error);
+        }
+    }, [publicKey, getProgram]);
+
+    const onlyClaim = useCallback(async () => {
+        if (!publicKey) throw new WalletNotConnectedError();
+        const program = await getProgram();
+        if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+
+        const { claimSendAllArray } = await NeoSwap.claim({
+            program: program,
+            signer: publicKey,
+            swapDataAccount: swapDataAccountGiven,
+            CONST_PROGRAM,
+        });
+
+        let sendAllArray = await sendAllPopulateInstruction(program, claimSendAllArray);
 
         try {
             const transactionHash = await program.provider.sendAll(sendAllArray);
@@ -200,6 +254,12 @@ const Solana: FC = () => {
             </div>
             <br />
             <div>
+                <button onClick={onlyClaim} disabled={!publicKey}>
+                    claim
+                </button>
+            </div>
+            <br />
+            <div>
                 <button onClick={cancel} disabled={!publicKey}>
                     Cancel
                 </button>
@@ -208,6 +268,18 @@ const Solana: FC = () => {
             <div>
                 <button onClick={forceClose} disabled={!publicKey}>
                     Force Close
+                </button>
+            </div>
+            <br />
+            <div>
+                <button onClick={vDep} disabled={!publicKey}>
+                    validate deposit
+                </button>
+            </div>
+            <br />
+            <div>
+                <button onClick={cHalf} disabled={!publicKey}>
+                    claimHalf
                 </button>
             </div>
         </div>

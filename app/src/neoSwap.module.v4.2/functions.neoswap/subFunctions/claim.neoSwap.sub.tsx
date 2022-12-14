@@ -30,10 +30,11 @@ export const claim = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
     });
-    if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
+    // if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
 
     let claimTransactionInstruction: TransactionInstruction[] = [];
     let ataList: Array<PublicKey> = [];
+    console.log('programId', Data.program.programId.toBase58());
 
     for (let item = 0; item < swapData.swapData.items.length; item++) {
         let swapDataItem = swapData.swapData.items[item];
