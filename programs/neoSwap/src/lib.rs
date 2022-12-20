@@ -541,17 +541,18 @@ pub mod neo_swap {
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
                 transfered = true;
                 
-                // if not already, Swap status changed to 90 (Cancelled)
-                if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
-                    ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
-                    msg!("General status changed to Cancelled");
-                }
                 break;
             } 
         }
-
+        
         if transfered == false {
             return  Err(error!(MYERROR::NoSend).into());
+        }
+        
+        // if not already, Swap status changed to 90 (Cancelled)
+        if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
+            ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
+            msg!("General status changed to Cancelled");
         }
         Ok(())
     }
