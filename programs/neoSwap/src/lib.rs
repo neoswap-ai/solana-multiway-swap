@@ -255,14 +255,15 @@ pub mod neo_swap {
                     ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Claimed.to_u8();
                     transfered = true;
                     msg!("SOL item Deposited");
-
+                    break;
                 } else {
-                    return  Err(error!(MYERROR::NotReady).into());
+                    return  Err(error!(MYERROR::NoSend).into());
                 }
-
-            } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
-                return  Err(error!(MYERROR::NoSend).into());
-            }
+            } 
+        }
+        
+        if transfered == false {
+            return  Err(error!(MYERROR::NoSend).into());
         }
         Ok(())
     }
