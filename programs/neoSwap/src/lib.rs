@@ -851,8 +851,8 @@ impl SwapData {
         + 1 //u8
         + 32 ;
 
-    pub fn size(_swap_data_account: SwapData, nb_items: u32 )->usize{
-        return SwapData::LEN + ( nb_items as usize * NftSwapItem::LEN );//* swap_data_account.items.len() *);
+    pub fn size(_swap_data_account: SwapData, nb_items: u32 )->usize {
+        return SwapData::LEN.checked_add(NftSwapItem::LEN.checked_mul(nb_items as usize).unwrap()).unwrap()
     }
 }
 
