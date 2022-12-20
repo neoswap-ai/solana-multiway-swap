@@ -438,7 +438,7 @@ pub mod neo_swap {
                 break;
              } 
         }
-        
+
         if transfered == false {
             return  Err(error!(MYERROR::NoSend).into());
         }
@@ -527,34 +527,32 @@ pub mod neo_swap {
                                 msg!("SOL item Cancelled");
                                 
                             } else {return  Err(error!(MYERROR::SumNotNull).into());}
-    
                         } 
-                    } else if ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
-                    || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
-                        msg!("Item status changed to Cancelled, nothing to recover");
-                    } else {
-                        return  Err(error!(MYERROR::NotReady).into());
-                    }
-    
-                    // Item status changed to 91 (CancelledRecovered)
-                    ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
-                    transfered = true;
-                    
-                    // if not already, Swap status changed to 90 (Cancelled)
-                    if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
-                        ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
-                        msg!("General status changed to Cancelled");
-                    }
 
-                } else if item_id == ctx.accounts.swap_data_account.items.len() && transfered ==false {
-                    return  Err(error!(MYERROR::NoSend).into());
+                } else if ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
+                || ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8() {
+                    msg!("Item status changed to Cancelled, nothing to recover");
+                } else {
+                    return  Err(error!(MYERROR::NotReady).into());
                 }
-            
+
+                // Item status changed to 91 (CancelledRecovered)
+                ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::CancelledRecovered.to_u8();
+                transfered = true;
+                
+                // if not already, Swap status changed to 90 (Cancelled)
+                if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
+                    ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
+                    msg!("General status changed to Cancelled");
+                }
+                break;
+            } 
         }
-
+        
+        if transfered == false {
+            return  Err(error!(MYERROR::NoSend).into());
+        }
         Ok(())
-
-
     }
 
     /// @notice Cancel NFT from escrow, retrieving it if previously deposited. /!\ initializer function
