@@ -47,7 +47,9 @@ pub mod neo_swap {
         } else {
             if item_to_add[0].amount.is_positive(){
                 item_to_add[0].status = TradeStatus::Pending.to_u8()
-            }else{
+            } else if item_to_add[0].amount==0 {
+                return  Err(error!(MYERROR::UnexpectedData).into());
+            } else {
                 item_to_add[0].status = TradeStatus::Deposited.to_u8();
                 msg!("item added with status deposited");
             }
@@ -99,6 +101,8 @@ pub mod neo_swap {
             if item_to_add.amount.is_positive(){
                 item_to_add.status = TradeStatus::Pending.to_u8();
                 msg!("SOL item added with status Pending");
+            }else if item_to_add.amount==0 {
+                return  Err(error!(MYERROR::UnexpectedData).into());
             }else{
                 item_to_add.status = TradeStatus::Deposited.to_u8();
                 msg!("SOL item added with status Deposited");
@@ -668,7 +672,7 @@ pub mod neo_swap {
             ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
             msg!("General status changed to Cancelled");
         }
-        
+
         Ok(())
 
     }
