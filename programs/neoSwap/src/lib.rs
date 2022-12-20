@@ -548,7 +548,7 @@ pub mod neo_swap {
         if transfered == false {
             return  Err(error!(MYERROR::NoSend).into());
         }
-        
+
         // if not already, Swap status changed to 90 (Cancelled)
         if ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() {
             ctx.accounts.swap_data_account.status = TradeStatus::Cancelled.to_u8();
@@ -692,6 +692,8 @@ pub mod neo_swap {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
       
+        require_keys_eq!(ctx.accounts.signer.key(),ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
+
         require_eq!(ctx.accounts.swap_data_account.status, TradeStatus::Cancelled.to_u8(),MYERROR::NotReady);
 
         let nbr_items = ctx.accounts.swap_data_account.items.len();
