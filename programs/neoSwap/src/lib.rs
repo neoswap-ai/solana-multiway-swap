@@ -200,11 +200,13 @@ pub mod neo_swap {
                 ctx.accounts.swap_data_account.items[item_id].status = TradeStatus::Deposited.to_u8();
                 transfered = true;
                 msg!("NFT item Deposited");
+                break;
 
             } 
-            else if item_id == ctx.accounts.swap_data_account.items.len() && transfered == false {
-                return  Err(error!(MYERROR::NoSend).into());
-            }
+        }
+        
+        if transfered == false {
+            return  Err(error!(MYERROR::NoSend).into());
         }
         Ok(())
     }
