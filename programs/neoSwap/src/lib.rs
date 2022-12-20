@@ -237,7 +237,7 @@ pub mod neo_swap {
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if  !(ctx.accounts.swap_data_account.items[item_id].is_nft) 
-            && ctx.accounts.swap_data_account.items[item_id].status == 0  
+            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8()  
             && ctx.accounts.swap_data_account.items[item_id].owner.eq(ctx.accounts.signer.key) 
             && transfered == false {
                 if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
@@ -386,7 +386,7 @@ pub mod neo_swap {
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if ctx.accounts.swap_data_account.items[item_id].is_nft
-            && ctx.accounts.swap_data_account.items[item_id].status == 1 
+            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
             && ctx.accounts.swap_data_account.items[item_id].mint.eq(&ctx.accounts.item_from_deposit.mint)
             && ctx.accounts.swap_data_account.items[item_id].mint.eq(&ctx.accounts.item_to_deposit.mint)
             && ctx.accounts.swap_data_account.items[item_id].destinary.eq(ctx.accounts.user.key)
@@ -592,7 +592,7 @@ pub mod neo_swap {
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if ctx.accounts.swap_data_account.items[item_id].is_nft 
-            && ctx.accounts.swap_data_account.items[item_id].status == 0 
+            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8()
             && ctx.accounts.swap_data_account.items[item_id].mint.eq(&user_ata.mint) 
             && ctx.accounts.swap_data_account.items[item_id].mint.eq(&swap_data_ata.mint) 
             && ctx.accounts.swap_data_account.items[item_id].owner.eq(ctx.accounts.user.key)
@@ -603,7 +603,7 @@ pub mod neo_swap {
                 msg!("Item status changed to Cancelled, nothing to recover");
 
             } else if ctx.accounts.swap_data_account.items[item_id].is_nft 
-            && ctx.accounts.swap_data_account.items[item_id].status == 1 
+            && ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Pending.to_u8()
             && ctx.accounts.swap_data_account.items[item_id].mint.eq(&user_ata.mint) 
             && ctx.accounts.swap_data_account.items[item_id].mint.eq(&swap_data_ata.mint) 
             && ctx.accounts.swap_data_account.items[item_id].owner.eq(ctx.accounts.user.key)
