@@ -548,7 +548,7 @@ pub mod neo_swap {
                 break;
             } 
         }
-        
+
         if transfered == false {
             return  Err(error!(MYERROR::NoSend).into());
         }
@@ -659,11 +659,13 @@ pub mod neo_swap {
                     msg!("General status changed to Cancelled");
                 }
                 transfered = true;
-            } else if item_id == ctx.accounts.swap_data_account.items.len()-1 && transfered == false {
-                return  Err(error!(MYERROR::NoSend).into());
+                break;
             }
         }
-
+        
+        if transfered == false {
+            return  Err(error!(MYERROR::NoSend).into());
+        }
         Ok(())
 
     }
