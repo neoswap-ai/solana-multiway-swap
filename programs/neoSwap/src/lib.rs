@@ -345,10 +345,10 @@ pub mod neo_swap {
                         msg!("SOL item Claimed");
                         break;
                     } else {
-                        return  Err(error!(MYERROR::NoSend).into());
+                        return  Err(error!(MYERROR::NotEnoughFunds).into());
                     }
                 } else {
-                    return  Err(error!(MYERROR::NotReady).into());
+                    return  Err(error!(MYERROR::NoSend).into());
                 }
             }  
         }
@@ -527,7 +527,7 @@ pub mod neo_swap {
                                 **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
                                 msg!("SOL item Cancelled");
                                 
-                            } else {return  Err(error!(MYERROR::SumNotNull).into());}
+                            } else {return  Err(error!(MYERROR::NotEnoughFunds).into());}
                         } 
 
                 } else if ctx.accounts.swap_data_account.items[item_id].status == TradeStatus::Deposited.to_u8() 
@@ -947,4 +947,6 @@ pub enum MYERROR {
     InvalidAccountData,
     #[msg("Incorrect init data length")]
     IncorrectLength,
+    #[msg("Not enough funds")]
+    NotEnoughFunds,
 }
