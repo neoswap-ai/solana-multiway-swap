@@ -335,7 +335,7 @@ pub mod neo_swap {
                     
                     let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
                     
-                    if swap_data_lamports_initial > amount_to_send {
+                    if swap_data_lamports_initial >= amount_to_send {
                         **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
                         **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
                         
@@ -525,7 +525,7 @@ pub mod neo_swap {
                             
                             let swap_data_lamports_initial = ctx.accounts.swap_data_account.to_account_info().lamports();
                             
-                            if swap_data_lamports_initial > amount_to_send {
+                            if swap_data_lamports_initial >= amount_to_send {
                                 **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
                                 **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
                                 msg!("SOL item Cancelled");
