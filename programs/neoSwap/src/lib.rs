@@ -412,7 +412,7 @@ pub mod neo_swap {
                     &[&[&seed[..],&[bump]]],
                 )?;
                 msg!("NFT item Claimed");
-
+                let _ = ctx.accounts.item_from_deposit.reload();
                     // if no more NFT held, closes the Swap's PDA ATA
                     if ctx.accounts.item_from_deposit.amount == 0 {
                         let ix2 = spl_token::instruction::close_account(
@@ -578,7 +578,7 @@ pub mod neo_swap {
         require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
     
         let user_ata = &ctx.accounts.item_to_deposit;
-        let swap_data_ata = &ctx.accounts.item_from_deposit;
+        let swap_data_ata = &mut ctx.accounts.item_from_deposit;
 
         require!((
             ctx.accounts.swap_data_account.status == TradeStatus::Pending.to_u8() 
@@ -627,9 +627,11 @@ pub mod neo_swap {
                     &[&[&seed[..], &[bump]]],
                 )?;
                 msg!("NFT item Cancelled");
+
+                let _ = swap_data_ata.reload();
                 
-                // If Swap's PDA ATA balance is null, closes the account and send the rent to user
-                if swap_data_ata.amount == 0 {
+                // If Swap's PDA ATA balance is null, closes the account and send the rent to user                
+                if swap_data_ata.amount.eq(&0 ) {
                     let ix2 = spl_token::instruction::close_account(
                         &ctx.accounts.token_program.key,
                         &swap_data_ata.key(),
