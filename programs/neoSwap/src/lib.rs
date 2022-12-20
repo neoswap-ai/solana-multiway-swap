@@ -479,9 +479,6 @@ pub mod neo_swap {
         // Change Swap's status to 3 (Closed)
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
 
-        **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + ctx.accounts.swap_data_account.to_account_info().lamports();
-        **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = 0;
-
         Ok(())  
     }
 
@@ -705,10 +702,6 @@ pub mod neo_swap {
 
         // Changing Swap status to 91 (CancelledRecovered)
         ctx.accounts.swap_data_account.status = TradeStatus::CancelledRecovered.to_u8();
-
-        // Emptying Swap's PDA
-        **ctx.accounts.signer.lamports.borrow_mut() = ctx.accounts.signer.lamports() + ctx.accounts.swap_data_account.to_account_info().lamports();
-        **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = 0;
 
         Ok(())  
     }
