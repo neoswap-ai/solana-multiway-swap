@@ -7,6 +7,7 @@ anchor_lang::{
     }},
 anchor_spl::token::{spl_token, TokenAccount}
 };
+use std::str::FromStr;
 
 declare_id!("DX1pLgDgRWgUCLHHDgVcnKkSnr5r6gokHprjYXo7eykZ");
 
@@ -46,6 +47,9 @@ pub mod neo_swap {
             item_to_add[0].status = ItemStatus::NFTPending.to_u8();
             msg!("item added with status NFTPending");
         } else {
+            item_to_add[0].destinary = Pubkey::from_str("11111111111111111111111111111111").unwrap();
+            item_to_add[0].mint = Pubkey::from_str("11111111111111111111111111111111").unwrap();
+
             if item_to_add[0].amount.is_positive(){
                 item_to_add[0].status = ItemStatus::SolPending.to_u8();
                 msg!("item added with status SolPending");
@@ -100,6 +104,9 @@ pub mod neo_swap {
                     return  Err(error!(MYERROR::UnexpectedData).into());
                 }
             };
+            item_to_add.destinary = Pubkey::from_str("11111111111111111111111111111111").unwrap();
+            item_to_add.mint = Pubkey::from_str("11111111111111111111111111111111").unwrap();
+
             if item_to_add.amount.is_positive(){
                 item_to_add.status = ItemStatus::SolPending.to_u8();
                 msg!("SOL item added with status SolPending");
@@ -142,7 +149,6 @@ pub mod neo_swap {
                 sum = sum.checked_add(swap_data_account.items[item_id].amount).unwrap()
             }
         };
-
         require!(sum==0, MYERROR::SumNotNull);
         
         //changing status to 0 (Pending)
