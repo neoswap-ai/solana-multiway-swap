@@ -3,6 +3,7 @@ import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/
 import appendTransactionToArray from '../../utils.neoSwap/appendTransactionToArray.neosap';
 import convertAllTransaction from '../../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSwapDataFromPDA } from '../../utils.neoSwap/getSwapDataFromPDA.neoSwap';
+import { ItemStatus, TradeStatus } from '../../utils.neoSwap/types.neo-swap/status.type.neoswap';
 import cancelNft from '../createInstruction/cancel.nft.neoswap.ci';
 import cancelSol from '../createInstruction/cancel.sol.neoswap.ci';
 
@@ -30,7 +31,14 @@ export const cancel = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
     });
-    if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
+    console.log("swdata",swapData.swapData.status);
+    if (
+        !(
+            swapData.swapData.status === TradeStatus.WaitingToDeposit ||
+            swapData.swapData.status === TradeStatus.Cancelling
+        )
+    )
+        throw console.error('Trade not in waiting for deposit state');
 
     let cancelTransactionInstruction: TransactionInstruction[] = [];
     let ataList: Array<PublicKey> = [];
@@ -40,44 +48,58 @@ export const cancel = async (Data: {
 
         switch (swapDataItem.isNft) {
             case true:
-                console.log('XXXXXXX - cancelling item n° ', item, ' XXXXXXX');
-                let cancelingNft = await cancelNft({
-                    program: Data.program,
-                    signer: Data.signer,
-                    user: swapDataItem.owner,
-                    mint: swapDataItem.mint,
-                    swapDataAccount: Data.swapDataAccount,
-                    swapDataAccount_seed: swapData.swapDataAccount_seed,
-                    swapDataAccount_bump: swapData.swapDataAccount_bump,
-                    ataList,
-                });
-                cancelingNft.instruction.forEach((element) => {
-                    cancelTransactionInstruction.push(element);
-                });
-                let isPush = true;
-                cancelingNft.mintAta.forEach((element) => {
-                    ataList.forEach((ataElem) => {
-                        if (element === ataElem) {
-                            isPush = false;
-                        }
+                if (swapDataItem.status === ItemStatus.NFTDeposited) {
+                    console.log(
+                        'XXXXXXX - cancelling NFT n° ',
+                        item,
+                        ' XXXXXXX',
+                        swapDataItem.mint.toBase58(),
+                        swapDataItem.owner.toBase58(),
+                        swapDataItem.status
+                    );
+                    let cancelingNft = await cancelNft({
+                        program: Data.program,
+                        signer: Data.signer,
+                        user: swapDataItem.owner,
+                        mint: swapDataItem.mint,
+                        swapDataAccount: Data.swapDataAccount,
+                        swapDataAccount_seed: swapData.swapDataAccount_seed,
+                        swapDataAccount_bump: swapData.swapDataAccount_bump,
+                        ataList,
                     });
-
-                    if (isPush) ataList.push();
-                });
-                console.log('cancelNftinstruction added');
+                    cancelingNft.instruction.forEach((iX) => {
+                        cancelTransactionInstruction.push(iX);
+                    });
+                    ataList = cancelingNft.mintAta;
+                    console.log('cancelNftinstruction added');
+                } else {
+                    console.log('XXXXXXX - not adding NFT n° ', item);
+                }
                 break;
             case false:
-                console.log('XXXXXXX - cancelling item n° ', item, ' XXXXXXX');
-                let cancelingSol = await cancelSol({
-                    program: Data.program,
-                    user: swapDataItem.owner,
-                    signer: Data.signer,
-                    swapDataAccount: Data.swapDataAccount,
-                    swapDataAccount_seed: swapData.swapDataAccount_seed,
-                    swapDataAccount_bump: swapData.swapDataAccount_bump,
-                });
-                cancelTransactionInstruction.push(cancelingSol.instruction);
-                console.log('cancelSolinstruction added');
+                console.log(swapDataItem.status, ItemStatus.SolDeposited);
+
+                if (swapDataItem.status === ItemStatus.SolDeposited) {
+                    console.log(
+                        'XXXXXXX - cancelling SOL n° ',
+                        item,
+                        ' XXXXXXX',
+                        swapDataItem.status,
+                        swapDataItem.owner.toBase58()
+                    );
+                    let cancelingSol = await cancelSol({
+                        program: Data.program,
+                        user: swapDataItem.owner,
+                        signer: Data.signer,
+                        swapDataAccount: Data.swapDataAccount,
+                        swapDataAccount_seed: swapData.swapDataAccount_seed,
+                        swapDataAccount_bump: swapData.swapDataAccount_bump,
+                    });
+                    cancelTransactionInstruction.push(cancelingSol.instruction);
+                    console.log('cancelSolinstruction added');
+                } else {
+                    console.log('XXXXXXX - not adding SOL n° ', item, swapDataItem.status);
+                }
                 break;
         }
     }

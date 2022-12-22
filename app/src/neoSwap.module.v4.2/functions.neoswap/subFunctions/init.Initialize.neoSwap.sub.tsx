@@ -3,6 +3,7 @@ import { PublicKey, Signer, SystemProgram, Transaction } from '@solana/web3.js';
 import { splAssociatedTokenAccountProgramId } from '../../utils.neoSwap/const.neoSwap';
 import convertAllTransaction from '../../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSeedFromData } from '../../utils.neoSwap/getSeedfromData.neoswap';
+import { TradeStatus } from '../../utils.neoSwap/types.neo-swap/status.type.neoswap';
 import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap';
 
 /**
@@ -37,7 +38,7 @@ export const initInitialize = async (Data: {
     let sentData: SwapData = {
         initializer: Data.signer,
         items: [swapData.items[0]],
-        status: 80,
+        status: TradeStatus.Initializing,
     };
 
     const initInitTransaction = new Transaction().add(

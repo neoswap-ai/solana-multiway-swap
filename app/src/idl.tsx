@@ -1,7 +1,7 @@
 import { Idl } from '@project-serum/anchor';
 export const idl = {
     version: '0.1.0',
-    name: 'swap_coontract_test',
+    name: 'neo_swap',
     instructions: [
         {
             name: 'initInitialize',
@@ -478,25 +478,63 @@ export const idl = {
                 kind: 'enum',
                 variants: [
                     {
-                        name: 'Pending',
+                        name: 'Initializing',
                     },
                     {
-                        name: 'Deposited',
+                        name: 'WaitingToDeposit',
                     },
                     {
-                        name: 'Claimed',
+                        name: 'WaitingToClaim',
                     },
                     {
                         name: 'Closed',
                     },
                     {
-                        name: 'Initializing',
+                        name: 'Cancelling',
                     },
                     {
                         name: 'Cancelled',
                     },
+                ],
+            },
+        },
+        {
+            name: 'ItemStatus',
+            type: {
+                kind: 'enum',
+                variants: [
                     {
-                        name: 'CancelledRecovered',
+                        name: 'NFTPending',
+                    },
+                    {
+                        name: 'NFTDeposited',
+                    },
+                    {
+                        name: 'NFTClaimed',
+                    },
+                    {
+                        name: 'NFTCancelled',
+                    },
+                    {
+                        name: 'NFTCancelledRecovered',
+                    },
+                    {
+                        name: 'SolPending',
+                    },
+                    {
+                        name: 'SolDeposited',
+                    },
+                    {
+                        name: 'SolToClaim',
+                    },
+                    {
+                        name: 'SolClaimed',
+                    },
+                    {
+                        name: 'SolCancelled',
+                    },
+                    {
+                        name: 'SolCancelledRecovered',
                     },
                 ],
             },
@@ -606,6 +644,6 @@ export const idl = {
         },
     ],
     metadata: {
-        address: 'EBwKXJ7MM2WYSxRJQJMA76h7Exgr3mjUddcNq152bExw',
+        address: '5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9',
     },
 } as Idl;

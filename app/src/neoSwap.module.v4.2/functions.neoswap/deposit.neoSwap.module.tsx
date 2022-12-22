@@ -4,6 +4,7 @@ import appendTransactionToArray from '../utils.neoSwap/appendTransactionToArray.
 import convertAllTransaction from '../utils.neoSwap/convertAllTransaction.neoswap';
 import { getProgram } from '../utils.neoSwap/getProgram.neoswap';
 import { getSwapDataFromPDA } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
+import { ItemStatus, TradeStatus } from '../utils.neoSwap/types.neo-swap/status.type.neoswap';
 import depositNft from './createInstruction/deposit.nft.neoswap.ci';
 import depositSol from './createInstruction/deposit.sol.neoswap.ci';
 
@@ -37,7 +38,8 @@ export const deposit = async (Data: {
         throw console.error(error);
     });
 
-    if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
+    if (swapData.swapData.status !== TradeStatus.WaitingToDeposit)
+        throw console.error('Trade not in waiting for deposit state');
 
     let depositInstruction: Array<TransactionInstruction> = [];
     let ataList: Array<PublicKey> = [];
@@ -46,7 +48,10 @@ export const deposit = async (Data: {
 
         switch (swapDataItem.isNft) {
             case true:
-                if (swapDataItem.owner.toBase58() === Data.signer.toBase58() && swapDataItem.status === 0) {
+                if (
+                    swapDataItem.owner.toBase58() === Data.signer.toBase58() &&
+                    swapDataItem.status === ItemStatus.NFTPending
+                ) {
                     console.log('XXX - Deposit item n° ', item, ' X X ', swapDataItem.mint.toBase58(), ' - XXX ');
 
                     let depositing = await depositNft({
@@ -80,7 +85,10 @@ export const deposit = async (Data: {
                 }
                 break;
             case false:
-                if (swapDataItem.owner.toBase58() === Data.signer.toBase58() && swapDataItem.status === 0) {
+                if (
+                    swapDataItem.owner.toBase58() === Data.signer.toBase58() &&
+                    swapDataItem.status === ItemStatus.SolPending
+                ) {
                     console.log('XXXXXXX - Deposit sol item n° ', item, ' XXXXXXX');
                     const { instruction: depositSolInstruction } = await depositSol({
                         program: program,

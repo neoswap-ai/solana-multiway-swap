@@ -3,6 +3,7 @@ import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/
 import { appendTransactionToArray } from '../../utils.neoSwap/appendTransactionToArray.neosap';
 import { convertAllTransaction } from '../../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSeedFromData } from '../../utils.neoSwap/getSeedfromData.neoswap';
+import { TradeStatus } from '../../utils.neoSwap/types.neo-swap/status.type.neoswap';
 import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap';
 
 /**
@@ -24,7 +25,7 @@ export const saddInitialize = async (Data: {
         signers?: Array<Signer> | undefined;
     }>;
 }> => {
-    if (Data.swapData.status !== 80) throw console.error('Trade not in waiting for initialized state');
+    if (Data.swapData.status !== TradeStatus.Initializing) throw console.error('Trade not in waiting for initialized state');
 
     const seedSwapData = await getSeedFromData({
         swapDataGiven: Data.swapData,
