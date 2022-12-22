@@ -39,6 +39,7 @@ export const initInitialize = async (Data: {
         initializer: Data.signer,
         items: [swapData.items[0]],
         status: TradeStatus.Initializing,
+        nb_items: 1,
     };
 
     const initInitTransaction = new Transaction().add(

@@ -1,7 +1,7 @@
 import { Idl } from '@project-serum/anchor';
 export const idl = {
     version: '0.1.0',
-    name: 'swap_coontract_test',
+    name: 'neo_swap',
     instructions: [
         {
             name: 'initInitialize',
@@ -447,7 +447,7 @@ export const idl = {
     ],
     accounts: [
         {
-            name: 'swapData',
+            name: 'SwapData',
             type: {
                 kind: 'struct',
                 fields: [
@@ -467,6 +467,10 @@ export const idl = {
                             },
                         },
                     },
+                    {
+                        name: 'nbItems',
+                        type: 'u32',
+                    },
                 ],
             },
         },
@@ -478,25 +482,63 @@ export const idl = {
                 kind: 'enum',
                 variants: [
                     {
-                        name: 'Pending',
+                        name: 'Initializing',
                     },
                     {
-                        name: 'Deposited',
+                        name: 'WaitingToDeposit',
                     },
                     {
-                        name: 'Claimed',
+                        name: 'WaitingToClaim',
                     },
                     {
                         name: 'Closed',
                     },
                     {
-                        name: 'Initializing',
+                        name: 'Cancelling',
                     },
                     {
                         name: 'Cancelled',
                     },
+                ],
+            },
+        },
+        {
+            name: 'ItemStatus',
+            type: {
+                kind: 'enum',
+                variants: [
                     {
-                        name: 'CancelledRecovered',
+                        name: 'NFTPending',
+                    },
+                    {
+                        name: 'NFTDeposited',
+                    },
+                    {
+                        name: 'NFTClaimed',
+                    },
+                    {
+                        name: 'NFTCancelled',
+                    },
+                    {
+                        name: 'NFTCancelledRecovered',
+                    },
+                    {
+                        name: 'SolPending',
+                    },
+                    {
+                        name: 'SolDeposited',
+                    },
+                    {
+                        name: 'SolToClaim',
+                    },
+                    {
+                        name: 'SolClaimed',
+                    },
+                    {
+                        name: 'SolCancelled',
+                    },
+                    {
+                        name: 'SolCancelledRecovered',
                     },
                 ],
             },
@@ -548,30 +590,7 @@ export const idl = {
                 ],
             },
         },
-        {
-            name: 'SwapData',
-            type: {
-                kind: 'struct',
-                fields: [
-                    {
-                        name: 'initializer',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'status',
-                        type: 'u8',
-                    },
-                    {
-                        name: 'items',
-                        type: {
-                            vec: {
-                                defined: 'NftSwapItem',
-                            },
-                        },
-                    },
-                ],
-            },
-        },
+
         {
             name: 'NftSwapItem',
             type: {
@@ -605,7 +624,4 @@ export const idl = {
             },
         },
     ],
-    metadata: {
-        address: 'EBwKXJ7MM2WYSxRJQJMA76h7Exgr3mjUddcNq152bExw',
-    },
 } as Idl;

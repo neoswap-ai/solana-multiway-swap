@@ -32,7 +32,7 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8,
         sent_data: SwapData,
-        _nb_of_items: u32
+        nb_of_items: u32
     ) -> Result<()>  {
         require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
         require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
@@ -66,6 +66,7 @@ pub mod neo_swap {
         ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
         ctx.accounts.swap_data_account.items = item_to_add;
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
+        ctx.accounts.swap_data_account.nb_items = nb_of_items;
         Ok(())
     }
   
@@ -144,13 +145,15 @@ pub mod neo_swap {
 
         // Check that sum of lamports to trade is null
         let mut sum =0 as i64;
+        let mut count = 0 as u32;
         for item_id in 0..swap_data_account.items.len() {
             if !swap_data_account.items[item_id].is_nft {
                 sum = sum.checked_add(swap_data_account.items[item_id].amount).unwrap()
             }
+            count+=1
         };
         require!(sum==0, MYERROR::SumNotNull);
-        
+        require!(count==swap_data_account.nb_items, MYERROR::IncorrectLength);
         //changing status to 0 (Pending)
         swap_data_account.status = TradeStatus::WaitingToDeposit.to_u8();
 
@@ -859,6 +862,7 @@ pub struct SwapData {
     pub initializer: Pubkey,
     pub status: u8,
     pub items: Vec<NftSwapItem>,
+    pub nb_items: u32
 }
 
 impl SwapData {
@@ -880,7 +884,7 @@ pub struct NftSwapItem {
     amount: i64,
     owner: Pubkey,
     destinary: Pubkey,
-    status : u8
+    status: u8,
 }
 
 impl NftSwapItem {

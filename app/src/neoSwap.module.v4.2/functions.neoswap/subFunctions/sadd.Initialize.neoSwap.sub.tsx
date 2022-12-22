@@ -25,7 +25,7 @@ export const saddInitialize = async (Data: {
         signers?: Array<Signer> | undefined;
     }>;
 }> => {
-    if (Data.swapData.status !== TradeStatus.Initializing) throw console.error('Trade not in waiting for initialized state');
+    // if (Data.swapData.status !== TradeStatus.Initializing) throw console.error('Trade not in waiting for initialized state');
 
     const seedSwapData = await getSeedFromData({
         swapDataGiven: Data.swapData,
