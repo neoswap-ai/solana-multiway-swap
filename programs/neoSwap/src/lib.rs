@@ -723,7 +723,7 @@ pub struct InitInitialize<'info> {
         executable, 
         constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
     )]
-    system_program: SystemAccount<'info>,
+    system_program: AccountInfo<'info>,
     #[account(
         executable, 
         constraint = spl_token_program.key() == anchor_spl::associated_token::ID @ MYERROR::NotTokenProgram
@@ -769,7 +769,7 @@ pub struct DepositNft<'info> {
         executable, 
         constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
     )]
-    system_program: SystemAccount<'info>,
+    system_program: AccountInfo<'info>,
     #[account(
         executable, 
         constraint = token_program.key() == anchor_spl::token::ID @ MYERROR::NotTokenProgram)]
@@ -799,7 +799,7 @@ pub struct DepositSol<'info> {
         executable, 
         constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
     )]
-    system_program: SystemAccount<'info>,
+    system_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -827,7 +827,7 @@ pub struct ValidateAndClose<'info> {
         executable, 
         constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
     )]
-    system_program: SystemAccount<'info>,
+    system_program: AccountInfo<'info>,
     #[account(
         executable, 
         constraint = spl_token_program.key() == anchor_spl::associated_token::ID @ MYERROR::NotTokenProgram    
@@ -855,7 +855,7 @@ pub struct ClaimNft<'info> {
         executable, 
         constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
     )]
-    system_program: SystemAccount<'info>,
+    system_program: AccountInfo<'info>,
     #[account(
         executable, 
         constraint = token_program.key() == anchor_spl::token::ID @ MYERROR::NotTokenProgram
@@ -892,7 +892,7 @@ pub struct ClaimSol<'info> {
         executable, 
         constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
     )]
-    system_program: SystemAccount<'info>,
+    system_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
