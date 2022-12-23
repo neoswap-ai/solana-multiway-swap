@@ -34,8 +34,6 @@ pub mod neo_swap {
         sent_data: SwapData,
         nb_of_items: u32
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
 
         require!(sent_data.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
         require!(sent_data.items.len() == 1, MYERROR::IncorrectLength);
@@ -87,7 +85,6 @@ pub mod neo_swap {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
         require!(swap_data_account.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
-        require_keys_eq!(swap_data_account.initializer, ctx.accounts.signer.key(),MYERROR::NotInit);
         
         let mut item_to_add: NftSwapItem= trade_to_add;
 
@@ -141,7 +138,6 @@ pub mod neo_swap {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
         require!(swap_data_account.status == TradeStatus::Initializing.to_u8(),MYERROR::UnexpectedState);
-        require_keys_eq!(swap_data_account.initializer, ctx.accounts.signer.key(),MYERROR::NotInit);
 
         // Check that sum of lamports to trade is null
         let mut sum =0 as i64;
@@ -171,9 +167,7 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
-        
+ 
         let swap_data_account = &ctx.accounts.swap_data_account;
 
         let token_program = &ctx.accounts.token_program;
@@ -239,7 +233,6 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
      
         require!(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),MYERROR::UnexpectedState);
 
@@ -295,7 +288,6 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.swap_data_account.initializer,ctx.accounts.signer.key(),MYERROR::NotInit);
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),MYERROR::UnexpectedState);
 
@@ -328,7 +320,6 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToClaim.to_u8(),MYERROR::NotReady);
 
@@ -338,7 +329,7 @@ pub mod neo_swap {
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if !ctx.accounts.swap_data_account.items[item_id].is_nft 
             && ctx.accounts.swap_data_account.items[item_id].status == ItemStatus::SolToClaim.to_u8()
-            && ctx.accounts.swap_data_account.items[item_id].destinary.eq(ctx.accounts.user.key)
+            && ctx.accounts.swap_data_account.items[item_id].owner.eq(ctx.accounts.user.key)
             && transfered == false {                
                 if  ctx.accounts.swap_data_account.items[item_id].amount.is_negative() {
                     // Send lamports to user
@@ -387,8 +378,6 @@ pub mod neo_swap {
         seed: Vec<u8>,
         bump: u8,
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
 
         require!(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToClaim.to_u8(),MYERROR::NotReady);
 
@@ -475,13 +464,9 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
      
         require_eq!(ctx.accounts.swap_data_account.status, TradeStatus::WaitingToClaim.to_u8(),MYERROR::NotReady);
       
-        require_keys_eq!(ctx.accounts.swap_data_account.initializer,ctx.accounts.signer.key(),MYERROR::NotInit);
-    
         // verify all items are claimed
         for item_id in 0..ctx.accounts.swap_data_account.items.len(){
             if !(ctx.accounts.swap_data_account.items[item_id].status==ItemStatus::SolClaimed.to_u8()
@@ -511,7 +496,6 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
 
         if !(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8() || 
             ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8()){
@@ -585,8 +569,6 @@ pub mod neo_swap {
         seed: Vec<u8>,
         bump: u8,
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.token_program.key(),anchor_spl::token::ID,MYERROR::NotTokenProgram);
     
         let user_ata = &ctx.accounts.item_to_deposit;
         let swap_data_ata = &mut ctx.accounts.item_from_deposit;
@@ -693,10 +675,6 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8
     ) -> Result<()>  {
-        require_keys_eq!(ctx.accounts.system_program.key(),anchor_lang::system_program::ID,MYERROR::NotSystemProgram);
-        require_keys_eq!(ctx.accounts.spl_token_program.key(),anchor_spl::associated_token::ID,MYERROR::NotTokenProgram);
-      
-        require_keys_eq!(ctx.accounts.signer.key(),ctx.accounts.swap_data_account.initializer,MYERROR::NotInit);
 
        if !(ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8() || 
         ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()){
@@ -741,9 +719,15 @@ pub struct InitInitialize<'info> {
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
-    #[account(executable)]
+    #[account(
+        executable, 
+        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
+    )]
+    system_program: SystemAccount<'info>,
+    #[account(
+        executable, 
+        constraint = spl_token_program.key() == anchor_spl::associated_token::ID @ MYERROR::NotTokenProgram
+    )]
     spl_token_program: AccountInfo<'info>,
 }
 
@@ -751,7 +735,12 @@ pub struct InitInitialize<'info> {
 #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct InitializeAdd<'info> {
-    #[account(mut,seeds = [&seed[..]], bump)]
+    #[account(
+        mut,
+        seeds = [&seed[..]], 
+        bump,
+        constraint = swap_data_account.initializer == signer.key() @ MYERROR::NotInit        
+    )]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -760,7 +749,12 @@ pub struct InitializeAdd<'info> {
 #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct VerifyInitialize<'info> {
-    #[account(mut,seeds = [&seed[..]], bump)]
+    #[account(
+        mut,
+        seeds = [&seed[..]], 
+        bump,
+        constraint = swap_data_account.initializer == signer.key() @ MYERROR::NotInit        
+    )]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -771,17 +765,29 @@ pub struct VerifyInitialize<'info> {
 #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct DepositNft<'info> {
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
-    #[account(executable)]
+    #[account(
+        executable, 
+        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
+    )]
+    system_program: SystemAccount<'info>,
+    #[account(
+        executable, 
+        constraint = token_program.key() == anchor_spl::token::ID @ MYERROR::NotTokenProgram)]
     token_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(mut, constraint = signer.key() == item_from_deposit.owner)]
+    #[account(
+        mut,
+        constraint = item_from_deposit.mint == item_to_deposit.mint @ MYERROR::MintIncorrect,
+        constraint = item_from_deposit.owner == signer.key() @ MYERROR::IncorrectOwner
+    )]
     item_from_deposit: Account<'info, TokenAccount>,
-    #[account(mut, constraint = swap_data_account.key() == item_to_deposit.owner)]
+    #[account(
+        mut,
+        constraint = item_to_deposit.owner == swap_data_account.to_account_info().key()  @ MYERROR::IncorrectOwner
+)]
     item_to_deposit: Account<'info, TokenAccount>,
 }
 
@@ -789,8 +795,11 @@ pub struct DepositNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct DepositSol<'info> {
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
+    #[account(
+        executable, 
+        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
+    )]
+    system_program: SystemAccount<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -801,7 +810,11 @@ pub struct DepositSol<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct Validate<'info> {
-    #[account(mut,seeds = [&seed[..]], bump)]
+    #[account(
+        mut,
+        seeds = [&seed[..]], bump,
+        constraint = swap_data_account.initializer == signer.key() @ MYERROR::NotInit        
+    )]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -810,11 +823,23 @@ pub struct Validate<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ValidateAndClose<'info> {
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
-    #[account(executable)]
+    #[account(
+        executable, 
+        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
+    )]
+    system_program: SystemAccount<'info>,
+    #[account(
+        executable, 
+        constraint = spl_token_program.key() == anchor_spl::associated_token::ID @ MYERROR::NotTokenProgram    
+    )]
     spl_token_program: AccountInfo<'info>,
-    #[account(mut,seeds = [&seed[..]], bump, close = signer)]
+    #[account(
+        mut,
+        seeds = [&seed[..]], 
+        bump, 
+        close = signer,
+        constraint = swap_data_account.initializer == signer.key() @ MYERROR::NotInit    
+    )]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -826,19 +851,36 @@ pub struct ValidateAndClose<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimNft<'info> {
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
-    #[account(executable)]
+    #[account(
+        executable, 
+        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
+    )]
+    system_program: SystemAccount<'info>,
+    #[account(
+        executable, 
+        constraint = token_program.key() == anchor_spl::token::ID @ MYERROR::NotTokenProgram
+    )]
     token_program: AccountInfo<'info>,
-    #[account(mut,seeds = [&seed[..]], bump)]
+    #[account(
+        mut,
+        seeds = [&seed[..]], 
+        bump
+    )]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     user: AccountInfo<'info>,
     #[account(mut)]
-    signer: Signer<'info>,
-    #[account(mut, constraint = swap_data_account.key() == item_from_deposit.owner)]
+    signer: Signer<'info>,  
+    #[account(
+        mut,
+        constraint = item_from_deposit.mint == item_to_deposit.mint  @ MYERROR::MintIncorrect,
+        constraint = item_from_deposit.owner == swap_data_account.key()  @ MYERROR::IncorrectOwner
+    )]
     item_from_deposit: Account<'info, TokenAccount>,
-    #[account(mut, constraint = user.key() == item_to_deposit.owner)]
+    #[account(
+        mut,
+        constraint = item_to_deposit.owner == user.key() @ MYERROR::IncorrectOwner
+    )]
     item_to_deposit: Account<'info, TokenAccount>,
 }
 
@@ -846,8 +888,11 @@ pub struct ClaimNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimSol<'info> {
-    #[account(executable)]
-    system_program: AccountInfo<'info>,
+    #[account(
+        executable, 
+        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
+    )]
+    system_program: SystemAccount<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -995,8 +1040,8 @@ impl ItemStatus {
 pub enum MYERROR {
     #[msg("User not part of the trade")]
     UserNotPartOfTrade,
-    #[msg("Mint not found")]
-    MintNotFound,
+    #[msg("Incorrect Mint")]
+    MintIncorrect,
     #[msg("Amount given isn't correct")]
     AmountIncorrect,
     #[msg("User shouldn't be sending funds")]
@@ -1027,4 +1072,6 @@ pub enum MYERROR {
     IncorrectLength,
     #[msg("Not enough funds")]
     NotEnoughFunds,
+    #[msg("Owner Given is incorrect")]
+    IncorrectOwner,
 }
