@@ -31,7 +31,7 @@ export const claim = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
     });
-    
+
     // if (swapData.swapData.status !== TradeStatus.WaitingToDeposit) throw console.error('Trade not in waiting for deposit state');
 
     let claimTransactionInstruction: TransactionInstruction[] = [];
@@ -43,6 +43,8 @@ export const claim = async (Data: {
             case true:
                 if (swapDataItem.status === ItemStatus.NFTDeposited) {
                     console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
+                    // console.log(Data.user.toBase58(), swapDataItem.destinary.toBase58());
+
                     let claimingNft = await claimNft({
                         program: Data.program,
                         signer: Data.signer,
@@ -71,7 +73,7 @@ export const claim = async (Data: {
                 break;
             case false:
                 if (swapDataItem.status === ItemStatus.SolToClaim) {
-                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX',swapDataItem);
+                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX', swapDataItem);
                     const claimingSol = await claimSol({
                         program: Data.program,
                         user: swapDataItem.owner,
@@ -82,6 +84,8 @@ export const claim = async (Data: {
                     });
                     claimTransactionInstruction.push(claimingSol.instruction);
                     console.log('claimSolinstruction added');
+                } else {
+                    console.log('not to claim item n° ', item);
                 }
                 break;
         }

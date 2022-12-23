@@ -12,8 +12,8 @@ export const programId = new PublicKey('DX1pLgDgRWgUCLHHDgVcnKkSnr5r6gokHprjYXo7
 // export const network = WalletAdapterNetwork.Mainnet;
 // export const programId = new PublicKey('');
 
-export const CONST_PROGRAM: string = '0136';
-export const swapDataAccountGiven = new PublicKey('GGiFLfexCtsxjHxBqi38wpjCEAvy8CakHBzcty3izzr3');
+export const CONST_PROGRAM: string = '0138';
+export const swapDataAccountGiven = new PublicKey('B2ZyQpbdoecuMhNrhMvGwhMu1cGpoBNGuMAZKtqcMMeZ');
 
 const i11: NftSwapItem = {
     isNft: false,
@@ -97,9 +97,11 @@ export const fullData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: TradeStatus.Initializing,
     items: [i11, i12, i21, i22, i31, i32] as Array<NftSwapItem>,
+    nb_items:6
 };
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: TradeStatus.Initializing,
     items: [i11] as Array<NftSwapItem>,
+    nb_items:1
 };
