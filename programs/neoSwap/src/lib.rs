@@ -40,7 +40,7 @@ pub mod neo_swap {
      
         let mut item_to_add: Vec<NftSwapItem>= sent_data.items;
 
-        // Write according status to item
+        // checking status and values
         if item_to_add[0].is_nft {
             item_to_add[0].status = ItemStatus::NFTPending.to_u8();
             msg!("item added with status NFTPending");
@@ -102,8 +102,11 @@ pub mod neo_swap {
                     return  Err(error!(MYERROR::UnexpectedData).into());
                 }
             };
-            item_to_add.destinary = Pubkey::from_str("11111111111111111111111111111111").unwrap();
-            item_to_add.mint = Pubkey::from_str("11111111111111111111111111111111").unwrap();
+            if item_to_add.destinary != Pubkey::from_str("11111111111111111111111111111111").unwrap() ||
+            item_to_add.mint != Pubkey::from_str("11111111111111111111111111111111").unwrap() {
+                return  Err(error!(MYERROR::UnexpectedData).into());
+
+            }
 
             if item_to_add.amount.is_positive(){
                 item_to_add.status = ItemStatus::SolPending.to_u8();
@@ -124,7 +127,7 @@ pub mod neo_swap {
     }
 
     /// @notice Verify Swap's PDA items to proceed to waiting for deposit state. /!\ initializer function
-    /// @dev Function verify each item status and sum of lamports to mutate the smart contract status to 0 (waiting for deposit).  /!\ this function can only be triggered by initializer
+    /// @dev Function verify each item status and sum of lamports to mutate the smart contract status to (waiting for deposit). 
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
@@ -150,7 +153,8 @@ pub mod neo_swap {
         };
         require!(sum==0, MYERROR::SumNotNull);
         require!(count==swap_data_account.nb_items, MYERROR::IncorrectLength);
-        //changing status to 0 (Pending)
+
+        //changing status to WaitingToDeposit
         swap_data_account.status = TradeStatus::WaitingToDeposit.to_u8();
 
         Ok(())
@@ -205,10 +209,10 @@ pub mod neo_swap {
                     ],
                 )?;
                     
-                //update item status to 1 (WaitingToClaim)
+                //update item status to NFTDeposited
                 ctx.accounts.swap_data_account.items[item_id].status = ItemStatus::NFTDeposited.to_u8();
                 transfered = true;
-                msg!("NFT item WaitingToClaim");
+                msg!("NFTDeposited");
                 break;
 
             } 
@@ -262,7 +266,7 @@ pub mod neo_swap {
                     //update status to 2 (Claimed)
                     ctx.accounts.swap_data_account.items[item_id].status = ItemStatus::SolDeposited.to_u8();
                     transfered = true;
-                    msg!("SOL item WaitingToClaim");
+                    msg!("SolDeposited");
                     break;
                 } else {
                     return  Err(error!(MYERROR::NoSend).into());
@@ -300,7 +304,7 @@ pub mod neo_swap {
                 }
         }
 
-        // Udpate status to 1 (WaitingToClaim)
+        // Udpate status to WaitingToClaim
         ctx.accounts.swap_data_account.status  = TradeStatus::WaitingToClaim.to_u8();
 
         Ok(())  
@@ -341,7 +345,7 @@ pub mod neo_swap {
                         **ctx.accounts.user.lamports.borrow_mut() = ctx.accounts.user.lamports() + amount_to_send ;
                         **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
                         
-                        //update item status to 2 (Claimed)
+                        //update item status to SolClaimed
                         ctx.accounts.swap_data_account.items[item_id].status = ItemStatus::SolClaimed.to_u8();
                         transfered = true;
                         msg!("SOL item Claimed");
@@ -436,7 +440,7 @@ pub mod neo_swap {
 
                         }
                         
-                //Change status to (Claimed)
+                //Change status to NFTClaimed
                 ctx.accounts.swap_data_account.items[item_id].status = ItemStatus::NFTClaimed.to_u8();
                 transfered = true;
                 break;
@@ -476,7 +480,7 @@ pub mod neo_swap {
                 }
         }
         
-        // Change Swap's status to 3 (Closed)
+        // Change Swap's status to Closed
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
 
         Ok(())  
@@ -524,7 +528,7 @@ pub mod neo_swap {
                                 **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() = ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
 
                                 ctx.accounts.swap_data_account.items[item_id].status = ItemStatus::SolCancelledRecovered.to_u8();
-                                msg!("SOL item Cancelled");
+                                msg!("SolCancelledRecovered");
                                 
                             } else {return  Err(error!(MYERROR::NotEnoughFunds).into());}
                         } 
@@ -654,7 +658,7 @@ pub mod neo_swap {
         // If not already, update Swap's status to 90 (Cancelled)
         if ctx.accounts.swap_data_account.status != TradeStatus::Cancelling.to_u8() {
             ctx.accounts.swap_data_account.status = TradeStatus::Cancelling.to_u8();
-            msg!("General status changed to Cancelled");
+            msg!("General status changed to Cancelling");
         }
 
         Ok(())
@@ -698,6 +702,7 @@ pub mod neo_swap {
 
         // Changing Swap status to 91 (CancelledRecovered)
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
+        msg!("General status changed to Closed");
 
         Ok(())  
     }
