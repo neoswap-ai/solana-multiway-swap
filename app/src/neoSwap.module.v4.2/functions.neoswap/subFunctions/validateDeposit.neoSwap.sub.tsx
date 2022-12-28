@@ -2,6 +2,7 @@ import { AnchorProvider, Program, web3 } from '@project-serum/anchor';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { convertAllTransaction } from '../../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSwapDataFromPDA } from '../../utils.neoSwap/getSwapDataFromPDA.neoSwap';
+import { TradeStatus } from '../../utils.neoSwap/types.neo-swap/status.type.neoswap';
 
 /**
  * @notice creates instruction for validating deposited state of the swap's PDA and change status to claiming
@@ -22,24 +23,27 @@ export const validateDeposit = async (Data: {
         signers?: web3.Signer[] | undefined;
     }>;
 }> => {
-    const { swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
+    const { swapDataAccount_seed, swapDataAccount_bump, swapData } = await getSwapDataFromPDA({
         swapDataAccount: Data.swapDataAccount,
         provider: Data.program.provider as AnchorProvider,
         CONST_PROGRAM: Data.CONST_PROGRAM,
     });
+    if (swapData.status === TradeStatus.WaitingToDeposit) {
+        const validateClaimedTransaction = new Transaction().add(
+            await Data.program.methods
+                .validateDeposit(swapDataAccount_seed, swapDataAccount_bump)
+                .accounts({
+                    swapDataAccount: Data.swapDataAccount,
+                    signer: Data.signer,
+                })
+                .instruction()
+        );
 
-    const validateClaimedTransaction = new Transaction().add(
-        await Data.program.methods
-            .validateDeposit(swapDataAccount_seed, swapDataAccount_bump)
-            .accounts({
-                swapDataAccount: Data.swapDataAccount,
-                signer: Data.signer,
-            })
-            .instruction()
-    );
-
-    const validateDepositSendAll = await convertAllTransaction([validateClaimedTransaction]);
-    return { validateDepositSendAll };
+        const validateDepositSendAll = await convertAllTransaction([validateClaimedTransaction]);
+        return { validateDepositSendAll };
+    } else {
+        return { validateDepositSendAll: await convertAllTransaction([new Transaction()]) };
+    }
 };
 
 export default validateDeposit;

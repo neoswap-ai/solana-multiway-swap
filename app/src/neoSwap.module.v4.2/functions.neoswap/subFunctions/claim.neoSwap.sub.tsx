@@ -3,6 +3,7 @@ import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/
 import appendTransactionToArray from '../../utils.neoSwap/appendTransactionToArray.neosap';
 import convertAllTransaction from '../../utils.neoSwap/convertAllTransaction.neoswap';
 import { getSwapDataFromPDA } from '../../utils.neoSwap/getSwapDataFromPDA.neoSwap';
+import { ItemStatus, TradeStatus } from '../../utils.neoSwap/types.neo-swap/status.type.neoswap';
 import claimNft from '../createInstruction/claim.nft.neoswap.ci';
 import claimSol from '../createInstruction/claim.sol.neoswap.ci';
 
@@ -30,7 +31,8 @@ export const claim = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
     });
-    if (swapData.swapData.status !== 0) throw console.error('Trade not in waiting for deposit state');
+
+    // if (swapData.swapData.status !== TradeStatus.WaitingToDeposit) throw console.error('Trade not in waiting for deposit state');
 
     let claimTransactionInstruction: TransactionInstruction[] = [];
     let ataList: Array<PublicKey> = [];
@@ -39,8 +41,10 @@ export const claim = async (Data: {
         let swapDataItem = swapData.swapData.items[item];
         switch (swapDataItem.isNft) {
             case true:
-                if (swapDataItem.status === 1) {
+                if (swapDataItem.status === ItemStatus.NFTDeposited) {
                     console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
+                    // console.log(Data.user.toBase58(), swapDataItem.destinary.toBase58());
+
                     let claimingNft = await claimNft({
                         program: Data.program,
                         signer: Data.signer,
@@ -68,8 +72,8 @@ export const claim = async (Data: {
                 }
                 break;
             case false:
-                if (swapDataItem.status === 1) {
-                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
+                if (swapDataItem.status === ItemStatus.SolToClaim) {
+                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX', swapDataItem);
                     const claimingSol = await claimSol({
                         program: Data.program,
                         user: swapDataItem.owner,
@@ -80,6 +84,8 @@ export const claim = async (Data: {
                     });
                     claimTransactionInstruction.push(claimingSol.instruction);
                     console.log('claimSolinstruction added');
+                } else {
+                    console.log('not to claim item n° ', item);
                 }
                 break;
         }

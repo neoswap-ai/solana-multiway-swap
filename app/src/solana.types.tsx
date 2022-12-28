@@ -13,4 +13,5 @@ export type SwapData = {
     initializer: PublicKey;
     status: number;
     items: Array<NftSwapItem>;
+    nb_items: number;
 };

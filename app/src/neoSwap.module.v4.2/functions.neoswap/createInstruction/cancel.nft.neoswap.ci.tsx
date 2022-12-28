@@ -27,7 +27,7 @@ export async function cancelNft(Data: {
     ataList: Array<PublicKey>;
 }): Promise<{ instruction: TransactionInstruction[]; mintAta: PublicKey[] }> {
     let instruction: TransactionInstruction[] = [];
-    let mintAta: PublicKey[] = [];
+    // let mintAta: PublicKey[] = [];
 
     const { mintAta: userMintAta, instruction: userMintAtaTx } = await findOrCreateAta({
         connection: Data.program.provider.connection,
@@ -35,7 +35,6 @@ export async function cancelNft(Data: {
         mint: Data.mint,
         signer: Data.signer,
     });
-    mintAta.push(userMintAta);
     let addUserTx = true;
     Data.ataList.forEach((ata) => {
         if (ata.toString() === userMintAta.toString()) {
@@ -46,7 +45,8 @@ export async function cancelNft(Data: {
         userMintAtaTx.forEach((userMintAtaTxItem) => {
             instruction.push(userMintAtaTxItem);
         });
-        console.log('createUserAta Cancel Nft Tx Added');
+        Data.ataList.push(userMintAta);
+        console.log('createUserAta Cancel Nft Tx Added', userMintAta);
     }
 
     const { mintAta: pdaMintAta, instruction: pdaMintAtaTx } = await findOrCreateAta({
@@ -55,7 +55,6 @@ export async function cancelNft(Data: {
         mint: Data.mint,
         signer: Data.signer,
     });
-    mintAta.push(pdaMintAta);
     let addPdaTx = true;
     Data.ataList.forEach((ata) => {
         if (ata.toString() === pdaMintAta.toString()) {
@@ -66,7 +65,8 @@ export async function cancelNft(Data: {
         pdaMintAtaTx.forEach((pdaMintAtaTxItem) => {
             instruction.push(pdaMintAtaTxItem);
         });
-        console.log('createPdaAta Cancel Nft Tx Added');
+        Data.ataList.push(pdaMintAta);
+        console.log('createPdaAta Cancel Nft Tx Added', pdaMintAta);
     }
 
     const cancelNftTx = await Data.program.methods
@@ -83,7 +83,7 @@ export async function cancelNft(Data: {
         .instruction();
 
     instruction.push(cancelNftTx);
-    return { instruction, mintAta };
+    return { instruction, mintAta: Data.ataList };
 }
 
 export default cancelNft;

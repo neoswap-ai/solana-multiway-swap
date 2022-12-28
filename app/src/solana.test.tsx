@@ -2,25 +2,26 @@ import { NftSwapItem, SwapData } from './solana.types';
 import { BN } from '@project-serum/anchor';
 import { PublicKey } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { ItemStatus, TradeStatus } from './neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/status.type.neoswap';
 
 /// DEV
 export const network = WalletAdapterNetwork.Devnet;
-export const programId = new PublicKey('5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9');
+export const programId = new PublicKey('DX1pLgDgRWgUCLHHDgVcnKkSnr5r6gokHprjYXo7eykZ');
 
 /// MAIN
 // export const network = WalletAdapterNetwork.Mainnet;
 // export const programId = new PublicKey('');
 
-export const CONST_PROGRAM: string = '0131';
-export const swapDataAccountGiven = new PublicKey('8inLXxbPiQoZNHfsJB6P9tCn6SQWsL7TXn91bj5pCrj6');
+export const CONST_PROGRAM: string = '0138';
+export const swapDataAccountGiven = new PublicKey('B2ZyQpbdoecuMhNrhMvGwhMu1cGpoBNGuMAZKtqcMMeZ');
 
 const i11: NftSwapItem = {
     isNft: false,
     amount: new BN(-2 * 10 ** 9),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    mint: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    status: 1,
+    destinary: new PublicKey('11111111111111111111111111111111'),
+    mint: new PublicKey('11111111111111111111111111111111'),
+    status: ItemStatus.SolToClaim,
 };
 
 const i12: NftSwapItem = {
@@ -28,26 +29,26 @@ const i12: NftSwapItem = {
     amount: new BN(1),
     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
-    status: 0,
+    mint: new PublicKey('7JFzB74JaLXD4YPvM7yMoaQ872YD6QQwvEWjLsMyi2cN'),
+    status: ItemStatus.NFTPending,
 };
 
-const i13: NftSwapItem = {
-    isNft: true,
-    amount: new BN(1),
-    owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    mint: new PublicKey('DxKz618SSAiswCsUPZkmKDU9kUxXkNUC9uDfZYNEF6mY'),
-    status: 0,
-};
+// const i13: NftSwapItem = {
+//     isNft: true,
+//     amount: new BN(1),
+//     owner: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
+//     destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
+//     mint: new PublicKey('7JFzB74JaLXD4YPvM7yMoaQ872YD6QQwvEWjLsMyi2cN'),
+//     status: ItemStatus.NFTPending,
+// };
 
 const i21: NftSwapItem = {
     isNft: false,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    mint: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    status: 0,
+    destinary: new PublicKey('11111111111111111111111111111111'),
+    mint: new PublicKey('11111111111111111111111111111111'),
+    status: ItemStatus.SolPending,
 };
 
 const i22: NftSwapItem = {
@@ -55,50 +56,52 @@ const i22: NftSwapItem = {
     amount: new BN(1),
     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
     destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    mint: new PublicKey('DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew'),
-    status: 0,
+    mint: new PublicKey('8dpsqhjtcmHij554Nsp7ZewaRThA3KGj9apgB89m35S7'),
+    status: ItemStatus.NFTPending,
 };
 
-const i23: NftSwapItem = {
-    isNft: true,
-    amount: new BN(1),
-    owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    mint: new PublicKey('DwPKNrMPg3ocBvzhrpAZmcKAjUiFcA1okpRnBACrucew'),
-    status: 0,
-};
+// const i23: NftSwapItem = {
+//     isNft: true,
+//     amount: new BN(1),
+//     owner: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
+//     destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
+//     mint: new PublicKey('8dpsqhjtcmHij554Nsp7ZewaRThA3KGj9apgB89m35S7'),
+//     status: ItemStatus.NFTPending,
+// };
 
 const i31: NftSwapItem = {
     isNft: false,
     amount: new BN(1 * 10 ** 9),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    destinary: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    mint: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
-    status: 0,
+    destinary: new PublicKey('11111111111111111111111111111111'),
+    mint: new PublicKey('11111111111111111111111111111111'),
+    status: ItemStatus.SolPending,
 };
 const i32: NftSwapItem = {
     isNft: true,
     amount: new BN(1),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     destinary: new PublicKey('4vc8rbxj2hsxPEPQp8QtfCof1vmAFL2ccL8J2aAAQfS8'),
-    mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
-    status: 0,
+    mint: new PublicKey('2RMVWVmXri4mR8d9zrxd8nQM8AQjpoCrjZZkEkfKaPEu'),
+    status: ItemStatus.NFTPending,
 };
 const i33: NftSwapItem = {
     isNft: true,
     amount: new BN(1),
     owner: new PublicKey('GbBKQ9nok57CUKJeCgugoCbucQiuuoGZk1prrrbz3oqE'),
     destinary: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    mint: new PublicKey('UUCjpbeFwockd4RKYj8DmxSWWcxHrG5cJW1uoAhjeDc'),
-    status: 0,
+    mint: new PublicKey('2RMVWVmXri4mR8d9zrxd8nQM8AQjpoCrjZZkEkfKaPEu'),
+    status: ItemStatus.NFTPending,
 };
 export const fullData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    status: 80,
-    items: [i11, i12, i13, i21, i22, i23, i31, i32, i33] as Array<NftSwapItem>,
+    status: TradeStatus.Initializing,
+    items: [i11, i12, i21, i22, i31, i32] as Array<NftSwapItem>,
+    nb_items:6
 };
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
-    status: 80,
+    status: TradeStatus.Initializing,
     items: [i11] as Array<NftSwapItem>,
+    nb_items:1
 };

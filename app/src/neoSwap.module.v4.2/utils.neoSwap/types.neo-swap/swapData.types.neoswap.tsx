@@ -1,10 +1,11 @@
-import { PublicKey } from "@solana/web3.js";
-import NftSwapItem from "./nftSwapItem.types.neoswap";
+import { PublicKey } from '@solana/web3.js';
+import NftSwapItem from './nftSwapItem.types.neoswap';
 
 type SwapData = {
-  initializer: PublicKey;
-  status: number;
-  items: Array<NftSwapItem>;
+    initializer: PublicKey;
+    status: number;
+    items: Array<NftSwapItem>;
+    nb_items: number;
 };
 
 export default SwapData;
