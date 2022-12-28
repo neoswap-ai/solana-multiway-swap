@@ -544,7 +544,7 @@ export const idl = {
             },
         },
         {
-            name: 'ERROR',
+            name: 'MYERROR',
             type: {
                 kind: 'enum',
                 variants: [
@@ -552,7 +552,7 @@ export const idl = {
                         name: 'UserNotPartOfTrade',
                     },
                     {
-                        name: 'MintNotFound',
+                        name: 'MintIncorrect',
                     },
                     {
                         name: 'AmountIncorrect',
@@ -564,7 +564,7 @@ export const idl = {
                         name: 'NoSend',
                     },
                     {
-                        name: 'AmountGivenIncorect',
+                        name: 'SumNotNull',
                     },
                     {
                         name: 'NotReady',
@@ -586,6 +586,21 @@ export const idl = {
                     },
                     {
                         name: 'NotBump',
+                    },
+                    {
+                        name: 'UnexpectedState',
+                    },
+                    {
+                        name: 'InvalidAccountData',
+                    },
+                    {
+                        name: 'IncorrectLength',
+                    },
+                    {
+                        name: 'NotEnoughFunds',
+                    },
+                    {
+                        name: 'IncorrectOwner',
                     },
                 ],
             },

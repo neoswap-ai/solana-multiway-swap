@@ -447,7 +447,7 @@ export const idl = {
     ],
     accounts: [
         {
-            name: 'swapData',
+            name: 'SwapData',
             type: {
                 kind: 'struct',
                 fields: [
@@ -466,6 +466,10 @@ export const idl = {
                                 defined: 'NftSwapItem',
                             },
                         },
+                    },
+                    {
+                        name: 'nbItems',
+                        type: 'u32',
                     },
                 ],
             },
@@ -540,7 +544,7 @@ export const idl = {
             },
         },
         {
-            name: 'ERROR',
+            name: 'MYERROR',
             type: {
                 kind: 'enum',
                 variants: [
@@ -548,7 +552,7 @@ export const idl = {
                         name: 'UserNotPartOfTrade',
                     },
                     {
-                        name: 'MintNotFound',
+                        name: 'MintIncorrect',
                     },
                     {
                         name: 'AmountIncorrect',
@@ -560,7 +564,7 @@ export const idl = {
                         name: 'NoSend',
                     },
                     {
-                        name: 'AmountGivenIncorect',
+                        name: 'SumNotNull',
                     },
                     {
                         name: 'NotReady',
@@ -583,33 +587,25 @@ export const idl = {
                     {
                         name: 'NotBump',
                     },
-                ],
-            },
-        },
-        {
-            name: 'SwapData',
-            type: {
-                kind: 'struct',
-                fields: [
                     {
-                        name: 'initializer',
-                        type: 'publicKey',
+                        name: 'UnexpectedState',
                     },
                     {
-                        name: 'status',
-                        type: 'u8',
+                        name: 'InvalidAccountData',
                     },
                     {
-                        name: 'items',
-                        type: {
-                            vec: {
-                                defined: 'NftSwapItem',
-                            },
-                        },
+                        name: 'IncorrectLength',
+                    },
+                    {
+                        name: 'NotEnoughFunds',
+                    },
+                    {
+                        name: 'IncorrectOwner',
                     },
                 ],
             },
         },
+
         {
             name: 'NftSwapItem',
             type: {
@@ -643,7 +639,4 @@ export const idl = {
             },
         },
     ],
-    metadata: {
-        address: '5CihstNRfYL87s4b7y24UmesKSV6poNLS9ku3DArknx9',
-    },
 } as Idl;
