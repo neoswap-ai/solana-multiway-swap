@@ -5,11 +5,11 @@ anchor_lang::{
         pubkey::Pubkey,
         program::{invoke_signed, invoke}
     }},
-anchor_spl::token::{spl_token, TokenAccount}
+anchor_spl::{token::{spl_token, TokenAccount,Token},associated_token::AssociatedToken}
 };
 use std::str::FromStr;
 
-declare_id!("DX1pLgDgRWgUCLHHDgVcnKkSnr5r6gokHprjYXo7eykZ");
+declare_id!("CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -205,7 +205,7 @@ pub mod neo_swap {
                         item_from_deposit.to_account_info(),
                         item_to_deposit.to_account_info(),
                         signer.to_account_info(),
-                        token_program.clone(),
+                        token_program.to_account_info(),
                     ],
                 )?;
                     
@@ -408,7 +408,7 @@ pub mod neo_swap {
                 invoke_signed(
                     &ix,
                     &[
-                        ctx.accounts.token_program.clone(),
+                        ctx.accounts.token_program.to_account_info(),
                         ctx.accounts.item_from_deposit.to_account_info(),
                         ctx.accounts.item_to_deposit.to_account_info(),
                         ctx.accounts.swap_data_account.to_account_info(),
@@ -429,7 +429,7 @@ pub mod neo_swap {
                         invoke_signed(
                             &ix2,
                             &[
-                                ctx.accounts.token_program.clone(),
+                                ctx.accounts.token_program.to_account_info(),
                                 ctx.accounts.item_from_deposit.to_account_info(),
                                 ctx.accounts.swap_data_account.to_account_info(),
                                 ctx.accounts.user.to_account_info(),
@@ -607,7 +607,7 @@ pub mod neo_swap {
                 invoke_signed(
                     &ix,
                     &[
-                        ctx.accounts.token_program.clone(),
+                        ctx.accounts.token_program.to_account_info(),
                         swap_data_ata.to_account_info(),
                         user_ata.to_account_info(),
                         ctx.accounts.swap_data_account.to_account_info(),
@@ -631,7 +631,7 @@ pub mod neo_swap {
                     invoke_signed(
                         &ix2,
                         &[
-                            ctx.accounts.token_program.clone(),
+                            ctx.accounts.token_program.to_account_info(),
                             swap_data_ata.to_account_info(),
                             ctx.accounts.swap_data_account.to_account_info(),
                             ctx.accounts.user.to_account_info(),
@@ -724,16 +724,10 @@ pub struct InitInitialize<'info> {
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(
-        executable, 
-        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
-    )]
-    system_program: AccountInfo<'info>,
-    #[account(
-        executable, 
-        constraint = spl_token_program.key() == anchor_spl::associated_token::ID @ MYERROR::NotTokenProgram
-    )]
-    spl_token_program: AccountInfo<'info>,
+    #[account()]
+    system_program: Program<'info,System>,
+    #[account()]
+    spl_token_program: Program<'info,AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -770,15 +764,10 @@ pub struct VerifyInitialize<'info> {
 #[instruction(seed: Vec<u8>, bump: u8)]
 
 pub struct DepositNft<'info> {
-    #[account(
-        executable, 
-        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
-    )]
-    system_program: AccountInfo<'info>,
-    #[account(
-        executable, 
-        constraint = token_program.key() == anchor_spl::token::ID @ MYERROR::NotTokenProgram)]
-    token_program: AccountInfo<'info>,
+    #[account()]
+    system_program: Program<'info,System>,
+    #[account()]
+    token_program: Program<'info,Token>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -800,11 +789,8 @@ pub struct DepositNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct DepositSol<'info> {
-    #[account(
-        executable, 
-        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
-    )]
-    system_program: AccountInfo<'info>,
+    #[account()]
+    system_program: Program<'info,System>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -828,16 +814,10 @@ pub struct Validate<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ValidateAndClose<'info> {
-    #[account(
-        executable, 
-        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
-    )]
-    system_program: AccountInfo<'info>,
-    #[account(
-        executable, 
-        constraint = spl_token_program.key() == anchor_spl::associated_token::ID @ MYERROR::NotTokenProgram    
-    )]
-    spl_token_program: AccountInfo<'info>,
+    #[account()]
+    system_program: Program<'info,System>,
+    #[account()]
+    spl_token_program: Program<'info,AssociatedToken>,
     #[account(
         mut,
         seeds = [&seed[..]], 
@@ -856,16 +836,10 @@ pub struct ValidateAndClose<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimNft<'info> {
-    #[account(
-        executable, 
-        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
-    )]
-    system_program: AccountInfo<'info>,
-    #[account(
-        executable, 
-        constraint = token_program.key() == anchor_spl::token::ID @ MYERROR::NotTokenProgram
-    )]
-    token_program: AccountInfo<'info>,
+    #[account()]
+    system_program: Program<'info,System>,
+    #[account()]
+    token_program: Program<'info,Token>,
     #[account(
         mut,
         seeds = [&seed[..]], 
@@ -893,11 +867,8 @@ pub struct ClaimNft<'info> {
 
 #[instruction(seed: Vec<u8>, bump: u8)]
 pub struct ClaimSol<'info> {
-    #[account(
-        executable, 
-        constraint = system_program.key() == anchor_lang::system_program::ID @ MYERROR::NotSystemProgram
-    )]
-    system_program: AccountInfo<'info>,
+    #[account()]
+    system_program: Program<'info,System>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account:Box<Account<'info, SwapData>>,
     #[account(mut)]
