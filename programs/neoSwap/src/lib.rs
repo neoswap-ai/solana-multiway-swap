@@ -617,6 +617,10 @@ pub mod neo_swap {
 
         let mut authorized = false;
 
+        if ctx.accounts.signer.key().eq(&ctx.accounts.swap_data_account.initializer) {
+            authorized = true;
+        }
+
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8() ||
                 ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8(),
@@ -627,6 +631,15 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            if
+                ctx.accounts.signer
+                    .key()
+                    .eq(&ctx.accounts.swap_data_account.items[item_id].owner) ||
+                authorized == true
+            {
+                authorized = true;
+            }
+
             if
                 ctx.accounts.swap_data_account.items[item_id].is_nft &&
                 ctx.accounts.swap_data_account.items[item_id].status ==
@@ -694,6 +707,10 @@ pub mod neo_swap {
 
         if transfered == false {
             return Err(error!(MYERROR::NoSend).into());
+        }
+
+        if authorized == false {
+            return Err(error!(MYERROR::UserNotPartOfTrade).into());
         }
 
         // If not already, update Swap's status to 90 (Cancelled)
