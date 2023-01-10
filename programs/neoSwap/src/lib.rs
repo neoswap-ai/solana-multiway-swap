@@ -597,8 +597,6 @@ pub mod neo_swap {
                 }
 
                 transfered = true;
-
-                break;
             }
         }
 
@@ -720,7 +718,6 @@ pub mod neo_swap {
                     ItemStatus::NFTCancelledRecovered.to_u8();
 
                 transfered = true;
-                break;
             }
         }
 
