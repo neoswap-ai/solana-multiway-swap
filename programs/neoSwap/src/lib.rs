@@ -540,9 +540,24 @@ pub mod neo_swap {
         }
 
         let mut transfered: bool = false;
+        let mut authorized: bool = false;
 
+        if ctx.accounts.signer.key().eq(&ctx.accounts.swap_data_account.initializer) {
+            authorized = true;
+        }
+        
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            if
+                (ctx.accounts.signer
+                    .key()
+                    .eq(&ctx.accounts.swap_data_account.items[item_id].owner) &&
+                    ctx.accounts.swap_data_account.items[item_id].amount > 0) ||
+                authorized == true
+            {
+                authorized = true;
+            }
+
             if
                 !ctx.accounts.swap_data_account.items[item_id].is_nft &&
                 ctx.accounts.swap_data_account.items[item_id].owner.eq(ctx.accounts.user.key) &&
@@ -589,6 +604,10 @@ pub mod neo_swap {
 
         if transfered == false {
             return Err(error!(MYERROR::NoSend).into());
+        }
+
+        if authorized == false {
+            return Err(error!(MYERROR::UserNotPartOfTrade).into());
         }
 
         // if not already, Swap status changed to 90 (Cancelled)
