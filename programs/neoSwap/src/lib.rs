@@ -545,7 +545,7 @@ pub mod neo_swap {
         if ctx.accounts.signer.key().eq(&ctx.accounts.swap_data_account.initializer) {
             authorized = true;
         }
-        
+
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if
@@ -964,7 +964,7 @@ impl SwapData {
     const LEN: usize =
         8 + //Base
         1 + //u8
-        4 + //u32
+        4 * 2 + //u32
         32; //Pubkey
 
     pub fn size(_swap_data_account: SwapData, nb_items: u32) -> usize {
@@ -987,7 +987,6 @@ pub struct NftSwapItem {
 
 impl NftSwapItem {
     const LEN: usize =
-        8 +
         32 * 3 + //pubkey
         2 + //bool / u8
         8; //i64
