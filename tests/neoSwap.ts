@@ -43,6 +43,7 @@ describe("swapCoontractTest", () => {
     let userKeypairs: Keypair[] = [];
 
     let signer = Keypair.generate();
+    let unauthorizedKeypair: Keypair;
     let pda: PublicKey;
     let swapData: SwapData = {
         initializer: signer.publicKey,
@@ -75,11 +76,16 @@ describe("swapCoontractTest", () => {
             await program.provider.connection.confirmTransaction(
                 await program.provider.connection.requestAirdrop(
                     userKeypair.publicKey,
-                    2 * LAMPORTS_PER_SOL
+                    1.2 * LAMPORTS_PER_SOL
                 )
             );
             console.log("user airdrop done", userKeypair.publicKey.toBase58());
         }
+        unauthorizedKeypair = Keypair.generate();
+        await program.provider.connection.requestAirdrop(
+            unauthorizedKeypair.publicKey,
+            1.2 * LAMPORTS_PER_SOL
+        );
     });
 
     it("users instruction", async () => {
@@ -140,7 +146,7 @@ describe("swapCoontractTest", () => {
     });
 
     it("initialize", async () => {
-        console.log(swapData);
+        // console.log(swapData);
 
         const allInitData = await NeoSwap.allInitialize({
             provider: program.provider as anchor.AnchorProvider,
@@ -286,7 +292,34 @@ describe("swapCoontractTest", () => {
         console.log("deposited user ", transactionHashs);
     });
 
-    it("cancel and close", async () => {
+    it("partial cancel and close from in trade user", async () => {
+        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+            provider: program.provider as anchor.AnchorProvider,
+            signer: userKeypairs[0].publicKey,
+            swapDataAccount: pda,
+            CONST_PROGRAM,
+        });
+
+        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+        allCancelSendAllArray.forEach((transactionDeposit) => {
+            transactionDeposit.signers = [userKeypairs[0]];
+            transactionDeposit.tx.feePayer = userKeypairs[0].publicKey;
+            transactionDeposit.tx.recentBlockhash = recentBlockhash;
+        });
+
+        const cancelAndCloseHash = await program.provider.sendAll(
+            allCancelSendAllArray.slice(0, 1)
+        );
+
+        for await (const hash of cancelAndCloseHash) {
+            program.provider.connection.confirmTransaction(hash);
+        }
+
+        console.log("cancelAndCloseHash :", cancelAndCloseHash);
+    });
+
+    it("finish cancel and close from signer", async () => {
         const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
             provider: program.provider as anchor.AnchorProvider,
             signer: signer.publicKey,
@@ -438,7 +471,7 @@ describe("swapCoontractTest", () => {
 
             console.log("initialized", txhashs);
         } catch (error) {
-            console.log(error);
+            // console.log(error);
             assert.strictEqual(
                 String(error).toLowerCase().includes("custom program error: 0x1776"),
                 true
@@ -446,19 +479,39 @@ describe("swapCoontractTest", () => {
         }
     });
 
-    it("cancel and close before deposit", async () => {
-        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+    it("cancel from unAuthorized user", async () => {
+        const { depositSendAllArray } = await NeoSwap.deposit({
             provider: program.provider as anchor.AnchorProvider,
-            signer: signer.publicKey,
+            signer: userKeypairs[0].publicKey,
             swapDataAccount: pda,
             CONST_PROGRAM,
         });
 
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+        depositSendAllArray.forEach((transactionDeposit) => {
+            transactionDeposit.signers = [userKeypairs[0]];
+            transactionDeposit.tx.feePayer = userKeypairs[0].publicKey;
+        });
+        let recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+        depositSendAllArray.forEach((transactionDeposit) => {
+            transactionDeposit.tx.recentBlockhash = recentBlockhash;
+        });
+        const transactionHashs = await program.provider.sendAll(depositSendAllArray.slice(0, 1));
+        for await (const transactionHash of transactionHashs) {
+            await program.provider.connection.confirmTransaction(transactionHash);
+        }
+        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+            provider: program.provider as anchor.AnchorProvider,
+            signer: unauthorizedKeypair.publicKey,
+            swapDataAccount: pda,
+            CONST_PROGRAM,
+        });
+
+        recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
         try {
             allCancelSendAllArray.forEach((transactionDeposit) => {
-                transactionDeposit.signers = [signer];
-                transactionDeposit.tx.feePayer = signer.publicKey;
+                transactionDeposit.signers = [unauthorizedKeypair];
+                transactionDeposit.tx.feePayer = unauthorizedKeypair.publicKey;
                 transactionDeposit.tx.recentBlockhash = recentBlockhash;
             });
 
@@ -471,28 +524,10 @@ describe("swapCoontractTest", () => {
             console.log("initialized", txhashs);
         } catch (error) {
             console.log(error);
-        }
-    });
-
-    it("Deposit for misshandling", async () => {
-        let sendAllArray: {
-            tx: anchor.web3.Transaction;
-            signers?: anchor.web3.Signer[];
-        }[] = [];
-        for await (const userKeypair of userKeypairs) {
-            try {
-                const { depositSendAllArray } = await NeoSwap.deposit({
-                    provider: program.provider as anchor.AnchorProvider,
-                    signer: userKeypair.publicKey,
-                    swapDataAccount: pda,
-                    CONST_PROGRAM,
-                });
-
-                assert.strictEqual(!depositSendAllArray, true);
-            } catch (error) {
-                console.log(error);
-                // assert.strictEqual(true, true);
-            }
+            assert.strictEqual(
+                String(error).toLowerCase().includes("custom program error: 0x1770"),
+                true
+            );
         }
     });
 });
