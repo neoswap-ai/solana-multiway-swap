@@ -47,9 +47,14 @@ const Solana: FC = () => {
               };
 
         try {
+            console.log('getSwapData');
             swapData = await getSwapData(swapDataAccountGiven, program);
+            // console.log('SwapData', swapData.swapDataAccount);
         } catch (error) {
+            console.log('getSeed', error);
+
             swapData = await getSeed(fullData);
+            console.log('SwapData', swapData.swapDataAccount.toBase58());
         }
 
         console.log('SwapData', swapData);
