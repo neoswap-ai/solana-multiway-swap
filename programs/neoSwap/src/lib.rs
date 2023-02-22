@@ -7,7 +7,7 @@ use ::{
 };
 use std::str::FromStr;
 
-declare_id!("CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx");
+declare_id!("EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
