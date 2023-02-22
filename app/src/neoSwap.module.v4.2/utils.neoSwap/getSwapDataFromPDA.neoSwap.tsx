@@ -25,6 +25,7 @@ export const getSwapDataFromPDA = async (Data: {
 }> => {
     try {
         const program = getProgram(Data.provider);
+        console.log('getSwapDataFromPDA');
         let swapData = (await program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
 
         let preSeed = Data.CONST_PROGRAM;
@@ -62,7 +63,7 @@ export const getSwapDataFromPDA = async (Data: {
             swapDataAccount_bump,
         };
     } catch (error) {
-        throw console.error('PDA not initialized');
+        throw console.error('PDA not initialized', error);
     }
 };
 
