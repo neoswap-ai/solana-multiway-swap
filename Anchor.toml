@@ -1,3 +1,5 @@
+[programs.mainnet]
+neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
 [programs.devnet]
 neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
 [programs.localnet]
@@ -7,7 +9,7 @@ neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "https://api.devnet.solana.com"
+cluster = "mainnet"
 wallet = "/home/kwiscion/.config/solana/id.json"
 
 [scripts]
