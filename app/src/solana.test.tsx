@@ -6,14 +6,14 @@ import { ItemStatus, TradeStatus } from './neoSwap.module.v4.2/utils.neoSwap/typ
 
 /// DEV
 export const network = WalletAdapterNetwork.Devnet;
-export const programId = new PublicKey('DX1pLgDgRWgUCLHHDgVcnKkSnr5r6gokHprjYXo7eykZ');
+export const programId = new PublicKey('CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx');
 
 /// MAIN
 // export const network = WalletAdapterNetwork.Mainnet;
-// export const programId = new PublicKey('');
+// export const programId = new PublicKey('EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu');
 
-export const CONST_PROGRAM: string = '0138';
-export const swapDataAccountGiven = new PublicKey('B2ZyQpbdoecuMhNrhMvGwhMu1cGpoBNGuMAZKtqcMMeZ');
+export const CONST_PROGRAM: string = '0139';
+export const swapDataAccountGiven = new PublicKey('J68zLywo7Nrq3PaaAJuZhqK6CEyA2dvufm6hoNgc5V4P');
 
 const i11: NftSwapItem = {
     isNft: false,
@@ -97,11 +97,11 @@ export const fullData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: TradeStatus.Initializing,
     items: [i11, i12, i21, i22, i31, i32] as Array<NftSwapItem>,
-    nb_items:6
+    nb_items: 6,
 };
 export const sentData: SwapData = {
     initializer: new PublicKey('6mBWjWA8dMVrtYjhM7HoF59TbbdLt2U5gqPmahcUJtiW'),
     status: TradeStatus.Initializing,
     items: [i11] as Array<NftSwapItem>,
-    nb_items:1
+    nb_items: 1,
 };

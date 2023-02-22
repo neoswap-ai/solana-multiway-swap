@@ -7,7 +7,7 @@ use ::{
 };
 use std::str::FromStr;
 
-declare_id!("CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx");
+declare_id!("EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -91,7 +91,7 @@ pub mod neo_swap {
         // Write according status to item
         if item_to_add.is_nft {
             item_to_add.status = ItemStatus::NFTPending.to_u8();
-            if item_to_add.amount.is_negative() {
+            if item_to_add.amount.is_negative() || item_to_add.amount == 0 {
                 return Err(error!(MYERROR::UnexpectedData).into());
             }
             msg!("NFT item added with status NFTPending");
