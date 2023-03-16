@@ -4,6 +4,8 @@ import claimAndClose from './functions.neoswap/claimAndClose.neoSwap.module';
 import cancelAndClose from './functions.neoswap/cancelAndClose.neoSwap.module';
 import { getSwapDataFromPDA } from './utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { getSeedFromData } from './utils.neoSwap/getSeedfromData.neoswap';
+import { createUserPda } from './functions.neoswap/subFunctions/createUserPda.neoSwap.sub';
+import { userAddItemToSell } from './functions.neoswap/subFunctions/userAddItemToSell.neoSwap.sub';
 
 const NeoSwap = {
     /// Main
@@ -14,6 +16,9 @@ const NeoSwap = {
     /// Utils
     getSwapDataFromPDA, /// fetch and deserialize data from PDA
     getSeedFromData, /// reconstruct seed and
+    ///Pre-sign
+    createUserPda,
+    userAddItemToSell,
 };
 
 export default NeoSwap;

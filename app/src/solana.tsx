@@ -149,7 +149,38 @@ const Solana: FC = () => {
             throw console.error(error);
         }
     }, [publicKey, getProgram]);
+    const createUserPda = useCallback(async () => {
+        const program = await getProgram();
+        if (!publicKey) throw new WalletNotConnectedError();
 
+        const { addInitSendAllArray } = await NeoSwap.createUserPda({ signer: publicKey, program });
+        let sendAllArray = await sendAllPopulateInstruction(program, addInitSendAllArray);
+
+        try {
+            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('addInit transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+            throw console.error(error);
+        }
+    }, [getProgram, publicKey]);
+    const addItemToSell = useCallback(async () => {
+        const program = await getProgram();
+        if (!publicKey) throw new WalletNotConnectedError();
+
+        const { userAddItemToSellSendAllArray } = await NeoSwap.userAddItemToSell({ signer: publicKey, program });
+        let sendAllArray = await sendAllPopulateInstruction(program, userAddItemToSellSendAllArray);
+
+        try {
+            if (!program.provider.sendAll) throw console.error('no sendAndConfirm');
+            const transactionHash = await program.provider.sendAll(sendAllArray);
+            console.log('addInit transactionHash', transactionHash);
+        } catch (error) {
+            programCatchError(error);
+            throw console.error(error);
+        }
+    }, [getProgram, publicKey]);
     return (
         <div>
             <div>
@@ -179,6 +210,16 @@ const Solana: FC = () => {
             <div>
                 <button onClick={cancel} disabled={!publicKey}>
                     Cancel
+                </button>
+            </div>
+            <div>
+                <button onClick={createUserPda} disabled={!publicKey}>
+                    createUserPda
+                </button>
+            </div>
+            <div>
+                <button onClick={addItemToSell} disabled={!publicKey}>
+                    addItemToSell
                 </button>
             </div>
         </div>

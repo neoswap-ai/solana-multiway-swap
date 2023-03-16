@@ -444,6 +444,132 @@ export const idl = {
                 },
             ],
         },
+        {
+            name: 'createUserPda',
+            accounts: [
+                {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splTokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: {
+                        array: ['u8', 32],
+                    },
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+            ],
+        },
+        {
+            name: 'userAddItemToBuy',
+            accounts: [
+                {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'itemToAdd',
+                    type: {
+                        defined: 'ItemToBuy',
+                    },
+                },
+            ],
+        },
+        {
+            name: 'userAddItemToSell',
+            accounts: [
+                {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'itemToDelegate',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'itemToAdd',
+                    type: {
+                        defined: 'ItemToSell',
+                    },
+                },
+            ],
+        },
+        {
+            name: 'userUpdateAmountTopUp',
+            accounts: [
+                {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signerWsol',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'amountToTopup',
+                    type: 'u64',
+                },
+            ],
+        },
     ],
     accounts: [
         {
@@ -470,6 +596,102 @@ export const idl = {
                     {
                         name: 'nbItems',
                         type: 'u32',
+                    },
+                ],
+            },
+        },
+        {
+            name: 'NftSwapItem',
+            type: {
+                kind: 'struct',
+                fields: [
+                    {
+                        name: 'isNft',
+                        type: 'bool',
+                    },
+                    {
+                        name: 'mint',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'amount',
+                        type: 'i64',
+                    },
+                    {
+                        name: 'owner',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'destinary',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'status',
+                        type: 'u8',
+                    },
+                ],
+            },
+        },
+        {
+            name: 'UserPdaData',
+            type: {
+                kind: 'struct',
+                fields: [
+                    {
+                        name: 'owner',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'amountToTopup',
+                        type: 'u64',
+                    },
+                    {
+                        name: 'itemsToSell',
+                        type: {
+                            vec: {
+                                defined: 'ItemToSell',
+                            },
+                        },
+                    },
+                    {
+                        name: 'itemsToBuy',
+                        type: {
+                            vec: {
+                                defined: 'ItemToBuy',
+                            },
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            name: 'ItemToSell',
+            type: {
+                kind: 'struct',
+                fields: [
+                    {
+                        name: 'mint',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'amountMini',
+                        type: 'u64',
+                    },
+                ],
+            },
+        },
+        {
+            name: 'ItemToBuy',
+            type: {
+                kind: 'struct',
+                fields: [
+                    {
+                        name: 'mint',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'amountMaxi',
+                        type: 'u64',
                     },
                 ],
             },
@@ -602,38 +824,11 @@ export const idl = {
                     {
                         name: 'IncorrectOwner',
                     },
-                ],
-            },
-        },
-
-        {
-            name: 'NftSwapItem',
-            type: {
-                kind: 'struct',
-                fields: [
                     {
-                        name: 'isNft',
-                        type: 'bool',
+                        name: 'NotSeed',
                     },
                     {
-                        name: 'mint',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'amount',
-                        type: 'i64',
-                    },
-                    {
-                        name: 'owner',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'destinary',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'status',
-                        type: 'u8',
+                        name: 'AlreadyExist',
                     },
                 ],
             },
