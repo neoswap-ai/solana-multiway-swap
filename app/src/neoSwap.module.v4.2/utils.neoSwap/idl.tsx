@@ -471,9 +471,7 @@ export const idl = {
             args: [
                 {
                     name: 'seed',
-                    type: {
-                        array: ['u8', 32],
-                    },
+                    type: 'bytes',
                 },
                 {
                     name: 'bump',
@@ -526,6 +524,11 @@ export const idl = {
                     isMut: true,
                     isSigner: true,
                 },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
             ],
             args: [
                 {
@@ -557,6 +560,11 @@ export const idl = {
                     name: 'signer',
                     isMut: true,
                     isSigner: true,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
                 },
             ],
             args: [
@@ -601,38 +609,6 @@ export const idl = {
             },
         },
         {
-            name: 'NftSwapItem',
-            type: {
-                kind: 'struct',
-                fields: [
-                    {
-                        name: 'isNft',
-                        type: 'bool',
-                    },
-                    {
-                        name: 'mint',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'amount',
-                        type: 'i64',
-                    },
-                    {
-                        name: 'owner',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'destinary',
-                        type: 'publicKey',
-                    },
-                    {
-                        name: 'status',
-                        type: 'u8',
-                    },
-                ],
-            },
-        },
-        {
             name: 'UserPdaData',
             type: {
                 kind: 'struct',
@@ -660,6 +636,40 @@ export const idl = {
                                 defined: 'ItemToBuy',
                             },
                         },
+                    },
+                ],
+            },
+        },
+    ],
+    types: [
+        {
+            name: 'NftSwapItem',
+            type: {
+                kind: 'struct',
+                fields: [
+                    {
+                        name: 'isNft',
+                        type: 'bool',
+                    },
+                    {
+                        name: 'mint',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'amount',
+                        type: 'i64',
+                    },
+                    {
+                        name: 'owner',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'destinary',
+                        type: 'publicKey',
+                    },
+                    {
+                        name: 'status',
+                        type: 'u8',
                     },
                 ],
             },
@@ -696,8 +706,6 @@ export const idl = {
                 ],
             },
         },
-    ],
-    types: [
         {
             name: 'TradeStatus',
             type: {
@@ -829,6 +837,12 @@ export const idl = {
                     },
                     {
                         name: 'AlreadyExist',
+                    },
+                    {
+                        name: 'AmountWantedEqualToAlready',
+                    },
+                    {
+                        name: 'IncorrectAccount',
                     },
                 ],
             },

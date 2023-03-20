@@ -21,32 +21,34 @@ export const createUserPda = async (Data: {
     signer: PublicKey;
     program: Program;
 }): Promise<{
-    addInitSendAllArray: Array<{
+    addInitSendAllArray: {
         tx: Transaction;
         signers?: Array<Signer> | undefined;
-    }>;
+    };
     userPda: PublicKey;
 }> => {
     // if (Data.swapData.status !== TradeStatus.Initializing) throw console.error('Trade not in waiting for initialized state');
     const [userPda, userBump] = publicKey.findProgramAddressSync([Data.signer.toBytes()], Data.program.programId);
     const instructionToAdd = await Data.program.methods
-        .createUserPda(Data.signer.toBytes(), userBump)
+        .createUserPda((Data.signer.toBuffer()), userBump)
         .accounts({
             userPda,
             signer: Data.signer,
             systemProgram: web3.SystemProgram.programId,
-
             splTokenProgram: splAssociatedTokenAccountProgramId,
         })
         .instruction();
 
-    let addInitTransaction: Transaction[] = [new Transaction()];
-    addInitTransaction = appendTransactionToArray({
-        mainArray: addInitTransaction,
-        itemToAdd: [instructionToAdd],
-    });
+    let addInitSendAllArray: {
+        tx: Transaction;
+        signers?: Array<Signer> | undefined;
+    } = { tx: new Transaction().add(instructionToAdd) };
+    // addInitTransaction = appendTransactionToArray({
+    //     mainArray: addInitTransaction,
+    //     itemToAdd: [instructionToAdd],
+    // });
 
-    const addInitSendAllArray = await convertAllTransaction(addInitTransaction);
+    // const addInitSendAllArray = await convertAllTransaction(addInitTransaction);
 
     return { addInitSendAllArray, userPda };
 };

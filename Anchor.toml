@@ -1,13 +1,14 @@
 [programs.devnet]
-neo_swap = "DX1pLgDgRWgUCLHHDgVcnKkSnr5r6gokHprjYXo7eykZ"
+neo_swap = "CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx"
 [programs.localnet]
-neo_swap = "DX1pLgDgRWgUCLHHDgVcnKkSnr5r6gokHprjYXo7eykZ"
+neo_swap = "CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "localnet"
+# cluster = "devnet"
 wallet = "/home/biboux/.config/solana/id.json"
 
 [scripts]

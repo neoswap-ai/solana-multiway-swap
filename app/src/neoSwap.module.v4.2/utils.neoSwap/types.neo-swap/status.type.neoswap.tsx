@@ -1,3 +1,6 @@
+import { BN } from '@project-serum/anchor';
+import { PublicKey } from '@solana/web3.js';
+
 export enum TradeStatus {
     Initializing = 0,
     WaitingToDeposit = 1,
@@ -25,3 +28,8 @@ export enum ItemStatus {
     NFTCancelledRecovered = 110,
     SolCancelledRecovered = 111,
 }
+
+export type ItemToSell = {
+    mint: PublicKey;
+    amountMini: BN;
+};

@@ -6,6 +6,7 @@ import { getSwapDataFromPDA } from './utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { getSeedFromData } from './utils.neoSwap/getSeedfromData.neoswap';
 import { createUserPda } from './functions.neoswap/subFunctions/createUserPda.neoSwap.sub';
 import { userAddItemToSell } from './functions.neoswap/subFunctions/userAddItemToSell.neoSwap.sub';
+import { userUpdateAmountTopUp } from './functions.neoswap/subFunctions/userUpdateAmountTopUp.neoSwap.sub';
 
 const NeoSwap = {
     /// Main
@@ -19,6 +20,7 @@ const NeoSwap = {
     ///Pre-sign
     createUserPda,
     userAddItemToSell,
+    userUpdateAmountTopUp,
 };
 
 export default NeoSwap;

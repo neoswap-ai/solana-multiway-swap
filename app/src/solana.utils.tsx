@@ -51,7 +51,9 @@ export async function findOrCreateAta(
         return { mintAta, transaction: txCreate };
     }
 }
-
+export async function delay(time: number) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+}
 export async function cIPdaAta(
     mint: PublicKey,
     payer: PublicKey,
@@ -98,9 +100,7 @@ export async function getSwapData(
     });
 }
 
-export async function getSeed(
-    sentData: SwapData,
-): Promise<{
+export async function getSeed(sentData: SwapData): Promise<{
     swapDataAccount: web3.PublicKey;
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;

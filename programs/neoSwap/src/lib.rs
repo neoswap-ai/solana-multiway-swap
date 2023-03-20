@@ -3,7 +3,7 @@ use ::{
         prelude::*,
         solana_program::{ pubkey::Pubkey, program::{ invoke_signed, invoke } },
     },
-    anchor_spl::{ token::{ spl_token, TokenAccount, Token }, associated_token::AssociatedToken },
+    anchor_spl::{ token::{self, spl_token, TokenAccount, Token }, associated_token::AssociatedToken },
 };
 use std::str::FromStr;
 
@@ -12,6 +12,7 @@ declare_id!("CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx");
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
 pub mod neo_swap {
+
     use super::*;
 
     /// @notice Initialize Swap's PDA. /!\ Signer will be Initializer
@@ -799,19 +800,27 @@ pub mod neo_swap {
     /// @accounts system_program: Pubkey = system_program_id
     /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
-    pub fn create_user_pda(ctx: Context<CreateUserPda>, seed: [u8; 32], bump: u8) -> Result<()> {
-        let user_account_seed = ctx.accounts.user_pda.key().to_bytes();
+    pub fn create_user_pda(ctx: Context<CreateUserPda>, seed: Vec<u8>, bump: u8) -> Result<()> {
+        let user_account_seed = ctx.accounts.signer.key().to_bytes().to_vec();
+        // msg!("calc seed {:?}, ",user_account_seed);
+        // msg!("givenseed {:?}",seed);
         if user_account_seed != seed {
             return Err(error!(MYERROR::NotSeed));
         }
-        let (_pda, user_account_bump) = Pubkey::find_program_address(
+        let (pda, user_account_bump) = Pubkey::find_program_address(
             &[&user_account_seed],
             &ctx.program_id.key()
         );
         if user_account_bump != bump {
             return Err(error!(MYERROR::NotBump));
         }
+        if !pda.eq(&ctx.accounts.user_pda.key()) {
+            return Err(error!(MYERROR::IncorrectAccount));
+        }
         ctx.accounts.user_pda.owner = ctx.accounts.signer.key();
+        ctx.accounts.user_pda.amount_to_topup=0;
+        ctx.accounts.user_pda.items_to_sell=[].to_vec();
+        ctx.accounts.user_pda.items_to_buy=[].to_vec();
         Ok(())
     }
 
@@ -839,7 +848,7 @@ pub mod neo_swap {
 
     pub fn user_add_item_to_sell(
         ctx: Context<ModifyUserPdaSell>,
-        bump: u8,
+        _bump: u8,
         item_to_add: ItemToSell
     ) -> Result<()> {
         
@@ -847,25 +856,24 @@ pub mod neo_swap {
             return Err(error!(MYERROR::AlreadyExist));
         }
 
-        let approve_ix = spl_token::instruction::approve_checked(
-            &spl_token::ID, 
+        let approve_ix = spl_token::instruction::approve(
+            &token::ID, 
             &ctx.accounts.item_to_delegate.key(), 
-            &ctx.accounts.item_to_delegate.mint, 
+            // &ctx.accounts.item_to_delegate.mint, 
             &ctx.accounts.user_pda.key(), 
             &ctx.accounts.signer.key(), 
             &[&ctx.accounts.signer.key()], 
-            1, 
-            0
+            1
         ).unwrap();
 
-        invoke_signed(
+        invoke(
             &approve_ix,
             &[
                 ctx.accounts.item_to_delegate.to_account_info(),
                 ctx.accounts.user_pda.to_account_info(),
                 ctx.accounts.signer.to_account_info(),
-            ],
-            &[&[&ctx.accounts.user_pda.key().to_bytes()[..], &[bump]]]
+                // ctx.accounts.spl_token_program.to_account_info(),
+            ]
         )?;
         msg!("{} token {} owned by {} was delegated to {}",1,ctx.accounts.item_to_delegate.mint,ctx.accounts.signer.key(),ctx.accounts.user_pda.key());
 
@@ -877,91 +885,61 @@ pub mod neo_swap {
 
     pub fn user_update_amount_top_up(
         ctx: Context<UpdateUserPdaToTopUp>,
-        bump: u8,
+        _bump: u8,
         amount_to_topup: u64
     ) -> Result<()> {
-        
+        msg!("delegated amount {}",ctx.accounts.signer_wsol.owner);
     if ctx.accounts.signer_wsol.delegated_amount > 0  {
     //need reduce delegation
     let ix_revoke = spl_token::instruction::revoke( 
-        &spl_token::ID, 
+        &token::ID, 
         &ctx.accounts.signer_wsol.key(),  
         &ctx.accounts.signer.key(), 
         &[&ctx.accounts.signer.key()]
     ).unwrap();
 
-    invoke_signed(
+    invoke(
         &ix_revoke,
         &[
             ctx.accounts.signer_wsol.to_account_info(),
-            ctx.accounts.user_pda.to_account_info(),
             ctx.accounts.signer.to_account_info(),
-        ],
-        &[&[&ctx.accounts.user_pda.key().to_bytes()[..], &[bump]]]
+            // ctx.accounts.spl_token_program.to_account_info(),
+            // ctx.accounts.token_program.to_account_info(),
+        ]
     )?;
     msg!("revoked {} as an authority",ctx.accounts.user_pda.key());
 
-    //need increase delegation
-    let approve_ix = spl_token::instruction::approve_checked(
-        &spl_token::ID, 
-        &ctx.accounts.signer_wsol.key(), 
-        &ctx.accounts.signer_wsol.mint, 
-        &ctx.accounts.user_pda.key(), 
-        &ctx.accounts.signer.key(), 
-        &[&ctx.accounts.signer.key()], 
-        amount_to_topup, 
-        9
-    ).unwrap();
-
-    invoke_signed(
-        &approve_ix,
-        &[
-            ctx.accounts.signer_wsol.to_account_info(),
-            ctx.accounts.user_pda.to_account_info(),
-            ctx.accounts.signer.to_account_info(),
-        ],
-        &[&[&ctx.accounts.user_pda.key().to_bytes()[..], &[bump]]]
-    )?;
-    msg!("{} token {} owned by {} was delegated to {}",amount_to_topup,ctx.accounts.signer_wsol.mint,ctx.accounts.signer.key(),ctx.accounts.user_pda.key());
-
- } else if ctx.accounts.signer_wsol.delegated_amount == amount_to_topup {
-    //nothing to change
-    msg!("already enough tokens delegated {}",amount_to_topup);
-
- } else if ctx.accounts.signer_wsol.delegated_amount==0{
-    let approve_ix = spl_token::instruction::approve_checked(
-        &spl_token::ID, 
-        &ctx.accounts.signer_wsol.key(), 
-        &ctx.accounts.signer_wsol.mint, 
-        &ctx.accounts.user_pda.key(), 
-        &ctx.accounts.signer.key(), 
-        &[&ctx.accounts.signer.key()], 
-        amount_to_topup, 
-        9
-    ).unwrap();
-
-    invoke_signed(
-        &approve_ix,
-        &[
-            ctx.accounts.signer_wsol.to_account_info(),
-            ctx.accounts.user_pda.to_account_info(),
-            ctx.accounts.signer.to_account_info(),
-        ],
-        &[&[&ctx.accounts.user_pda.key().to_bytes()[..], &[bump]]]
-    )?;
-    msg!("{} token {} owned by {} was delegated to {}",
-        amount_to_topup,
-        ctx.accounts.signer_wsol.mint,
-        ctx.accounts.signer.key(),
-        ctx.accounts.user_pda.key()
-    );
-
+    } else if ctx.accounts.signer_wsol.delegated_amount==0{
+    } else if ctx.accounts.signer_wsol.delegated_amount == amount_to_topup {
+        //nothing to change
+        return Err(error!(MYERROR::AmountWantedEqualToAlready));
     } else {
         return Err(error!(MYERROR::AmountIncorrect));
      }
 
+    //need increase delegation
+    let approve_ix = spl_token::instruction::approve(
+        &token::ID, 
+        &ctx.accounts.signer_wsol.key(), 
+        &ctx.accounts.user_pda.key(), 
+        &ctx.accounts.signer.key(), 
+        &[&ctx.accounts.signer.key()], 
+        amount_to_topup
+    ).unwrap();
+    invoke(
+        &approve_ix,
+        &[
+            ctx.accounts.signer_wsol.to_account_info(),
+            ctx.accounts.user_pda.to_account_info(),
+            ctx.accounts.signer.to_account_info(),
+            // ctx.accounts.spl_token_program.to_account_info(),
+            // ctx.accounts.token_program.to_account_info(),
+        ]
+    )?;
+    msg!("{} token {} owned by {} was delegated to {}",amount_to_topup,ctx.accounts.signer_wsol.mint,ctx.accounts.signer.key(),ctx.accounts.user_pda.key());
+
     ctx.accounts.user_pda.amount_to_topup= amount_to_topup;
-    msg!("userPda was updated with {} sol to topup",amount_to_topup);
+    msg!("userPda was updated with {} lamports to topup",amount_to_topup);
     Ok(())
     }
 }
@@ -1127,9 +1105,9 @@ pub struct ClaimSol<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8)]
+#[instruction(bump: u8)]
 pub struct CreateUserPda<'info> {
-    #[account(init, payer = signer, seeds = [&&seed[..]], bump, space = 10240)]
+    #[account(init, payer = signer, seeds = [&signer.key().to_bytes()[..]], bump, space = 10240)]
     user_pda: Box<Account<'info, UserPdaData>>,
     #[account(mut)]
     signer: Signer<'info>,
@@ -1169,10 +1147,16 @@ pub struct ModifyUserPdaSell<'info> {
     item_to_delegate: Account<'info, TokenAccount>,
     #[account(mut)]
     signer: Signer<'info>,
+    #[account()]
+    token_program: Program<'info, Token>,
+    // #[account()]
+    // spl_token_program: Program<'info, AssociatedToken>,
+    // #[account()]
+    // system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-#[instruction( bump: u8, item_to_add:ItemToSell)]
+#[instruction( bump: u8)]
 pub struct UpdateUserPdaToTopUp<'info> {
     #[account(
         mut,
@@ -1188,6 +1172,12 @@ pub struct UpdateUserPdaToTopUp<'info> {
     signer_wsol: Account<'info, TokenAccount>,
     #[account(mut)]
     signer: Signer<'info>,
+    #[account()]
+    token_program: Program<'info, Token>,
+    // #[account()]
+    // spl_token_program: Program<'info, AssociatedToken>,
+    // #[account()]
+    // system_program: Program<'info, System>,
 }
 
 #[account]
@@ -1213,8 +1203,7 @@ impl SwapData {
     }
 }
 
-#[account]
-#[derive(Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct NftSwapItem {
     is_nft: bool,
     mint: Pubkey,
@@ -1240,15 +1229,13 @@ pub struct UserPdaData {
     pub items_to_buy: Vec<ItemToBuy>,
 }
 
-#[account]
-#[derive(Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct ItemToSell {
     mint: Pubkey,
     amount_mini: u64,
 }
 
-#[account]
-#[derive(Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct ItemToBuy {
     mint: Pubkey,
     amount_maxi: u64,
@@ -1409,6 +1396,10 @@ pub enum MYERROR {
     IncorrectOwner,
     #[msg("Wrong seed")]
     NotSeed,
-    #[msg("Item you're tryying to add already exist in the list")]
+    #[msg("Item you're trying to add already exist in the list")]
     AlreadyExist,
+    #[msg("Amount you're trying to input is equal to what's already on the PDA")]
+    AmountWantedEqualToAlready,
+    #[msg("Account passed is incorrect")]
+    IncorrectAccount
 }
