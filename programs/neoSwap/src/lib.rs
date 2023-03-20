@@ -3,7 +3,7 @@ use ::{
         prelude::*,
         solana_program::{ pubkey::Pubkey, program::{ invoke_signed, invoke } },
     },
-    anchor_spl::{ token::{self, spl_token, TokenAccount, Token }, associated_token::AssociatedToken },
+    anchor_spl::{ token::{self, spl_token, TokenAccount, Token,Transfer }, associated_token::AssociatedToken },
 };
 use std::str::FromStr;
 
@@ -942,6 +942,57 @@ pub mod neo_swap {
     msg!("userPda was updated with {} lamports to topup",amount_to_topup);
     Ok(())
     }
+
+    pub fn transfer_user_approved_nft(
+        ctx: Context<TransferApprovedToken>,
+        bump: u8,
+        // item_to_add: ItemToSell
+    ) -> Result<()> {
+        
+        // if already_exist_sell(ctx.accounts.user_pda.items_to_buy.to_vec(),item_to_add.clone()){ 
+        //     return Err(error!(MYERROR::AlreadyExist));
+        // }
+        let seeds = &[&ctx.accounts.user_pda.owner.to_bytes()[..], &[bump]];
+        let signer = &[&seeds[..]];
+
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.delegated_item.to_account_info(),
+                to: ctx.accounts.destinary.to_account_info(),
+                authority: ctx.accounts.user_pda.to_account_info(),
+            },
+             signer);
+        token::transfer(cpi_ctx, 1)?;
+
+        // let transfer_ix = spl_token::instruction::transfer(
+        //     &token::ID, 
+        //     &ctx.accounts.delegated_item.key(), 
+        //     // &ctx.accounts.delegated_item.mint, 
+        //     &ctx.accounts.destinary.key(), 
+        //     &ctx.accounts.user.key(), 
+        //     &[&ctx.accounts.user_pda.key()], 
+        //     1
+        // ).unwrap();
+
+        // invoke_signed(
+        //     &transfer_ix,
+        //     &[
+        //         ctx.accounts.delegated_item.to_account_info(),
+        //         ctx.accounts.user.to_account_info(),
+        //         ctx.accounts.user_pda.to_account_info(),
+        //         ctx.accounts.destinary.to_account_info(),
+        //         ctx.accounts.token_program.to_account_info(),
+        //     ],
+        //     &[&[&ctx.accounts.user_pda.owner.to_bytes()[..], &[bump]]]
+        // )?;
+        // msg!("{} token {} owned by {} was delegated to {}",1,ctx.accounts.item_to_delegate.mint,ctx.accounts.signer.key(),ctx.accounts.user_pda.key());
+
+        // ctx.accounts.user_pda.items_to_sell= [&ctx.accounts.user_pda.items_to_sell[..],&[item_to_add.clone()][..]].concat();
+        // msg!("token {} was added to userPda to sell with a minimum exchange value of {}",item_to_add.mint,item_to_add.amount_mini);
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -1170,6 +1221,41 @@ pub struct UpdateUserPdaToTopUp<'info> {
         constraint = signer_wsol.owner == signer.key()  @ MYERROR::IncorrectOwner
     )]
     signer_wsol: Account<'info, TokenAccount>,
+    #[account(mut)]
+    signer: Signer<'info>,
+    #[account()]
+    token_program: Program<'info, Token>,
+    // #[account()]
+    // spl_token_program: Program<'info, AssociatedToken>,
+    // #[account()]
+    // system_program: Program<'info, System>,
+}
+
+
+
+#[derive(Accounts)]
+#[instruction( bump: u8)]
+pub struct TransferApprovedToken<'info> {
+    #[account(
+        mut,
+        seeds = [&delegated_item.owner.to_bytes()[..]], 
+        bump,
+    )]
+    user_pda: Box<Account<'info, UserPdaData>>,
+    #[account()]
+    user:AccountInfo<'info>,
+    #[account(
+        mut,
+        // constraint = destinary.mint== @ MYERROR::MintIncorrect,
+        constraint = delegated_item.owner == user_pda.owner  @ MYERROR::IncorrectOwner
+    )]
+    delegated_item: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        constraint = destinary.mint==delegated_item.mint @ MYERROR::MintIncorrect,
+        // constraint = signer_wsol.owner == signer.key()  @ MYERROR::IncorrectOwner
+    )]
+    destinary: Account<'info, TokenAccount>,
     #[account(mut)]
     signer: Signer<'info>,
     #[account()]

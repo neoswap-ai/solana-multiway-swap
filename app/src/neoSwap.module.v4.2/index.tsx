@@ -7,6 +7,7 @@ import { getSeedFromData } from './utils.neoSwap/getSeedfromData.neoswap';
 import { createUserPda } from './functions.neoswap/subFunctions/createUserPda.neoSwap.sub';
 import { userAddItemToSell } from './functions.neoswap/subFunctions/userAddItemToSell.neoSwap.sub';
 import { userUpdateAmountTopUp } from './functions.neoswap/subFunctions/userUpdateAmountTopUp.neoSwap.sub';
+import { transferUserApprovedNft } from './functions.neoswap/subFunctions/transferUserApprovedNft.neoSwap.sub';
 
 const NeoSwap = {
     /// Main
@@ -21,6 +22,7 @@ const NeoSwap = {
     createUserPda,
     userAddItemToSell,
     userUpdateAmountTopUp,
+    transferUserApprovedNft,
 };
 
 export default NeoSwap;

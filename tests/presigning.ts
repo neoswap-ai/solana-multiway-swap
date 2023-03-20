@@ -39,7 +39,7 @@ describe("pre-signing", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     const program = anchor.workspace.NeoSwap as Program;
-    const nbuser = 1;
+    const nbuser = 2;
     const nftNb = [0, 1];
     let userKeypairs: { keypair: Keypair; tokens: { mint: PublicKey; ata: PublicKey }[] }[] = [];
 
@@ -308,7 +308,7 @@ describe("pre-signing", () => {
 
         console.log("amoutn topped up", txhashs);
     });
-    
+
     it("Update amount to topup third time", async () => {
         // console.log(swapData);
 
@@ -340,5 +340,50 @@ describe("pre-signing", () => {
         }
 
         console.log("amoutn topped up", txhashs);
+    });
+
+    it("transferUserApprovedNft", async () => {
+        // console.log(swapData);
+
+        console.log("signerNft.mint", signerNft.mint.toBase58());
+        console.log(
+            "userKeypairs[0].keypair.publicKey",
+            userKeypairs[0].keypair.publicKey.toBase58()
+        );
+        console.log(
+            "userKeypairs[1].keypair.publicKey",
+            userKeypairs[1].keypair.publicKey.toBase58()
+        );
+
+        const { userTransaction } = await NeoSwap.transferUserApprovedNft({
+            program,
+            user: signer.publicKey,
+            delegatedMint: signerNft.mint,
+            destinary: userKeypairs[0].keypair.publicKey,
+            signer: userKeypairs[1].keypair.publicKey,
+        });
+
+        // console.log("signerNft.mint", signerNft.mint.toBase58());
+
+        // let userPda = createUserPdaData.userPda;
+        const allInitSendAllArray = userTransaction;
+        // console.log("XXX-XXX userPda", userPda.toBase58());
+
+        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+        allInitSendAllArray.signers = [userKeypairs[1].keypair];
+        allInitSendAllArray.tx.feePayer = userKeypairs[1].keypair.publicKey;
+        allInitSendAllArray.tx.recentBlockhash = recentBlockhash;
+        // allInitSendAllArray.forEach((txElement) => {
+        // });
+
+        const txhashs = await program.provider.sendAll([allInitSendAllArray], {
+            skipPreflight: true,
+        });
+
+        for await (const hash of txhashs) {
+            program.provider.connection.confirmTransaction(hash);
+        }
+
+        console.log("transferUserApprovedNft", txhashs);
     });
 });

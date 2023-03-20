@@ -578,6 +578,47 @@ export const idl = {
                 },
             ],
         },
+        {
+            name: 'transferUserApprovedNft',
+            accounts: [
+                {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'user',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'delegatedItem',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'destinary',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+            ],
+            args: [
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+            ],
+        },
     ],
     accounts: [
         {
@@ -848,4 +889,7 @@ export const idl = {
             },
         },
     ],
+    metadata: {
+        address: 'CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx',
+    },
 } as Idl;
