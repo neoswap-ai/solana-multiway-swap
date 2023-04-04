@@ -1,7 +1,7 @@
 import { BN, Program, web3 } from '@project-serum/anchor';
 import { program } from '@project-serum/anchor/dist/cjs/spl/associated-token';
 import { publicKey } from '@project-serum/anchor/dist/cjs/utils';
-import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { getAssociatedTokenAddress, NATIVE_MINT, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { appendTransactionToArray } from '../../utils.neoSwap/appendTransactionToArray.neosap';
 import { splAssociatedTokenAccountProgramId } from '../../utils.neoSwap/const.neoSwap';
@@ -19,12 +19,12 @@ import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap'
  * @param {Program} program program linked to NeoSwap
  * @return {Array<{tx: Transaction; signers?: Signer[] | undefined;}>}addInitSendAllArray => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
  */
-export const transferUserApprovedNft = async (Data: {
+export const transferUserApprovedWsol = async (Data: {
     signer: PublicKey;
     program: Program;
     user: PublicKey;
-    delegatedMint: PublicKey;
     destinary: PublicKey;
+    number: number;
 }): Promise<{
     userTransaction: {
         tx: Transaction;
@@ -43,7 +43,7 @@ export const transferUserApprovedNft = async (Data: {
     console.log('userPdaData', userPdaData);
     const { mintAta: destinaryAta, instruction: destinaryAtaIx } = await findOrCreateAta({
         connection: Data.program.provider.connection,
-        mint: Data.delegatedMint,
+        mint: NATIVE_MINT,
         owner: Data.destinary,
         signer: Data.signer,
     });
@@ -56,11 +56,11 @@ export const transferUserApprovedNft = async (Data: {
     // console.log('splAssociatedTokenAccountProgramId', splAssociatedTokenAccountProgramId.toBase58());
     // console.log('TOKEN_PROGRAM_ID', TOKEN_PROGRAM_ID.toBase58());
     // console.log('web3.SystemProgram.programId', web3.SystemProgram.programId.toBase58());
-    let delegatedItem = await getAssociatedTokenAddress(Data.delegatedMint, Data.user);
+    let delegatedItem = await getAssociatedTokenAddress(NATIVE_MINT, Data.user);
     console.log('delegatedItem', delegatedItem.toBase58());
 
     const addUserItemToAddIx = await Data.program.methods
-        .transferUserApprovedNft(userBump, new BN(1))
+        .transferUserApprovedNft(userBump, new BN(Data.number))
         .accounts({
             userPda,
             user: Data.user,
@@ -88,4 +88,4 @@ export const transferUserApprovedNft = async (Data: {
     return { userTransaction };
 };
 
-export default transferUserApprovedNft;
+export default transferUserApprovedWsol;

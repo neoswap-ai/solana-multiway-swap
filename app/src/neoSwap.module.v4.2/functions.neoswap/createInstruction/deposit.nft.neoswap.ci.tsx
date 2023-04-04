@@ -25,7 +25,8 @@ export async function depositNft(Data: {
     ataList: Array<PublicKey>;
 }): Promise<{ instruction: TransactionInstruction[]; mintAta: PublicKey[] }> {
     let instruction: TransactionInstruction[] = [];
-    let mintAta: PublicKey[] = [...Data.ataList];
+    let mintAta: PublicKey[] = Data.ataList;
+    console.log('mintAta', mintAta);
 
     const { mintAta: userMintAta, instruction: ixCreateUserMintAta } = await findOrCreateAta({
         connection: Data.program.provider.connection,

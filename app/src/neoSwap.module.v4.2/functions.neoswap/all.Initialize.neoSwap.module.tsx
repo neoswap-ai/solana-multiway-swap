@@ -44,6 +44,8 @@ export const allInitialize = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapData: swapData,
     });
+    console.log("test");
+    
     const { validateInitSendAllArray } = await validateInitialize({
         program: program,
         signer: Data.signer,

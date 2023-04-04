@@ -80,6 +80,95 @@ export const idl = {
             ],
         },
         {
+            name: 'initializeAddPresign',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userPda',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'delegatedItem',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'user',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'userBump',
+                    type: 'u8',
+                },
+                {
+                    name: 'tradeToAdd',
+                    type: {
+                        defined: 'NftSwapItem',
+                    },
+                },
+            ],
+        },
+        {
+            name: 'validateUserPdaItems',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'user',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'userBump',
+                    type: 'u8',
+                },
+            ],
+        },
+        {
             name: 'validateInitialize',
             accounts: [
                 {
@@ -158,7 +247,116 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
                     name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccountWsol',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'user',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userWsol',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'userBump',
+                    type: 'u8',
+                },
+            ],
+        },
+        {
+            name: 'depositNftPresigned',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+                {
+                    name: 'itemFromDeposit',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'itemToDeposit',
+                    isMut: true,
+                    isSigner: false,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+            ],
+        },
+        {
+            name: 'depositSolPresigned',
+            accounts: [
+                {
+                    name: 'systemProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userPda',
                     isMut: true,
                     isSigner: false,
                 },
@@ -213,12 +411,32 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
                     name: 'swapDataAccount',
                     isMut: true,
                     isSigner: false,
                 },
                 {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccountWsol',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
                     name: 'user',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userWsol',
                     isMut: true,
                     isSigner: false,
                 },
@@ -235,6 +453,10 @@ export const idl = {
                 },
                 {
                     name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'userBump',
                     type: 'u8',
                 },
             ],
@@ -333,12 +555,32 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
                     name: 'swapDataAccount',
                     isMut: true,
                     isSigner: false,
                 },
                 {
+                    name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccountWsol',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
                     name: 'user',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userWsol',
                     isMut: true,
                     isSigner: false,
                 },
@@ -355,6 +597,10 @@ export const idl = {
                 },
                 {
                     name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'userBump',
                     type: 'u8',
                 },
             ],
@@ -488,9 +734,19 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'signerWsol',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
                     name: 'signer',
                     isMut: true,
                     isSigner: true,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
                 },
             ],
             args: [
@@ -617,6 +873,10 @@ export const idl = {
                     name: 'bump',
                     type: 'u8',
                 },
+                {
+                    name: 'number',
+                    type: 'u64',
+                },
             ],
         },
     ],
@@ -693,6 +953,10 @@ export const idl = {
                         type: 'bool',
                     },
                     {
+                        name: 'isPresigning',
+                        type: 'bool',
+                    },
+                    {
                         name: 'mint',
                         type: 'publicKey',
                     },
@@ -711,6 +975,10 @@ export const idl = {
                     {
                         name: 'status',
                         type: 'u8',
+                    },
+                    {
+                        name: 'value',
+                        type: 'u64',
                     },
                 ],
             },
@@ -779,7 +1047,13 @@ export const idl = {
                 kind: 'enum',
                 variants: [
                     {
+                        name: 'NFTPresigningWaitingForApproval',
+                    },
+                    {
                         name: 'NFTPending',
+                    },
+                    {
+                        name: 'NFTPendingPresign',
                     },
                     {
                         name: 'NFTDeposited',
@@ -794,7 +1068,13 @@ export const idl = {
                         name: 'NFTCancelledRecovered',
                     },
                     {
+                        name: 'SolPresigningWaitingForApproval',
+                    },
+                    {
                         name: 'SolPending',
+                    },
+                    {
+                        name: 'SolPendingPresign',
                     },
                     {
                         name: 'SolDeposited',
@@ -885,11 +1165,20 @@ export const idl = {
                     {
                         name: 'IncorrectAccount',
                     },
+                    {
+                        name: 'IncorrectStatus',
+                    },
+                    {
+                        name: 'OnlyPresign',
+                    },
+                    {
+                        name: 'OnlyNormal',
+                    },
+                    {
+                        name: 'NotDelegatedToUserPda',
+                    },
                 ],
             },
         },
     ],
-    metadata: {
-        address: 'CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx',
-    },
 } as Idl;

@@ -62,7 +62,7 @@ export const getSwapDataFromPDA = async (Data: {
             swapDataAccount_bump,
         };
     } catch (error) {
-        throw console.error('PDA not initialized');
+        throw console.error('PDA not initialized', error);
     }
 };
 

@@ -33,3 +33,8 @@ export type ItemToSell = {
     mint: PublicKey;
     amountMini: BN;
 };
+
+export type ItemToBuy = {
+    mint: PublicKey;
+    amountMaxi: BN;
+};

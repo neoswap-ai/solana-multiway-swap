@@ -37,7 +37,7 @@ export const initInitialize = async (Data: {
 
     let sentData: SwapData = {
         initializer: Data.signer,
-        items: [swapData.items[0]],
+        items: [],
         status: TradeStatus.Initializing,
         nb_items: swapData.items.length,
     };

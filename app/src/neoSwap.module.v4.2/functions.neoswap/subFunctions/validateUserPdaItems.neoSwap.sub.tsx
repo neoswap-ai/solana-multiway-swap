@@ -1,4 +1,4 @@
-import { BN, Program, web3 } from '@project-serum/anchor';
+import { AnchorProvider, BN, Program, web3 } from '@project-serum/anchor';
 import { program } from '@project-serum/anchor/dist/cjs/spl/associated-token';
 import { publicKey } from '@project-serum/anchor/dist/cjs/utils';
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -8,6 +8,7 @@ import { splAssociatedTokenAccountProgramId } from '../../utils.neoSwap/const.ne
 import { convertAllTransaction } from '../../utils.neoSwap/convertAllTransaction.neoswap';
 import findOrCreateAta from '../../utils.neoSwap/findOrCreateAta.neoSwap';
 import { getSeedFromData } from '../../utils.neoSwap/getSeedfromData.neoswap';
+import { getSwapDataFromPDA } from '../../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { ItemToSell, TradeStatus } from '../../utils.neoSwap/types.neo-swap/status.type.neoswap';
 import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap';
 
@@ -19,68 +20,54 @@ import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap'
  * @param {Program} program program linked to NeoSwap
  * @return {Array<{tx: Transaction; signers?: Signer[] | undefined;}>}addInitSendAllArray => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
  */
-export const transferUserApprovedNft = async (Data: {
+export const validateUserPdaItems = async (Data: {
     signer: PublicKey;
     program: Program;
     user: PublicKey;
     delegatedMint: PublicKey;
     destinary: PublicKey;
+    swapDataAccount: PublicKey;
+    CONST_PROGRAM: string;
 }): Promise<{
     userTransaction: {
         tx: Transaction;
         signers?: Array<Signer> | undefined;
     };
 }> => {
-    // if (Data.swapData.status !== TradeStatus.Initializing) throw console.error('Trade not in waiting for initialized state');
-    // const mintAccountData = await Data.program.provider.connection.get(Data.delegatedMint);
-    // console.log('mintAccountData owner', mintAccountData?.data.toBase58());
-    // if (!mintAccountData?.owner) throw '';
-    // console.log('userPda', userPda.toBase58());
+    const { swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
+        swapDataAccount: Data.swapDataAccount,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+        provider: Data.program.provider as AnchorProvider,
+    });
+
     const [userPda, userBump] = publicKey.findProgramAddressSync([Data.user.toBytes()], Data.program.programId);
     console.log('userPda', userPda.toBase58());
 
     const userPdaData = await Data.program.account.userPdaData.fetch(userPda);
     console.log('userPdaData', userPdaData);
-    const { mintAta: destinaryAta, instruction: destinaryAtaIx } = await findOrCreateAta({
-        connection: Data.program.provider.connection,
-        mint: Data.delegatedMint,
-        owner: Data.destinary,
-        signer: Data.signer,
-    });
 
-    // let itemToSell = { mint: new PublicKey('5EJN7h5eUX8vhGcuZKPTkU9hRHn8zJJmcv6guqKQoUav'), amountMini: new BN(10000) };
-    // console.log('Data.itemToSell', Data.itemToSell);
-    // console.log('userPda', userPda.toBase58());
-    // console.log('Data.signer', Data.signer.toBase58());
-    // console.log('Data.itemToSell.mint', Data.itemToSell.mint.toBase58());
-    // console.log('splAssociatedTokenAccountProgramId', splAssociatedTokenAccountProgramId.toBase58());
-    // console.log('TOKEN_PROGRAM_ID', TOKEN_PROGRAM_ID.toBase58());
-    // console.log('web3.SystemProgram.programId', web3.SystemProgram.programId.toBase58());
     let delegatedItem = await getAssociatedTokenAddress(Data.delegatedMint, Data.user);
     console.log('delegatedItem', delegatedItem.toBase58());
 
-    const addUserItemToAddIx = await Data.program.methods
-        .transferUserApprovedNft(userBump, new BN(1))
+    const validateUserPdaItemsIx = await Data.program.methods
+        .validateUserPdaItemsIx(swapDataAccount_seed, swapDataAccount_bump, userBump)
         .accounts({
+            swapDataAccount: Data.swapDataAccount,
             userPda,
             user: Data.user,
-            delegatedItem,
-            destinary: destinaryAta,
             signer: Data.signer,
-            tokenProgram: TOKEN_PROGRAM_ID,
             // splTokenProgram: splAssociatedTokenAccountProgramId,
             // systemProgram: web3.SystemProgram.programId,
         })
         .instruction();
-    if (!destinaryAtaIx) throw 'no destinaryAtaIx';
 
     let userTransaction: {
         tx: Transaction;
         signers?: Array<Signer> | undefined;
-    } = { tx: new Transaction().add(...destinaryAtaIx, addUserItemToAddIx) };
+    } = { tx: new Transaction().add(validateUserPdaItemsIx) };
     // userTransaction = appendTransactionToArray({
     //     mainArray: userTransaction,
-    //     itemToAdd: [addUserItemToAddIx],
+    //     itemToAdd: [validateUserPdaItemsIx],
     // });
 
     // const userTransaction = await convertAllTransaction(userTransaction);
@@ -88,4 +75,4 @@ export const transferUserApprovedNft = async (Data: {
     return { userTransaction };
 };
 
-export default transferUserApprovedNft;
+export default validateUserPdaItems;

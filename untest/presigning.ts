@@ -14,6 +14,7 @@ import {
     mintToChecked,
     createAssociatedTokenAccountInstruction,
     createMintToCheckedInstruction,
+    NATIVE_MINT,
 } from "@solana/spl-token";
 import {
     Keypair,
@@ -29,6 +30,7 @@ import {
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
 import {
     ItemStatus,
+    ItemToBuy,
     ItemToSell,
     TradeStatus,
 } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/status.type.neoswap";
@@ -385,5 +387,95 @@ describe("pre-signing", () => {
         }
 
         console.log("transferUserApprovedNft", txhashs);
+    });
+
+    it("add Item To buy", async () => {
+        // console.log(swapData);
+        // await delay(5000);
+        const { userAddItemToBuyTransaction } = await NeoSwap.userAddItemToBuy({
+            program,
+            signer: signer.publicKey,
+            itemToBuy: {
+                mint: userKeypairs[0].tokens[0].mint,
+                amountMaxi: new BN(LAMPORTS_PER_SOL * 0.2),
+            } as ItemToBuy,
+        });
+        const { userAddItemToBuyTransaction: userAddItemToBuyTransaction2 } =
+            await NeoSwap.userAddItemToBuy({
+                program,
+                signer: signer.publicKey,
+                itemToBuy: {
+                    mint: userKeypairs[0].tokens[1].mint,
+                    amountMaxi: new BN(LAMPORTS_PER_SOL * 0.2),
+                } as ItemToBuy,
+            });
+        console.log("signerNft.mint", signerNft.mint.toBase58());
+
+        // let userPda = createUserPdaData.userPda;
+        const allInitSendAllArray = [userAddItemToBuyTransaction, userAddItemToBuyTransaction2];
+        // console.log("XXX-XXX userPda", userPda.toBase58());
+
+        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+        allInitSendAllArray.forEach((allInitSendAllArrayitem) => {
+            allInitSendAllArrayitem.signers = [signer];
+            allInitSendAllArrayitem.tx.feePayer = signer.publicKey;
+            allInitSendAllArrayitem.tx.recentBlockhash = recentBlockhash;
+        });
+
+        const txhashs = await program.provider.sendAll(allInitSendAllArray, {
+            // skipPreflight: true,
+        });
+
+        for await (const hash of txhashs) {
+            program.provider.connection.confirmTransaction(hash);
+        }
+
+        console.log("item added to sell", txhashs);
+    });
+
+    it("transferUserApprovedWsol", async () => {
+        // console.log(swapData);
+
+        console.log("signer.publicKey", signer.publicKey.toBase58());
+        console.log(
+            "userKeypairs[0].keypair.publicKey",
+            userKeypairs[0].keypair.publicKey.toBase58()
+        );
+        console.log(
+            "userKeypairs[1].keypair.publicKey",
+            userKeypairs[1].keypair.publicKey.toBase58()
+        );
+
+        const { userTransaction } = await NeoSwap.transferUserApprovedWsol({
+            program,
+            user: signer.publicKey,
+            // delegatedMint: NATIVE_MINT,
+            destinary: userKeypairs[0].keypair.publicKey,
+            signer: userKeypairs[1].keypair.publicKey,
+            number: 0.2 * LAMPORTS_PER_SOL,
+        });
+
+        // console.log("signerNft.mint", signerNft.mint.toBase58());
+
+        // let userPda = createUserPdaData.userPda;
+        const allInitSendAllArray = userTransaction;
+        // console.log("XXX-XXX userPda", userPda.toBase58());
+
+        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+        allInitSendAllArray.signers = [userKeypairs[1].keypair];
+        allInitSendAllArray.tx.feePayer = userKeypairs[1].keypair.publicKey;
+        allInitSendAllArray.tx.recentBlockhash = recentBlockhash;
+        // allInitSendAllArray.forEach((txElement) => {
+        // });
+
+        const txhashs = await program.provider.sendAll([allInitSendAllArray], {
+            skipPreflight: true,
+        });
+
+        for await (const hash of txhashs) {
+            program.provider.connection.confirmTransaction(hash);
+        }
+
+        console.log("transferUserApprovedWsol", txhashs);
     });
 });
