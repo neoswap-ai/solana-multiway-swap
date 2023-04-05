@@ -26,7 +26,7 @@ export async function depositNft(Data: {
 }): Promise<{ instruction: TransactionInstruction[]; mintAta: PublicKey[] }> {
     let instruction: TransactionInstruction[] = [];
     let mintAta: PublicKey[] = Data.ataList;
-    console.log('mintAta', mintAta);
+    // console.log('mintAta', mintAta);
 
     const { mintAta: userMintAta, instruction: ixCreateUserMintAta } = await findOrCreateAta({
         connection: Data.program.provider.connection,
@@ -43,7 +43,7 @@ export async function depositNft(Data: {
     });
 
     if (ixCreateUserMintAta && addUserTx) {
-        console.log('CreateUserAta Deposit Tx added');
+        console.log('CreateUserAta Deposit Tx added', userMintAta);
         ixCreateUserMintAta.forEach((ixCreateUserMintAtaItem) => {
             instruction.push(ixCreateUserMintAtaItem);
         });
@@ -64,7 +64,7 @@ export async function depositNft(Data: {
         }
     });
     if (ixCreatePdaMintAta && addPdaTx) {
-        console.log('CreatePdaAta Deposit Tx added');
+        console.log('CreatePdaAta Deposit Tx added', pdaMintAta);
         ixCreatePdaMintAta.forEach((ixCreatePdaMintAtaItem) => {
             instruction.push(ixCreatePdaMintAtaItem);
         });
@@ -85,6 +85,8 @@ export async function depositNft(Data: {
 
     instruction.push(depositIx);
     console.log('from: ', userMintAta.toBase58(), '\nto: ', pdaMintAta.toBase58(), '\nmint: ', Data.mint.toBase58());
+    console.log('mintAta', mintAta);
+
     return { instruction, mintAta };
 }
 export default depositNft;

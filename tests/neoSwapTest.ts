@@ -262,6 +262,7 @@ describe("swapCoontractTest", () => {
             tx: anchor.web3.Transaction;
             signers?: anchor.web3.Signer[];
         }[] = [];
+        let transactionHashs: string[] = [];
         for await (const userKeypair of userKeypairs) {
             const { depositSendAllArray } = await NeoSwap.deposit({
                 provider: program.provider as anchor.AnchorProvider,
@@ -270,25 +271,24 @@ describe("swapCoontractTest", () => {
                 CONST_PROGRAM,
             });
 
+            const recentBlockhash = (await program.provider.connection.getLatestBlockhash())
+                .blockhash;
             depositSendAllArray.forEach((transactionDeposit) => {
                 transactionDeposit.signers = [userKeypair];
                 transactionDeposit.tx.feePayer = userKeypair.publicKey;
+                transactionDeposit.tx.recentBlockhash = recentBlockhash;
             });
-            sendAllArray.push(...depositSendAllArray);
-        }
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+            const transactionHash = await program.provider.sendAll(depositSendAllArray, {
+                skipPreflight: true,
+            });
+            console.log("transactionHash", transactionHash);
 
-        sendAllArray.forEach((transactionDeposit) => {
-            transactionDeposit.tx.recentBlockhash = recentBlockhash;
-        });
-        const transactionHashs = await program.provider.sendAll(sendAllArray, {
-            skipPreflight: true,
-        });
-        console.log("transactionHashs", transactionHashs);
-
-        for await (const transactionHash of transactionHashs) {
-            await program.provider.connection.confirmTransaction(transactionHash);
+            for await (const transactionHashh of transactionHash) {
+                await program.provider.connection.confirmTransaction(transactionHashh);
+            }
+            transactionHashs.push(...transactionHash);
         }
+
         console.log("deposited users ", transactionHashs);
     });
 
@@ -310,6 +310,122 @@ describe("swapCoontractTest", () => {
 
         // const claimAndCloseHash = await program.provider.sendAll(allClaimSendAllArray);
         const transactionHashs = await program.provider.sendAll(allClaimSendAllArray, {
+            skipPreflight: true,
+        });
+        console.log("transactionHashs", transactionHashs);
+        for await (const hash of transactionHashs) {
+            program.provider.connection.confirmTransaction(hash);
+        }
+
+        console.log("transactionHashs :", transactionHashs);
+    });
+
+    it("initialize for Cancel", async () => {
+        // console.log(swapData);
+
+        const allInitData = await NeoSwap.allInitialize({
+            provider: program.provider as anchor.AnchorProvider,
+            signer: signer.publicKey,
+            swapDataGiven: swapData,
+            CONST_PROGRAM,
+        });
+        swapData = allInitData.swapData;
+        pda = allInitData.pda;
+        const allInitSendAllArray = allInitData.allInitSendAllArray;
+        console.log("XXX-XXX pda", pda.toBase58());
+
+        let recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+        for await (const transactionDeposit of allInitSendAllArray) {
+            transactionDeposit.signers = [signer];
+            transactionDeposit.tx.feePayer = signer.publicKey;
+            transactionDeposit.tx.recentBlockhash = recentBlockhash;
+        }
+        //     console.log("test before sendAll", program);
+        //  console.log( 'XXXXXXXXXXXXXXXXXXXXXXXX',  await program.provider.connection.getAccountInfo(program.programId))
+        let txhashs: string[] = [];
+        try {
+            txhashs = await program.provider.sendAll(allInitSendAllArray, {
+                skipPreflight: true,
+            });
+        } catch (error) {
+            console.log(error);
+            throw "";
+        }
+        console.log("txhashs", txhashs);
+
+        let latestBlockHash = await program.provider.connection.getLatestBlockhash();
+
+        for await (const hash of txhashs) {
+            // console.log(
+            //     "confirmHash",
+            await program.provider.connection.confirmTransaction(
+                hash
+                //     {
+                //     blockhash: latestBlockHash.blockhash,
+                //     lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+                //     signature: ,
+                // }
+                // )
+            );
+        }
+
+        console.log("initialized", pda.toBase58());
+    });
+
+    it("Deposit for Cancel", async () => {
+        let sendAllArray: {
+            tx: anchor.web3.Transaction;
+            signers?: anchor.web3.Signer[];
+        }[] = [];
+        let transactionHashs: string[] = [];
+        for await (const userKeypair of userKeypairs) {
+            const { depositSendAllArray } = await NeoSwap.deposit({
+                provider: program.provider as anchor.AnchorProvider,
+                signer: userKeypair.publicKey,
+                swapDataAccount: pda,
+                CONST_PROGRAM,
+            });
+
+            const recentBlockhash = (await program.provider.connection.getLatestBlockhash())
+                .blockhash;
+            depositSendAllArray.forEach((transactionDeposit) => {
+                transactionDeposit.signers = [userKeypair];
+                transactionDeposit.tx.feePayer = userKeypair.publicKey;
+                transactionDeposit.tx.recentBlockhash = recentBlockhash;
+            });
+            const transactionHash = await program.provider.sendAll(depositSendAllArray, {
+                skipPreflight: true,
+            });
+            console.log("transactionHash", transactionHash);
+
+            for await (const transactionHashh of transactionHash) {
+                await program.provider.connection.confirmTransaction(transactionHashh);
+            }
+            transactionHashs.push(...transactionHash);
+        }
+
+        console.log("deposited users ", transactionHashs);
+    });
+
+    it("cancel and close", async () => {
+        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+            provider: program.provider as anchor.AnchorProvider,
+            signer: signer.publicKey,
+            swapDataAccount: pda,
+            CONST_PROGRAM,
+        });
+
+        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+        allCancelSendAllArray.forEach((transactionDeposit) => {
+            transactionDeposit.signers = [signer];
+            transactionDeposit.tx.feePayer = signer.publicKey;
+            transactionDeposit.tx.recentBlockhash = recentBlockhash;
+        });
+
+        // const claimAndCloseHash = await program.provider.sendAll(allCancelSendAllArray);
+        const transactionHashs = await program.provider.sendAll(allCancelSendAllArray, {
             skipPreflight: true,
         });
         console.log("transactionHashs", transactionHashs);

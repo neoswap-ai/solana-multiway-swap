@@ -4,6 +4,7 @@ import claim from './subFunctions/claim.neoSwap.sub';
 import validateDeposit from './subFunctions/validateDeposit.neoSwap.sub';
 import validateClaimed from './subFunctions/validateClaimed.neoSwap.sub';
 import { getProgram } from '../utils.neoSwap/getProgram.neoswap';
+import SwapData from '../utils.neoSwap/types.neo-swap/swapData.types.neoswap';
 
 /**
  * @notice creates claiming & closing instructions.
@@ -26,6 +27,8 @@ export const claimAndClose = async (Data: {
     }>;
 }> => {
     const program = getProgram(Data.provider);
+    let swapData = (await program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
+    console.log('swapData', swapData);
 
     const { validateDepositSendAll } = await validateDeposit({
         program: program,

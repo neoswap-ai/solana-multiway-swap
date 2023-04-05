@@ -27,7 +27,6 @@ export async function depositSol(Data: {
     let instruction: TransactionInstruction[] = [];
     let mintAta: PublicKey[] = Data.ataList;
 
-    console.log('mintAta', mintAta);
     // mintAta.forEach((v) => console.log('. ', v.toBase58));
     // console.log('\n');
 
@@ -118,6 +117,7 @@ export async function depositSol(Data: {
         .instruction();
 
     instruction.push(depositInstruction);
+    console.log('mintAta', mintAta);
 
     return { instruction, mintAta };
 }

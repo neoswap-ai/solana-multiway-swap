@@ -91,11 +91,12 @@ export const cancel = async (Data: {
                         program: Data.program,
                         user: swapDataItem.owner,
                         signer: Data.signer,
+                        ataList,
                         swapDataAccount: Data.swapDataAccount,
                         swapDataAccount_seed: swapData.swapDataAccount_seed,
                         swapDataAccount_bump: swapData.swapDataAccount_bump,
                     });
-                    cancelTransactionInstruction.push(cancelingSol.instruction);
+                    cancelTransactionInstruction.push(...cancelingSol.instruction);
                     console.log('cancelSolinstruction added');
                 } else {
                     console.log('XXXXXXX - not adding SOL n° ', item, swapDataItem.status);

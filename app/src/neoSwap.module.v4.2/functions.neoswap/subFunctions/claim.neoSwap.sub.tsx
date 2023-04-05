@@ -81,8 +81,9 @@ export const claim = async (Data: {
                         swapDataAccount: Data.swapDataAccount,
                         swapDataAccount_seed: swapData.swapDataAccount_seed,
                         swapDataAccount_bump: swapData.swapDataAccount_bump,
+                        ataList,
                     });
-                    claimTransactionInstruction.push(claimingSol.instruction);
+                    claimTransactionInstruction.push(...claimingSol.instruction);
                     console.log('claimSolinstruction added');
                 } else {
                     console.log('not to claim item n° ', item);

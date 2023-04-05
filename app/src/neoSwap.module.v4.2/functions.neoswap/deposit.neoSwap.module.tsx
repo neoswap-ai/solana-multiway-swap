@@ -40,7 +40,8 @@ export const deposit = async (Data: {
 
     if (swapData.swapData.status !== TradeStatus.WaitingToDeposit)
         throw console.error('Trade not in waiting for deposit state');
-
+    let test: number[] = [];
+    let i = 0;
     let depositInstruction: Array<TransactionInstruction> = [];
     let ataList: Array<PublicKey> = [];
     for await (let swapDataItem of swapData.swapData.items) {
@@ -53,8 +54,11 @@ export const deposit = async (Data: {
                     swapDataItem.status === ItemStatus.NFTPending
                 ) {
                     console.log('XXX - Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ', ataList);
+                    test.push(i);
+                    i++;
+                    console.log('test', test);
 
-                    let { instruction: depositNFTInstruction, mintAta: mintAtaAta } = await depositNft({
+                    let { instruction: depositNFTInstruction, mintAta: createdMint } = await depositNft({
                         program: program,
                         signer: Data.signer,
                         mint: swapDataItem.mint,
@@ -63,25 +67,25 @@ export const deposit = async (Data: {
                         swapDataAccount_bump: swapData.swapDataAccount_bump,
                         ataList,
                     });
+                    ataList = createdMint;
+                    // createdMint.forEach((depositNftAta) => {
+                    //     let isPush = true;
+                    //     ataList.forEach((ataElem) => {
+                    //         if (depositNftAta.equals(ataElem)) {
+                    //             isPush = false;
+                    //         }
+                    //     });
 
-                    mintAtaAta.forEach((depositNftAta) => {
-                        let isPush = true;
-                        ataList.forEach((ataElem) => {
-                            if (depositNftAta.equals(ataElem)) {
-                                isPush = false;
-                            }
-                        });
-
-                        if (isPush) {
-                            ataList.push(depositNftAta);
-                            console.log('added mint NFT', depositNftAta.toBase58());
-                        }
-                    });
+                    //     if (isPush) {
+                    //         ataList.push(depositNftAta);
+                    //         console.log('added mint NFT', depositNftAta.toBase58());
+                    //     }
+                    // });
                     depositNFTInstruction.forEach((depositNftAta) => {
                         depositInstruction.push(depositNftAta);
                     });
                     // ]);
-                    console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList', ataList);
+                    console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList NFT', ataList);
                     console.log('depositNftInstruction added');
                 }
 
@@ -91,8 +95,12 @@ export const deposit = async (Data: {
                     swapDataItem.owner.toBase58() === Data.signer.toBase58() &&
                     swapDataItem.status === ItemStatus.SolPending
                 ) {
+                    test.push(i);
+                    i++;
+                    console.log('test', test);
+
                     console.log('XXXXXXX - Deposit sol item - XXXXXXX', ataList);
-                    const { instruction: depositSolInstruction, mintAta: allMint } = await depositSol({
+                    const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSol({
                         program: program,
                         ataList,
                         signer: Data.signer,
@@ -103,21 +111,22 @@ export const deposit = async (Data: {
                     });
                     depositInstruction.push(...depositSolInstruction);
                     // console.log('allMint', allMint);
+                    ataList = createdMint;
 
-                    allMint.forEach((depositSolAta) => {
-                        let isPush = true;
-                        ataList.forEach((ataElem) => {
-                            if (depositSolAta.equals(ataElem)) {
-                                isPush = false;
-                            }
-                        });
+                    // allMint.forEach((depositSolAta) => {
+                    //     let isPush = true;
+                    //     ataList.forEach((ataElem) => {
+                    //         if (depositSolAta.equals(ataElem)) {
+                    //             isPush = false;
+                    //         }
+                    //     });
 
-                        if (isPush) {
-                            ataList.push(depositSolAta);
-                            console.log('added mint sol', depositSolAta.toBase58());
-                        }
-                    });
-                    console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList', ataList);
+                    //     if (isPush) {
+                    //         ataList.push(depositSolAta);
+                    //         console.log('added mint sol', depositSolAta.toBase58());
+                    //     }
+                    // });
+                    console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList SOL', ataList);
                     console.log('depositSolinstruction added');
                 }
                 break;

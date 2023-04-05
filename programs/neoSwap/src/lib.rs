@@ -486,7 +486,9 @@ pub mod neo_swap {
                         &ctx.accounts.swap_data_account_wsol.key(),
                         &ctx.accounts.user.key(),
                         &[&ctx.accounts.signer.key()],
-                        1,
+                        ctx.accounts.swap_data_account.items[item_id]
+                            .amount
+                            .unsigned_abs(),
                     )?;
                     invoke(
                         &ix,
@@ -679,7 +681,7 @@ pub mod neo_swap {
     /// @accounts user: Pubkey => User that will receive lamports
     /// @accounts signer: Pubkey => Initializer
     /// @return Void
-    pub fn claim_sol(ctx: Context<ClaimSol>, _seed: Vec<u8>, _bump: u8,user_bump:u8) -> Result<()> {
+    pub fn claim_sol(ctx: Context<ClaimSol>, seed: Vec<u8>, bump: u8) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToClaim.to_u8(),
             MYERROR::NotReady
@@ -707,11 +709,11 @@ pub mod neo_swap {
                         .unsigned_abs();
 
                     let swap_data_lamports_initial =
-                        ctx.accounts.swap_data_account.to_account_info().lamports();
+                        ctx.accounts.swap_data_account_wsol.amount;
 
                     if swap_data_lamports_initial >= amount_to_send {
           
-                                let seeds = &[&ctx.accounts.user_pda.owner.to_bytes()[..], &[user_bump]];
+                                let seeds = &[&seed[..], &[bump]];
                                 let signer = &[&seeds[..]];
                             
                                 let cpi_ctx = CpiContext::new_with_signer(
@@ -719,7 +721,7 @@ pub mod neo_swap {
                                     Transfer {
                                         from: ctx.accounts.swap_data_account_wsol.to_account_info(),
                                         to: ctx.accounts.user_wsol.to_account_info(),
-                                        authority: ctx.accounts.user_pda.to_account_info(),
+                                        authority: ctx.accounts.swap_data_account.to_account_info(),
                                     },
                                     signer,
                                 );
@@ -886,7 +888,7 @@ pub mod neo_swap {
     /// @accounts user: Pubkey => User that will receive lamports
     /// @accounts signer: Pubkey => Initializer
     /// @return Void
-    pub fn cancel_sol(ctx: Context<ClaimSol>, _seed: Vec<u8>, _bump: u8,user_bump:u8) -> Result<()> {
+    pub fn cancel_sol(ctx: Context<ClaimSol>, seed: Vec<u8>, bump: u8) -> Result<()> {
         if !(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
             || ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8())
         {
@@ -936,7 +938,7 @@ pub mod neo_swap {
                             .amount
                             .unsigned_abs();
                         let swap_data_lamports_initial =
-                            ctx.accounts.swap_data_account.to_account_info().lamports();
+                            ctx.accounts.swap_data_account_wsol.amount;
 
                         if swap_data_lamports_initial >= amount_to_send {
                             // **ctx.accounts.user.lamports.borrow_mut() =
@@ -950,15 +952,16 @@ pub mod neo_swap {
                             //     ctx.accounts.swap_data_account.to_account_info().lamports()
                                     // - amount_to_send;
 
-                                    let seeds = &[&ctx.accounts.user_pda.owner.to_bytes()[..], &[user_bump]];
-                                    let signer = &[&seeds[..]];
+                                    // let seeds = &[&seed, &[bump]];
+                                let seeds = &[&seed[..], &[bump]];
+                                let signer = &[&seeds[..]];
                             
                                     let cpi_ctx = CpiContext::new_with_signer(
                                         ctx.accounts.token_program.to_account_info(),
                                         Transfer {
                                             from: ctx.accounts.swap_data_account_wsol.to_account_info(),
                                             to: ctx.accounts.user_wsol.to_account_info(),
-                                            authority: ctx.accounts.user_pda.to_account_info(),
+                                            authority: ctx.accounts.swap_data_account.to_account_info(),
                                         },
                                         signer,
                                     );
@@ -1649,7 +1652,7 @@ pub struct ClaimNft<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, user_bump:u8)]
+#[instruction(seed: Vec<u8>, bump: u8)]// user_bump:u8
 pub struct ClaimSol<'info> {
     #[account()]
     system_program: Program<'info, System>,
@@ -1657,12 +1660,12 @@ pub struct ClaimSol<'info> {
     token_program: Program<'info, Token>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
-    #[account(
-        mut,
-        seeds = [&user.key().to_bytes()[..]], 
-        bump=user_bump,
-    )]
-    user_pda: Box<Account<'info, UserPdaData>>,
+    // #[account(
+    //     mut,
+    //     seeds = [&user.key().to_bytes()[..]], 
+    //     bump=user_bump,
+    // )]
+    // user_pda: Box<Account<'info, UserPdaData>>,
     #[account(
         mut,
         constraint = swap_data_account_wsol.is_native() @ MYERROR::MintIncorrect,
