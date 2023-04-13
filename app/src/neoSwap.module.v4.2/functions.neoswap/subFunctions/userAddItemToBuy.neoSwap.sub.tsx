@@ -34,7 +34,7 @@ export const userAddItemToBuy = async (Data: {
 
     // let itemToSell = { mint: new PublicKey('5EJN7h5eUX8vhGcuZKPTkU9hRHn8zJJmcv6guqKQoUav'), amountMini: new BN(10000) };
     // console.log('Data.itemToSell', Data.itemToSell);
-    // console.log('userPda', userPda.toBase58());
+    console.log('userPda', userPda.toBase58());
     // console.log('Data.signer', Data.signer.toBase58());
     // console.log('Data.itemToSell.mint', Data.itemToSell.mint.toBase58());
     // console.log('splAssociatedTokenAccountProgramId', splAssociatedTokenAccountProgramId.toBase58());

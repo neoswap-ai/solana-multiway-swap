@@ -169,6 +169,31 @@ export const idl = {
             ],
         },
         {
+            name: 'validatePresigningSwap',
+            accounts: [
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: true,
+                    isSigner: true,
+                },
+            ],
+            args: [
+                {
+                    name: 'seed',
+                    type: 'bytes',
+                },
+                {
+                    name: 'bump',
+                    type: 'u8',
+                },
+            ],
+        },
+        {
             name: 'validateInitialize',
             accounts: [
                 {
@@ -681,6 +706,11 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'user',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
                     name: 'signer',
                     isMut: true,
                     isSigner: true,
@@ -958,10 +988,6 @@ export const idl = {
                         name: 'status',
                         type: 'u8',
                     },
-                    {
-                        name: 'value',
-                        type: 'u64',
-                    },
                 ],
             },
         },
@@ -1004,6 +1030,9 @@ export const idl = {
                 variants: [
                     {
                         name: 'Initializing',
+                    },
+                    {
+                        name: 'WaitingToValidatePresigning',
                     },
                     {
                         name: 'WaitingToDeposit',
@@ -1159,8 +1188,20 @@ export const idl = {
                     {
                         name: 'NotDelegatedToUserPda',
                     },
+                    {
+                        name: 'DoubleSend',
+                    },
+                    {
+                        name: 'NotAllValidated',
+                    },
+                    {
+                        name: 'PresignCantBeReceiveSol',
+                    },
+                    {
+                        name: 'MinSupMax',
+                    },
                 ],
             },
         },
-    ]
+    ],
 } as Idl;

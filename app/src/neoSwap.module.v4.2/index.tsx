@@ -1,4 +1,4 @@
-import allInitialize from './functions.neoswap/all.Initialize.neoSwap.module';
+import { allInitialize } from './functions.neoswap/all.Initialize.neoSwap.module';
 import deposit from './functions.neoswap/deposit.neoSwap.module';
 import claimAndClose from './functions.neoswap/claimAndClose.neoSwap.module';
 import cancelAndClose from './functions.neoswap/cancelAndClose.neoSwap.module';
@@ -10,7 +10,9 @@ import userAddItemToBuy from './functions.neoswap/subFunctions/userAddItemToBuy.
 import { userUpdateAmountTopUp } from './functions.neoswap/subFunctions/userUpdateAmountTopUp.neoSwap.sub';
 import { transferUserApprovedNft } from './functions.neoswap/subFunctions/transferUserApprovedNft.neoSwap.sub';
 import transferUserApprovedWsol from './functions.neoswap/subFunctions/transferUserApprovedWsol.neoSwap.sub';
-import validateUserPdaItemsIx from './functions.neoswap/subFunctions/validateUserPdaItems.neoSwap.sub'
+import validateUserPdaItemsIx from './functions.neoswap/subFunctions/validateUserPdaItems.neoSwap.sub';
+import getUserPdaData from './functions.neoswap/subFunctions/getUserPdaData.neoSwap.sub';
+import validatePresigningSwap from './functions.neoswap/subFunctions/validatePresigningSwap.neoSwap.sub';
 const NeoSwap = {
     /// Main
     allInitialize, /// creates instruction for initializing PDA, writing data and setting the trade state to depositing
@@ -22,12 +24,12 @@ const NeoSwap = {
     getSeedFromData, /// reconstruct seed and
     ///Pre-sign
     createUserPda,
+    getUserPdaData,
     userAddItemToSell,
     userAddItemToBuy,
     userUpdateAmountTopUp,
     transferUserApprovedNft,
     transferUserApprovedWsol,
-    validateUserPdaItemsIx
 };
 
 export default NeoSwap;

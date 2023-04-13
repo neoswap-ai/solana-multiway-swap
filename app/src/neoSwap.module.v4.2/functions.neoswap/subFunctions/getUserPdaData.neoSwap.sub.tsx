@@ -17,34 +17,19 @@ import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap'
  * @param {Program} program program linked to NeoSwap
  * @return {Array<{tx: Transaction; signers?: Signer[] | undefined;}>}addInitSendAllArray => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
  */
-export const createUserPda = async (Data: {
-    signer: PublicKey;
+export const getUserPdaData = async (Data: {
     user: PublicKey;
     program: Program;
 }): Promise<{
-    addInitSendAllArray: {
-        tx: Transaction;
-        signers?: Array<Signer> | undefined;
-    };
     userPda: PublicKey;
+    userPdaData: any;
 }> => {
     // if (Data.swapData.status !== TradeStatus.Initializing) throw console.error('Trade not in waiting for initialized state');
     const [userPda, userBump] = publicKey.findProgramAddressSync([Data.user.toBytes()], Data.program.programId);
-    const instructionToAdd = await Data.program.methods
-        .createUserPda(Data.user.toBuffer(), userBump)
-        .accounts({
-            userPda,
-            user: Data.user,
-            signer: Data.signer,
-            systemProgram: web3.SystemProgram.programId,
-            splTokenProgram: splAssociatedTokenAccountProgramId,
-        })
-        .instruction();
 
-    let addInitSendAllArray: {
-        tx: Transaction;
-        signers?: Array<Signer> | undefined;
-    } = { tx: new Transaction().add(instructionToAdd) };
+    const userPdaData = await Data.program.account.userPdaData.fetch(userPda);
+    console.log('userPdaData', userPdaData);
+
     // addInitTransaction = appendTransactionToArray({
     //     mainArray: addInitTransaction,
     //     itemToAdd: [instructionToAdd],
@@ -52,7 +37,7 @@ export const createUserPda = async (Data: {
 
     // const addInitSendAllArray = await convertAllTransaction(addInitTransaction);
 
-    return { addInitSendAllArray, userPda };
+    return { userPda, userPdaData };
 };
 
-export default createUserPda;
+export default getUserPdaData;

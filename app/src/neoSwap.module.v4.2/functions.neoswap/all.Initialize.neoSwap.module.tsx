@@ -5,6 +5,8 @@ import initInitialize from './subFunctions/init.Initialize.neoSwap.sub';
 import validateInitialize from './subFunctions/validate.Initialize.neoSwap.sub';
 import SwapData from '../utils.neoSwap/types.neo-swap/swapData.types.neoswap';
 import { getProgram } from '../utils.neoSwap/getProgram.neoswap';
+import validateUserPdaItems from './subFunctions/validateUserPdaItems.neoSwap.sub';
+import validatePresigningSwap from './subFunctions/validatePresigningSwap.neoSwap.sub';
 
 /**
  * @notice creates Initialize instructions
@@ -44,16 +46,46 @@ export const allInitialize = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapData: swapData,
     });
-    console.log("test");
-    
+    console.log('test');
+
     const { validateInitSendAllArray } = await validateInitialize({
         program: program,
         signer: Data.signer,
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapData: swapData,
     });
+    let users: PublicKey[] = [];
 
-    const allInitSendAllArray = [...initinitSendAllArray, ...addInitSendAllArray, ...validateInitSendAllArray];
+    swapData.items.forEach((item) => {
+        if (!String(users).includes(item.owner.toString())) {
+            console.log('item.owner', item.owner.toBase58());
+
+            users.push(item.owner);
+        }
+    });
+
+    const { usersValidateItemsTransactions } = await validateUserPdaItems({
+        program: program,
+        signer: Data.signer,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+        users,
+        swapData,
+    });
+
+    const { validatePresigningSwapTransaction } = await validatePresigningSwap({
+        program: program,
+        signer: Data.signer,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+        swapData,
+    });
+
+    const allInitSendAllArray = [
+        ...initinitSendAllArray,
+        ...addInitSendAllArray,
+        ...validateInitSendAllArray,
+        ...usersValidateItemsTransactions,
+        ...validatePresigningSwapTransaction,
+    ];
 
     return {
         allInitSendAllArray,
@@ -61,5 +93,3 @@ export const allInitialize = async (Data: {
         swapData,
     };
 };
-
-export default allInitialize;

@@ -48,16 +48,16 @@ export const userUpdateAmountTopUp = async (Data: {
         signers?: Array<Signer> | undefined;
     }[] = [];
     // let itemToSell = { mint: new PublicKey('5EJN7h5eUX8vhGcuZKPTkU9hRHn8zJJmcv6guqKQoUav'), amountMini: new BN(10000) };
-    console.log('Data.itemToSell', Data.amountToTopup);
-    console.log('userPda', userPda.toBase58());
-    console.log('Data.signer', Data.signer.toBase58());
+    // console.log('Data.itemToSell', Data.amountToTopup);
+    // console.log('userPda', userPda.toBase58());
+    // console.log('Data.signer', Data.signer.toBase58());
     // console.log('Data.itemToSell.mint', Data.itemToSell.mint.toBase58());
-    console.log('TOKEN_PROGRAM_ID', TOKEN_PROGRAM_ID.toBase58());
+    // console.log('TOKEN_PROGRAM_ID', TOKEN_PROGRAM_ID.toBase58());
     // console.log('splAssociatedTokenAccountProgramId', splAssociatedTokenAccountProgramId.toBase58());
     // console.log('web3.SystemProgram.programId', web3.SystemProgram.programId.toBase58());
 
     const signerWsol = await getAssociatedTokenAddress(NATIVE_MINT, Data.signer);
-    console.log('signerWsol', signerWsol.toBase58());
+    // console.log('signerWsol', signerWsol.toBase58());
     let balance: number | null = null;
     try {
         balance = (await Data.program.provider.connection.getTokenAccountBalance(signerWsol)).value.uiAmount;
@@ -68,8 +68,8 @@ export const userUpdateAmountTopUp = async (Data: {
         console.log('could not find account');
     }
     let nativeIx: TransactionInstruction[] = [];
-    console.log('Balance', balance);
-    console.log('Data.amountToTopup', Data.amountToTopup);
+    // console.log('Balance', balance);
+    // console.log('Data.amountToTopup', Data.amountToTopup);
 
     if (balance === null) {
         nativeIx.push(createAssociatedTokenAccountInstruction(Data.signer, signerWsol, Data.signer, NATIVE_MINT));

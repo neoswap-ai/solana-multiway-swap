@@ -12,8 +12,13 @@ export enum TradeStatus {
 }
 
 export enum ItemStatus {
+    NFTPresigningWaitingForApproval = 0,
+    SolPresigningWaitingForApproval = 1,
+
     NFTPending = 10,
     SolPending = 11,
+    NFTPendingPresign = 12,
+    SolPendingPresig = 13,
 
     NFTDeposited = 20,
     SolDeposited = 21,

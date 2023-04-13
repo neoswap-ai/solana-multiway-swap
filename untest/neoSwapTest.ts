@@ -50,6 +50,7 @@ describe("swapCoontractTest", () => {
         items: [
             {
                 isNft: false,
+                isPresigning: false,
                 amount: new anchor.BN(-0.25 * nbuser * 10 ** 9),
                 destinary: new PublicKey("11111111111111111111111111111111"),
                 mint: new PublicKey("11111111111111111111111111111111"),
@@ -99,6 +100,7 @@ describe("swapCoontractTest", () => {
 
             swapData.items.push({
                 isNft: false,
+                isPresigning: false,
                 amount: new BN(0.25 * 10 ** 9),
                 mint: new PublicKey("11111111111111111111111111111111"),
                 status: ItemStatus.SolPending,
@@ -166,7 +168,8 @@ describe("swapCoontractTest", () => {
         for await (const userKeypair of userKeypairs) {
             const createUserPdaData = await NeoSwap.createUserPda({
                 program,
-                signer: userKeypair.publicKey,
+                user: userKeypair.publicKey,
+                signer: signer.publicKey,
             });
 
             let userPda = createUserPdaData.userPda;
@@ -180,8 +183,8 @@ describe("swapCoontractTest", () => {
             //     CONST_PROGRAM,
             // });
 
-            createUserPdaData.addInitSendAllArray.signers = [userKeypair];
-            createUserPdaData.addInitSendAllArray.tx.feePayer = userKeypair.publicKey;
+            createUserPdaData.addInitSendAllArray.signers = [signer];
+            createUserPdaData.addInitSendAllArray.tx.feePayer = signer.publicKey;
             // depositSendAllArray.forEach((transactionDeposit) => {
             // });
             sendAllArray.push(createUserPdaData.addInitSendAllArray);

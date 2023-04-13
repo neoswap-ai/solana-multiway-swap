@@ -23,56 +23,63 @@ import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap'
 export const validateUserPdaItems = async (Data: {
     signer: PublicKey;
     program: Program;
-    user: PublicKey;
-    delegatedMint: PublicKey;
-    destinary: PublicKey;
-    swapDataAccount: PublicKey;
+    users: PublicKey[];
+    // delegatedMint: PublicKey;
+    // destinary: PublicKey;
+    swapData: SwapData;
     CONST_PROGRAM: string;
 }): Promise<{
-    userTransaction: {
+    usersValidateItemsTransactions: {
         tx: Transaction;
         signers?: Array<Signer> | undefined;
-    };
+    }[];
 }> => {
-    const { swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
-        swapDataAccount: Data.swapDataAccount,
-        CONST_PROGRAM: Data.CONST_PROGRAM,
-        provider: Data.program.provider as AnchorProvider,
-    });
-
-    const [userPda, userBump] = publicKey.findProgramAddressSync([Data.user.toBytes()], Data.program.programId);
-    console.log('userPda', userPda.toBase58());
-
-    const userPdaData = await Data.program.account.userPdaData.fetch(userPda);
-    console.log('userPdaData', userPdaData);
-
-    let delegatedItem = await getAssociatedTokenAddress(Data.delegatedMint, Data.user);
-    console.log('delegatedItem', delegatedItem.toBase58());
-
-    const validateUserPdaItemsIx = await Data.program.methods
-        .validateUserPdaItemsIx(swapDataAccount_seed, swapDataAccount_bump, userBump)
-        .accounts({
-            swapDataAccount: Data.swapDataAccount,
-            userPda,
-            user: Data.user,
-            signer: Data.signer,
-            // splTokenProgram: splAssociatedTokenAccountProgramId,
-            // systemProgram: web3.SystemProgram.programId,
-        })
-        .instruction();
-
-    let userTransaction: {
+    let usersValidateItemsTransactions: {
         tx: Transaction;
         signers?: Array<Signer> | undefined;
-    } = { tx: new Transaction().add(validateUserPdaItemsIx) };
-    // userTransaction = appendTransactionToArray({
-    //     mainArray: userTransaction,
-    //     itemToAdd: [validateUserPdaItemsIx],
+    }[] = [];
+    let instructions: TransactionInstruction[] = [];
+    // const { swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
+    //     swapDataAccount: Data.swapDataAccount,
+    //     CONST_PROGRAM: Data.CONST_PROGRAM,
+    //     provider: Data.program.provider as AnchorProvider,
     // });
+    const { swapDataAccount_bump, swapDataAccount_seed, swapDataAccount } = await getSeedFromData({
+        swapDataGiven: Data.swapData,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+    });
+    await Promise.all(
+        Data.users.map(async (user) => {
+            // if (item.isNft) {
+            const [userPda, userBump] = publicKey.findProgramAddressSync([user.toBytes()], Data.program.programId);
+            console.log('userPda', userPda.toBase58());
 
-    // const userTransaction = await convertAllTransaction(userTransaction);
+            // const userPdaData = await Data.program.account.userPdaData.fetch(userPda);
+            // console.log('userPdaData', userPdaData);
 
-    return { userTransaction };
+            // let delegatedItem = await getAssociatedTokenAddress(item.mint, item.owner);
+            // console.log('delegatedItem', delegatedItem.toBase58());
+
+            const validateUserPdaItemsIx = await Data.program.methods
+                .validateUserPdaItems(swapDataAccount_seed, swapDataAccount_bump, userBump)
+                .accounts({
+                    swapDataAccount,
+                    userPda,
+                    user,
+                    signer: Data.signer,
+                    // splTokenProgram: splAssociatedTokenAccountProgramId,
+                    // systemProgram: web3.SystemProgram.programId,
+                })
+                .instruction();
+
+            instructions.push(validateUserPdaItemsIx);
+        })
+    );
+
+    usersValidateItemsTransactions = await convertAllTransaction(
+        appendTransactionToArray({ mainArray: [new Transaction()], itemToAdd: instructions })
+    );
+    return { usersValidateItemsTransactions };
 };
 
 export default validateUserPdaItems;

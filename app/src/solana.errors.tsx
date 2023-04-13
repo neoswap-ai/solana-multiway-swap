@@ -46,6 +46,8 @@ export async function programCatchError(error: any) {
         console.error('unsupported \n', error);
     }
 }
+
+// 3012 - Account not initialized
 // ERROR {0xbc4 ransaction was not confirmed in 30.00 seconds
 //     #[msg("User not part oof the trade")]
 //     UserNotPartOfTrade,
