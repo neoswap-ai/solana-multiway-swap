@@ -51,7 +51,7 @@ describe("swapCoontractTest", () => {
             {
                 isNft: false,
                 isPresigning: false,
-                amount: new anchor.BN(-0.25 * nbuser * 10 ** 9),
+                amount: new anchor.BN(-0.25 * nbuser * LAMPORTS_PER_SOL),
                 destinary: new PublicKey("11111111111111111111111111111111"),
                 mint: new PublicKey("11111111111111111111111111111111"),
                 owner: signer.publicKey,
@@ -101,7 +101,7 @@ describe("swapCoontractTest", () => {
             swapData.items.push({
                 isNft: false,
                 isPresigning: false,
-                amount: new BN(0.25 * 10 ** 9),
+                amount: new BN(0.25 * LAMPORTS_PER_SOL),
                 mint: new PublicKey("11111111111111111111111111111111"),
                 status: ItemStatus.SolPending,
                 owner: userKeypair.publicKey,
@@ -270,6 +270,7 @@ describe("swapCoontractTest", () => {
             const { depositSendAllArray } = await NeoSwap.deposit({
                 provider: program.provider as anchor.AnchorProvider,
                 signer: userKeypair.publicKey,
+                user: userKeypair.publicKey,
                 swapDataAccount: pda,
                 CONST_PROGRAM,
             });
@@ -386,6 +387,7 @@ describe("swapCoontractTest", () => {
             const { depositSendAllArray } = await NeoSwap.deposit({
                 provider: program.provider as anchor.AnchorProvider,
                 signer: userKeypair.publicKey,
+                user: userKeypair.publicKey,
                 swapDataAccount: pda,
                 CONST_PROGRAM,
             });

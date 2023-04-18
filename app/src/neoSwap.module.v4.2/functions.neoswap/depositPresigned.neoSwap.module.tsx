@@ -5,9 +5,7 @@ import convertAllTransaction from '../utils.neoSwap/convertAllTransaction.neoswa
 import { getProgram } from '../utils.neoSwap/getProgram.neoswap';
 import { getSwapDataFromPDA } from '../utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { ItemStatus, TradeStatus } from '../utils.neoSwap/types.neo-swap/status.type.neoswap';
-import depositNft from './createInstruction/deposit.nft.neoswap.ci';
 import depositNftPresigned from './createInstruction/deposit.nft.presigned.neoswap.ci';
-import depositSol from './createInstruction/deposit.sol.neoswap.ci';
 import depositSolPresigned from './createInstruction/deposit.sol.presigned.neoswap.ci';
 
 /**
@@ -17,16 +15,16 @@ import depositSolPresigned from './createInstruction/deposit.sol.presigned.neosw
  * @param {PublicKey} signer user that deposits
  * @param {string} CONST_PROGRAM 4 character string to initialize the seed
  * @param {AnchorProvider} provider with active Connection
- * @return {Array<{tx: Transaction; signers?: Signer[] | undefined;}>}depositSendAllArray => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
+ * @return {Array<{tx: Transaction; signers?: Signer[] | undefined;}>}depositPresignedSendAll => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
  */
-export const deposit = async (Data: {
+export const depositPresigned = async (Data: {
     swapDataAccount: PublicKey;
-    user: PublicKey;
+    // user: PublicKey;
     signer: PublicKey;
     CONST_PROGRAM: string;
     provider: AnchorProvider;
 }): Promise<{
-    depositSendAllArray: Array<{
+    depositPresignedSendAll: Array<{
         tx: Transaction;
         signers?: Array<Signer> | undefined;
     }>;
@@ -53,72 +51,12 @@ export const deposit = async (Data: {
         // let swapDataItem = swapData.swapData.items[item];
         if (!swapDataItem.isPresigning) {
             // case false:
-            switch (swapDataItem.isNft) {
-                case true:
-                    if (
-                        swapDataItem.owner.toBase58() === Data.signer.toBase58() &&
-                        swapDataItem.status === ItemStatus.NFTPending
-                    ) {
-                        // console.log('not presigned is NFT', swapDataItem);
-                        // if (Data.signer)
-                        console.log('XXX - Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
-                        // test.push(i);
-                        // i++;
-                        // console.log('test', test);
-
-                        let { instruction: depositNFTInstruction, mintAta: createdMint } = await depositNft({
-                            program: program,
-                            signer: Data.signer,
-                            mint: swapDataItem.mint,
-                            swapDataAccount: Data.swapDataAccount,
-                            swapDataAccount_seed: swapData.swapDataAccount_seed,
-                            swapDataAccount_bump: swapData.swapDataAccount_bump,
-                            ataList,
-                        });
-                        ataList = createdMint;
-
-                        depositNFTInstruction.forEach((depositNftAta) => {
-                            depositInstruction.push(depositNftAta);
-                        });
-                        // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList NFT', ataList);
-                        console.log('depositNftInstruction added');
-                    }
-
-                    break;
-                case false:
-                    if (
-                        swapDataItem.owner.toBase58() === Data.signer.toBase58() &&
-                        swapDataItem.status === ItemStatus.SolPending
-                    ) {
-                        // console.log('not presigned not NFT', swapDataItem);
-                        // test.push(i);
-                        // i++;
-                        // console.log('test', test);
-
-                        console.log('XXXXXXX - Deposit sol item - XXXXXXX', ataList);
-                        const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSol({
-                            program: program,
-                            ataList,
-                            signer: Data.user,
-                            ItemToDeposit: swapDataItem,
-                            swapDataAccount: Data.swapDataAccount,
-                            swapDataAccount_seed: swapData.swapDataAccount_seed,
-                            swapDataAccount_bump: swapData.swapDataAccount_bump,
-                        });
-                        depositInstruction.push(...depositSolInstruction);
-                        ataList = createdMint;
-
-                        // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList SOL', ataList);
-                        console.log('depositSolinstruction added');
-                    }
-                    break;
-            }
         } else if (swapDataItem.isPresigning) {
             switch (swapDataItem.isNft) {
                 case true:
-                    // console.log('presigned  NFT',µ swapDataItem, swapDataItem.owner.toBase58(), Data.user.toBase58());
+                    // console.log('presigned  NFT',µ swapDataItem, swapDataItem.owner.toBase58(), swapDataItem.owner.toBase58());
                     if (
-                        swapDataItem.owner.toBase58() === Data.user.toBase58() &&
+                        // swapDataItem.owner.toBase58() === swapDataItem.owner.toBase58() &&
                         swapDataItem.status === ItemStatus.NFTPendingPresign
                     ) {
                         console.log('XXX - Presigned Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
@@ -133,7 +71,7 @@ export const deposit = async (Data: {
                             swapDataAccount: Data.swapDataAccount,
                             swapDataAccount_seed: swapData.swapDataAccount_seed,
                             swapDataAccount_bump: swapData.swapDataAccount_bump,
-                            user: Data.user,
+                            user: swapDataItem.owner,
                             ataList,
                         });
                         ataList = createdMint;
@@ -147,10 +85,10 @@ export const deposit = async (Data: {
 
                     break;
                 case false:
-                    // console.log('presigned not NFT', swapDataItem, swapDataItem.owner.toBase58(), Data.user.toBase58());
+                    // console.log('presigned not NFT', swapDataItem, swapDataItem.owner.toBase58(), swapDataItem.owner.toBase58());
 
                     if (
-                        swapDataItem.owner.toBase58() === Data.user.toBase58() &&
+                        // swapDataItem.owner.toBase58() === swapDataItem.owner.toBase58() &&
                         swapDataItem.status === ItemStatus.SolPendingPresig
                     ) {
                         // test.push(i);
@@ -162,7 +100,7 @@ export const deposit = async (Data: {
                             'signer:',
                             Data.signer.toBase58(),
                             'user:',
-                            Data.user.toBase58(),
+                            swapDataItem.owner.toBase58(),
                             // 'swapDataAccount:',
                             // Data.swapDataAccount,
                             ataList
@@ -171,7 +109,7 @@ export const deposit = async (Data: {
                             program: program,
                             ataList,
                             signer: Data.signer,
-                            user: Data.user,
+                            user: swapDataItem.owner,
                             swapDataAccount: Data.swapDataAccount,
                             swapDataAccount_seed: swapData.swapDataAccount_seed,
                             swapDataAccount_bump: swapData.swapDataAccount_bump,
@@ -196,8 +134,8 @@ export const deposit = async (Data: {
         mainArray: depositTransaction,
         itemToAdd: depositInstruction,
     });
-    const depositSendAllArray = await convertAllTransaction(depositTransaction);
-    return { depositSendAllArray };
+    const depositPresignedSendAll = await convertAllTransaction(depositTransaction);
+    return { depositPresignedSendAll };
 };
 
-export default deposit;
+export default depositPresigned;

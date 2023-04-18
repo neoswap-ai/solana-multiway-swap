@@ -15,8 +15,9 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
  * @return {TransactionInstruction[]}instruction => list of instruction created for depositing NFT
  * @return {PublicKey[]}mintAta => updated list of ATA created until now
  */
-export async function depositNft(Data: {
+export async function depositNftPresigned(Data: {
     program: Program;
+    user: PublicKey;
     signer: PublicKey;
     mint: PublicKey;
     swapDataAccount: PublicKey;
@@ -27,10 +28,11 @@ export async function depositNft(Data: {
     let instruction: TransactionInstruction[] = [];
     let mintAta: PublicKey[] = Data.ataList;
     // console.log('mintAta', mintAta);
+    const [userPda, userBump] = PublicKey.findProgramAddressSync([Data.user.toBytes()], Data.program.programId);
 
     const { mintAta: userMintAta, instruction: ixCreateUserMintAta } = await findOrCreateAta({
         connection: Data.program.provider.connection,
-        owner: Data.signer,
+        owner: Data.user,
         mint: Data.mint,
         signer: Data.signer,
     });
@@ -43,14 +45,14 @@ export async function depositNft(Data: {
     });
 
     if (ixCreateUserMintAta && addUserTx) {
-        console.log('CreateUserAta Deposit Tx added', userMintAta);
+        console.log('CreateUserAta Deposit Tx added', userMintAta.toBase58());
         ixCreateUserMintAta.forEach((ixCreateUserMintAtaItem) => {
             instruction.push(ixCreateUserMintAtaItem);
         });
         mintAta.push(userMintAta);
     }
 
-    const { mintAta: pdaMintAta, instruction: ixCreatePdaMintAta } = await findOrCreateAta({
+    const { mintAta: swapDataAccountAta, instruction: ixCreateswapDataAccountAta } = await findOrCreateAta({
         connection: Data.program.provider.connection,
         owner: Data.swapDataAccount,
         mint: Data.mint,
@@ -59,34 +61,43 @@ export async function depositNft(Data: {
 
     let addPdaTx = true;
     mintAta.forEach((ata) => {
-        if (ata.equals(pdaMintAta)) {
+        if (ata.equals(swapDataAccountAta)) {
             addPdaTx = false;
         }
     });
-    if (ixCreatePdaMintAta && addPdaTx) {
-        console.log('CreatePdaAta Deposit Tx added', pdaMintAta.toBase58());
-        ixCreatePdaMintAta.forEach((ixCreatePdaMintAtaItem) => {
-            instruction.push(ixCreatePdaMintAtaItem);
+    if (ixCreateswapDataAccountAta && addPdaTx) {
+        console.log('CreatePdaAta Deposit Tx added', swapDataAccountAta.toBase58());
+        ixCreateswapDataAccountAta.forEach((ixCreateswapDataAccountAtaItem) => {
+            instruction.push(ixCreateswapDataAccountAtaItem);
         });
-        mintAta.push(pdaMintAta);
+        mintAta.push(swapDataAccountAta);
     }
 
     const depositIx = await Data.program.methods
-        .depositNft(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
+        .depositNftPresigned(Data.swapDataAccount_seed, Data.swapDataAccount_bump, userBump)
         .accounts({
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             swapDataAccount: Data.swapDataAccount,
             signer: Data.signer,
-            itemFromDeposit: userMintAta,
-            itemToDeposit: pdaMintAta,
+            user:Data.user,
+            userPda,
+            delegatedItemAta: userMintAta,
+            swapDataAccountAta,
         })
         .instruction();
 
     instruction.push(depositIx);
-    console.log('from: ', userMintAta.toBase58(), '\nto: ', pdaMintAta.toBase58(), '\nmint: ', Data.mint.toBase58());
-    console.log('mintAta', mintAta);
+    console.log(
+        'from: ',
+        userMintAta.toBase58(),
+        '\nto: ',
+        swapDataAccountAta.toBase58(),
+        '\nmint: ',
+        Data.mint.toBase58()
+    );
+    // console.log('mintAta', mintAta);
 
     return { instruction, mintAta };
 }
-export default depositNft;
+export default depositNftPresigned;

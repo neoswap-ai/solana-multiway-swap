@@ -48,6 +48,7 @@ export async function programCatchError(error: any) {
 }
 
 // 3012 - Account not initialized
+// panicked at 'called `COption::unwrap()` on a `COption::None` value' -> not delegated
 // ERROR {0xbc4 ransaction was not confirmed in 30.00 seconds
 //     #[msg("User not part oof the trade")]
 //     UserNotPartOfTrade,

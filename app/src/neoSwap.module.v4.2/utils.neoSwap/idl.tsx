@@ -80,56 +80,6 @@ export const idl = {
             ],
         },
         {
-            name: 'initializeAddPresign',
-            accounts: [
-                {
-                    name: 'swapDataAccount',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'userPda',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'delegatedItem',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'user',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'signer',
-                    isMut: true,
-                    isSigner: true,
-                },
-            ],
-            args: [
-                {
-                    name: 'seed',
-                    type: 'bytes',
-                },
-                {
-                    name: 'bump',
-                    type: 'u8',
-                },
-                {
-                    name: 'userBump',
-                    type: 'u8',
-                },
-                {
-                    name: 'tradeToAdd',
-                    type: {
-                        defined: 'NftSwapItem',
-                    },
-                },
-            ],
-        },
-        {
             name: 'validateUserPdaItems',
             accounts: [
                 {
@@ -346,12 +296,22 @@ export const idl = {
                     isSigner: true,
                 },
                 {
-                    name: 'itemFromDeposit',
+                    name: 'user',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'userPda',
                     isMut: true,
                     isSigner: false,
                 },
                 {
-                    name: 'itemToDeposit',
+                    name: 'delegatedItemAta',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccountAta',
                     isMut: true,
                     isSigner: false,
                 },
@@ -365,6 +325,10 @@ export const idl = {
                     name: 'bump',
                     type: 'u8',
                 },
+                {
+                    name: 'userBump',
+                    type: 'u8',
+                },
             ],
         },
         {
@@ -376,12 +340,32 @@ export const idl = {
                     isSigner: false,
                 },
                 {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
                     name: 'swapDataAccount',
                     isMut: true,
                     isSigner: false,
                 },
                 {
+                    name: 'swapDataAccountWsol',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'user',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
                     name: 'userPda',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'userWsol',
                     isMut: true,
                     isSigner: false,
                 },
@@ -398,6 +382,10 @@ export const idl = {
                 },
                 {
                     name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'userBump',
                     type: 'u8',
                 },
             ],
@@ -1199,6 +1187,9 @@ export const idl = {
                     },
                     {
                         name: 'MinSupMax',
+                    },
+                    {
+                        name: 'NotDelegated',
                     },
                 ],
             },

@@ -52,9 +52,9 @@ pub mod neo_swap {
         //     msg!("item added with status NFTPending");
         // } else {
         //     item_to_add[0].destinary = Pubkey::from_str(
-        //         "11111111111111111111111111111111"
+        //         "So11111111111111111111111111111111111111112"
         //     ).unwrap();
-        //     item_to_add[0].mint = Pubkey::from_str("11111111111111111111111111111111").unwrap();
+        //     item_to_add[0].mint = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
 
         //     if item_to_add[0].amount.is_positive() {
         //         item_to_add[0].status = ItemStatus::SolPending.to_u8();
@@ -126,8 +126,9 @@ pub mod neo_swap {
                 }
             }
             if item_to_add.destinary
-                != Pubkey::from_str("11111111111111111111111111111111").unwrap()
-                || item_to_add.mint != Pubkey::from_str("11111111111111111111111111111111").unwrap()
+                != Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap()
+                || item_to_add.mint
+                    != Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap()
             {
                 return Err(error!(MYERROR::UnexpectedData).into());
             }
@@ -156,84 +157,84 @@ pub mod neo_swap {
         Ok(())
     }
 
-    pub fn initialize_add_presign(
-        ctx: Context<InitializeAddPresign>,
-        _seed: Vec<u8>,
-        _bump: u8,
-        _user_bump: u8,
-        trade_to_add: NftSwapItem,
-    ) -> Result<()> {
-        let swap_data_account = &mut ctx.accounts.swap_data_account;
+    // pub fn initialize_add_presign(
+    //     ctx: Context<InitializeAddPresign>,
+    //     _seed: Vec<u8>,
+    //     _bump: u8,
+    //     _user_bump: u8,
+    //     trade_to_add: NftSwapItem,
+    // ) -> Result<()> {
+    //     let swap_data_account = &mut ctx.accounts.swap_data_account;
 
-        require!(
-            swap_data_account.status == TradeStatus::Initializing.to_u8(),
-            MYERROR::UnexpectedState
-        );
+    //     require!(
+    //         swap_data_account.status == TradeStatus::Initializing.to_u8(),
+    //         MYERROR::UnexpectedState
+    //     );
 
-        let mut item_to_add: NftSwapItem = trade_to_add;
+    //     let mut item_to_add: NftSwapItem = trade_to_add;
 
-        if item_to_add.is_presigning == false {
-            return Err(error!(MYERROR::OnlyPresign).into());
-        }
+    //     if item_to_add.is_presigning == false {
+    //         return Err(error!(MYERROR::OnlyPresign).into());
+    //     }
 
-        // Write according status to item
-        if item_to_add.is_nft {
-            item_to_add.status = ItemStatus::NFTPendingPresign.to_u8();
+    //     // Write according status to item
+    //     if item_to_add.is_nft {
+    //         item_to_add.status = ItemStatus::NFTPendingPresign.to_u8();
 
-            if item_to_add.amount.is_negative() {
-                return Err(error!(MYERROR::UnexpectedData).into());
-            }
-            // if ctx.accounts.delegated_item.owner!=item_to_add.owner {
-            //     return Err(error!(MYERROR::IncorrectOwner).into());
-            // }
-            // if !ctx.accounts.delegated_item.delegate.unwrap().eq(&ctx.accounts.user_pda.key()) {
-            //     return Err(error!(MYERROR::NotDelegatedToUserPda).into());
-            // }
-            if ctx.accounts.delegated_item.delegated_amount < item_to_add.amount.unsigned_abs() {
-                return Err(error!(MYERROR::AmountIncorrect).into());
-            }
-            msg!("NFT item added with status NFTPendingPresign");
-        } else {
-            //Check if already one user has Sol item
-            for item_id in 0..swap_data_account.items.len() {
-                if swap_data_account.items[item_id].is_nft == false
-                    && swap_data_account.items[item_id]
-                        .owner
-                        .eq(&item_to_add.owner)
-                {
-                    return Err(error!(MYERROR::UnexpectedData).into());
-                }
-            }
-            if item_to_add.destinary
-                != Pubkey::from_str("11111111111111111111111111111111").unwrap()
-                || item_to_add.mint
-                    != Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap()
-            {
-                return Err(error!(MYERROR::UnexpectedData).into());
-            }
+    //         if item_to_add.amount.is_negative() {
+    //             return Err(error!(MYERROR::UnexpectedData).into());
+    //         }
+    //         // if ctx.accounts.delegated_item.owner!=item_to_add.owner {
+    //         //     return Err(error!(MYERROR::IncorrectOwner).into());
+    //         // }
+    //         // if !ctx.accounts.delegated_item.delegate.unwrap().eq(&ctx.accounts.user_pda.key()) {
+    //         //     return Err(error!(MYERROR::NotDelegatedToUserPda).into());
+    //         // }
+    //         if ctx.accounts.delegated_item.delegated_amount < item_to_add.amount.unsigned_abs() {
+    //             return Err(error!(MYERROR::AmountIncorrect).into());
+    //         }
+    //         msg!("NFT item added with status NFTPendingPresign");
+    //     } else {
+    //         //Check if already one user has Sol item
+    //         for item_id in 0..swap_data_account.items.len() {
+    //             if swap_data_account.items[item_id].is_nft == false
+    //                 && swap_data_account.items[item_id]
+    //                     .owner
+    //                     .eq(&item_to_add.owner)
+    //             {
+    //                 return Err(error!(MYERROR::UnexpectedData).into());
+    //             }
+    //         }
+    //         if item_to_add.destinary
+    //             != Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap()
+    //             || item_to_add.mint
+    //                 != Pubkey::from_str("SoSo11111111111111111111111111111111111111112111111112").unwrap()
+    //         {
+    //             return Err(error!(MYERROR::UnexpectedData).into());
+    //         }
 
-            if item_to_add.amount.is_positive() {
-                item_to_add.status = ItemStatus::SolPendingPresign.to_u8();
-                msg!("SOL item added with status SolPendingPresign");
-            } else {
-                // no presigning on receiving Sol
-                return Err(error!(MYERROR::AmountIncorrect).into());
-            }
-            // if !ctx.accounts.delegated_item.delegate.unwrap().eq(&ctx.accounts.user_pda.key()){
-            //     return Err(error!(MYERROR::NotDelegatedToUserPda).into());
-            // }
-            if ctx.accounts.user_pda.amount_to_topup < item_to_add.amount.unsigned_abs()
-                || ctx.accounts.delegated_item.delegated_amount < item_to_add.amount.unsigned_abs()
-            {
-                return Err(error!(MYERROR::NotEnoughFunds).into());
-            }
-        }
+    //         if item_to_add.amount.is_positive() {
+    //             item_to_add.status = ItemStatus::SolPendingPresign.to_u8();
+    //             msg!("SOL item added with status SolPendingPresign");
+    //         } else {
+    //             // no presigning on receiving Sol
+    //             return Err(error!(MYERROR::AmountIncorrect).into());
+    //         }
+    //         // if !ctx.accounts.delegated_item.delegate.unwrap().eq(&ctx.accounts.user_pda.key()){
+    //         //     return Err(error!(MYERROR::NotDelegatedToUserPda).into());
+    //         // }
+    //         if ctx.accounts.user_pda.amount_to_topup < item_to_add.amount.unsigned_abs()
+    //             || ctx.accounts.delegated_item.delegated_amount < item_to_add.amount.unsigned_abs()
+    //         {
+    //             return Err(error!(MYERROR::NotEnoughFunds).into());
+    //         }
+    //     }
 
-        // Write according Data into Swap's PDA
-        swap_data_account.items.push(item_to_add);
+    //     // Write according Data into Swap's PDA
+    //     swap_data_account.items.push(item_to_add);
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     pub fn validate_user_pda_items(
         ctx: Context<VerifyUserPda>,
@@ -293,26 +294,38 @@ pub mod neo_swap {
                                 .unwrap();
                             ctx.accounts.swap_data_account.items[item_id].status =
                                 ItemStatus::SolPendingPresign.to_u8();
-                            msg!("Found positive sol to send {} status changed to SolPendingPresign", item_id);
+                            msg!(
+                                "Found positive sol to send {} status changed to SolPendingPresign",
+                                item_id
+                            );
                         } else {
                             return Err(error!(MYERROR::PresignCantBeReceiveSol).into());
                         }
                     }
-                    
-                    msg!("status : {}",ctx.accounts.swap_data_account.items[item_id].status);
-                    list_items.push(ctx.accounts.swap_data_account.items[item_id].clone());
 
+                    msg!(
+                        "status : {}",
+                        ctx.accounts.swap_data_account.items[item_id].status
+                    );
+                    list_items.push(ctx.accounts.swap_data_account.items[item_id].clone());
                 } else if ctx.accounts.swap_data_account.items[item_id]
                     .destinary
                     .eq(ctx.accounts.user.key)
                 {
-                    msg!("{} Found destinary presigning item {}", item_id,ctx.accounts.swap_data_account.items[item_id].mint);
+                    msg!(
+                        "{} Found destinary presigning item {}",
+                        item_id,
+                        ctx.accounts.swap_data_account.items[item_id].mint
+                    );
                     for user_pda_item_id in 0..ctx.accounts.user_pda.items_to_buy.len() {
                         if ctx.accounts.user_pda.items_to_buy[user_pda_item_id]
                             .mint
                             .eq(&ctx.accounts.swap_data_account.items[item_id].mint)
                         {
-                            msg!("amount max updated with {}",ctx.accounts.user_pda.items_to_buy[user_pda_item_id].amount_maxi);
+                            msg!(
+                                "amount max updated with {}",
+                                ctx.accounts.user_pda.items_to_buy[user_pda_item_id].amount_maxi
+                            );
                             amount_max +=
                                 ctx.accounts.user_pda.items_to_buy[user_pda_item_id].amount_maxi;
                         }
@@ -356,8 +369,8 @@ pub mod neo_swap {
     pub fn validate_presigning_swap(
         ctx: Context<VerifyPresigning>,
         _seed: Vec<u8>,
-        _bump: u8
-        ) -> Result<()> {
+        _bump: u8,
+    ) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status
                 == TradeStatus::WaitingToValidatePresigning.to_u8(),
@@ -367,17 +380,19 @@ pub mod neo_swap {
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             // msg!("item_id {}",item_id);
             if ctx.accounts.swap_data_account.items[item_id].is_presigning == true {
-                if !(ctx.accounts.swap_data_account.items[item_id].status == ItemStatus::NFTPendingPresign.to_u8()
-                || ctx.accounts.swap_data_account.items[item_id].status == ItemStatus::SolPendingPresign.to_u8())
-            {
-                msg!(
-                    "{} belongs to {:?}, was not validated {} ",
-                    ctx.accounts.swap_data_account.items[item_id].mint,
-                    ctx.accounts.swap_data_account.items[item_id].owner,
-                    ctx.accounts.swap_data_account.items[item_id].status
-                );
-                return Err(error!(MYERROR::NotAllValidated).into());
-            }
+                if !(ctx.accounts.swap_data_account.items[item_id].status
+                    == ItemStatus::NFTPendingPresign.to_u8()
+                    || ctx.accounts.swap_data_account.items[item_id].status
+                        == ItemStatus::SolPendingPresign.to_u8())
+                {
+                    msg!(
+                        "{} belongs to {:?}, was not validated {} ",
+                        ctx.accounts.swap_data_account.items[item_id].mint,
+                        ctx.accounts.swap_data_account.items[item_id].owner,
+                        ctx.accounts.swap_data_account.items[item_id].status
+                    );
+                    return Err(error!(MYERROR::NotAllValidated).into());
+                }
             }
         }
 
@@ -598,61 +613,83 @@ pub mod neo_swap {
         ctx: Context<DepositNftPresigned>,
         _seed: Vec<u8>,
         _bump: u8,
+        user_bump: u8,
     ) -> Result<()> {
-        let swap_data_account = &ctx.accounts.swap_data_account;
-
-        let token_program = &ctx.accounts.token_program;
-        let signer = &ctx.accounts.signer;
-        let item_to_deposit = &ctx.accounts.item_to_deposit;
-        let item_from_deposit = &ctx.accounts.item_from_deposit;
+        // ctx.accounts.delegated_item_ata.delegate.unwrap().eq(&ctx.accounts.user_pda.key);
+        // let swap_data_account = &ctx.accounts.swap_data_account;
+        // let item_to_deposit = &ctx.accounts.swap_data_account_ata;
 
         require!(
-            swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
+            ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
         );
 
         let mut transfered: bool = false;
-
+        let mut removed: bool = false;
+        msg!(
+            "delegated item {} with delegated {} amount {}",
+            ctx.accounts.delegated_item_ata.mint,
+            ctx.accounts.delegated_item_ata.delegate.unwrap(),
+            ctx.accounts.delegated_item_ata.delegated_amount
+        );
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if ctx.accounts.swap_data_account.items[item_id].is_nft
                 && ctx.accounts.swap_data_account.items[item_id]
                     .mint
-                    .eq(&item_to_deposit.mint)
+                    .eq(&ctx.accounts.delegated_item_ata.mint)
                 && ctx.accounts.swap_data_account.items[item_id].status
-                    == ItemStatus::NFTPending.to_u8()
+                    == ItemStatus::NFTPendingPresign.to_u8()
             {
-                // Transfer according item to Swap's PDA ATA
-                let ix = spl_token::instruction::transfer(
-                    token_program.key,
-                    &item_from_deposit.key(),
-                    &item_to_deposit.key(),
-                    &signer.key(),
-                    &[&signer.key()],
+                let seeds = &[&ctx.accounts.user.key().to_bytes()[..], &[user_bump]];
+                let signer = &[&seeds[..]];
+
+                let cpi_ctx = CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    Transfer {
+                        from: ctx.accounts.delegated_item_ata.to_account_info(),
+                        to: ctx.accounts.swap_data_account_ata.to_account_info(),
+                        authority: ctx.accounts.user_pda.to_account_info(),
+                    },
+                    signer,
+                );
+                token::transfer(
+                    cpi_ctx,
                     ctx.accounts.swap_data_account.items[item_id]
                         .amount
                         .unsigned_abs(),
                 )?;
-
-                invoke(
-                    &ix,
-                    &[
-                        item_from_deposit.to_account_info(),
-                        item_to_deposit.to_account_info(),
-                        signer.to_account_info(),
-                        token_program.to_account_info(),
-                    ],
-                )?;
-
                 //update item status to NFTDeposited
                 ctx.accounts.swap_data_account.items[item_id].status =
                     ItemStatus::NFTDeposited.to_u8();
                 transfered = true;
                 msg!("NFTDeposited");
+
+                for presigned_item_id in 0..ctx.accounts.user_pda.items_to_sell.len() {
+                    if ctx.accounts.user_pda.items_to_sell[presigned_item_id]
+                        .mint
+                        .eq(&ctx.accounts.swap_data_account.items[item_id].mint)
+                    {
+                        msg!(
+                            "removed {} from userPda",
+                            ctx.accounts.user_pda.items_to_sell[presigned_item_id].mint
+                        );
+                        ctx.accounts
+                            .user_pda
+                            .items_to_sell
+                            .remove(presigned_item_id);
+                        removed = true;
+                        break;
+                    }
+                }
+
                 break;
             }
         }
 
+        if removed == false {
+            return Err(error!(MYERROR::PdaDataNotRemoved).into());
+        }
         if transfered == false {
             return Err(error!(MYERROR::NoSend).into());
         }
@@ -671,6 +708,7 @@ pub mod neo_swap {
         ctx: Context<DepositSolPresigned>,
         _seed: Vec<u8>,
         _bump: u8,
+        user_bump: u8,
     ) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
@@ -683,34 +721,96 @@ pub mod neo_swap {
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if !ctx.accounts.swap_data_account.items[item_id].is_nft
                 && ctx.accounts.swap_data_account.items[item_id].status
-                    == ItemStatus::SolPending.to_u8()
+                    == ItemStatus::SolPendingPresign.to_u8()
                 && ctx.accounts.swap_data_account.items[item_id]
                     .owner
-                    .eq(ctx.accounts.signer.key)
+                    .eq(ctx.accounts.user.key)
                 && transfered == false
             {
                 if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
                     // Transfer lamports to Escrow
-                    let ix = anchor_lang::solana_program::system_instruction::transfer(
-                        &ctx.accounts.signer.key(),
-                        &ctx.accounts.swap_data_account.key(),
+                    // let ix = anchor_lang::solana_program::system_instruction::transfer(
+                    //     &ctx.accounts.signer.key(),
+                    //     &ctx.accounts.swap_data_account.key(),
+                    //     ctx.accounts.swap_data_account.items[item_id]
+                    //         .amount
+                    //         .unsigned_abs(),
+                    // );
+                    // invoke_signed(
+                    //     &ix,
+                    //     &[
+                    //         ctx.accounts.signer.to_account_info(),
+                    //         ctx.accounts.swap_data_account.to_account_info(),
+                    //     ],
+                    // )?;
+                    msg!(
+                        "sent {} tokens from {} to {}",
                         ctx.accounts.swap_data_account.items[item_id]
                             .amount
                             .unsigned_abs(),
+                        ctx.accounts.user_wsol.key(),
+                        ctx.accounts.swap_data_account_wsol.key()
                     );
-                    invoke(
-                        &ix,
-                        &[
-                            ctx.accounts.signer.to_account_info(),
-                            ctx.accounts.swap_data_account.to_account_info(),
-                        ],
-                    )?;
+                    // msg!("user balance {:?}",ctx.accounts.swap_data_account.items[item_id].owner);
+                    msg!("user balance {:?}", ctx.accounts.user.lamports);
+                    msg!(
+                        "user_pda balance {:?}",
+                        ctx.accounts.user_pda.to_account_info().lamports
+                    );
+                    msg!("user_wsol1 balance {}", ctx.accounts.user_wsol.amount);
+                    msg!(
+                        "user_wsol2 balance {}",
+                        ctx.accounts.user_wsol.delegated_amount
+                    );
+                    msg!(
+                        "user_wsol3 balance {}",
+                        ctx.accounts.swap_data_account.items[item_id]
+                            .amount
+                            .unsigned_abs()
+                    );
 
-                    //update status to 2 (Claimed)
+                    let seeds = &[&ctx.accounts.user_pda.owner.to_bytes()[..], &[user_bump]];
+                    let signer = &[&seeds[..]];
+
+                    let cpi_ctx = CpiContext::new_with_signer(
+                        ctx.accounts.token_program.to_account_info(),
+                        Transfer {
+                            from: ctx.accounts.user_wsol.to_account_info(),
+                            to: ctx.accounts.swap_data_account_wsol.to_account_info(),
+                            authority: ctx.accounts.user_pda.to_account_info(),
+                        },
+                        signer,
+                    );
+
+                    token::transfer(
+                        cpi_ctx,
+                        ctx.accounts.swap_data_account.items[item_id]
+                            .amount
+                            .unsigned_abs(),
+                    )?; //.checked_div(10).unwrap())?;
+                        // token::transfer(cpi_ctx,1)?;
+                        //update status to SolDeposited
                     ctx.accounts.swap_data_account.items[item_id].status =
                         ItemStatus::SolDeposited.to_u8();
                     transfered = true;
-                    msg!("SolDeposited");
+
+                    ctx.accounts
+                        .user_pda
+                        .amount_to_topup
+                        .checked_sub(
+                            ctx.accounts.swap_data_account.items[item_id]
+                                .amount
+                                .unsigned_abs(),
+                        )
+                        .unwrap();
+                    ctx.accounts.user_pda.reload()?;
+                    msg!(
+                        "SolDeposited and removed {} from amount_to_topup, left {}",
+                        ctx.accounts.swap_data_account.items[item_id]
+                            .amount
+                            .unsigned_abs(),
+                        ctx.accounts.user_pda.amount_to_topup
+                    );
                     break;
                 } else {
                     return Err(error!(MYERROR::NoSend).into());
@@ -1288,7 +1388,7 @@ pub mod neo_swap {
             return Err(error!(MYERROR::IncorrectAccount));
         }
 
-        ctx.accounts.user_pda.owner = ctx.accounts.signer.key();
+        ctx.accounts.user_pda.owner = ctx.accounts.user.key();
         ctx.accounts.user_pda.amount_to_topup = 0;
         ctx.accounts.user_pda.items_to_sell = [].to_vec();
         ctx.accounts.user_pda.items_to_buy = [].to_vec();
@@ -1314,24 +1414,29 @@ pub mod neo_swap {
         ) {
             return Err(error!(MYERROR::AlreadyExist));
         }
+
         // ctx.accounts.signer_wsol.delegated_amount
-        let approve_ix = spl_token::instruction::approve(
-            &token::ID,
-            &ctx.accounts.signer_wsol.key(),
-            &ctx.accounts.user_pda.key(),
-            &ctx.accounts.signer.key(),
-            &[&ctx.accounts.signer.key()],
-            item_to_add.amount_maxi,
-        )
-        .unwrap();
-        invoke(
-            &approve_ix,
-            &[
-                ctx.accounts.signer_wsol.to_account_info(),
-                ctx.accounts.user_pda.to_account_info(),
-                ctx.accounts.signer.to_account_info(),
-            ],
-        )?;
+        // let approve_ix = spl_token::instruction::approve(
+        //     &token::ID,
+        //     &ctx.accounts.signer_wsol.key(),
+        //     &ctx.accounts.user_pda.key(),
+        //     &ctx.accounts.signer.key(),
+        //     &[&ctx.accounts.signer.key()],
+        //     item_to_add.amount_maxi,
+        // )
+        // .unwrap();
+        // invoke(
+        //     &approve_ix,
+        //     &[
+        //         ctx.accounts.signer_wsol.to_account_info(),
+        //         ctx.accounts.user_pda.to_account_info(),
+        //         ctx.accounts.signer.to_account_info(),
+        //     ],
+        // )?;
+        // if item_to_add.amount_maxi > ctx.accounts.user_pda.amount_to_topup {
+        //     return Err(error!(MYERROR::ItemTooExpensive));
+
+        // }
         ctx.accounts.user_pda.items_to_buy.push(item_to_add.clone()); //= [&ctx.accounts.user_pda.items_to_buy[..],&[item_to_add.clone()][..]].concat();
         msg!(
             "token {} was added to userPda to buy with a maximum  exchange value of {}",
@@ -1371,12 +1476,15 @@ pub mod neo_swap {
                 ctx.accounts.signer.to_account_info(),
             ],
         )?;
+        ctx.accounts.item_to_delegate.reload()?;
+
         msg!(
             "{} token {} owned by {} was delegated to {}",
             1,
             ctx.accounts.item_to_delegate.mint,
             ctx.accounts.signer.key(),
-            ctx.accounts.user_pda.key()
+            ctx.accounts.user_pda.key(),
+            // ctx.accounts.item_to_delegate.delegate.unwrap()
         );
 
         ctx.accounts
@@ -1397,25 +1505,38 @@ pub mod neo_swap {
         _bump: u8,
         amount_to_topup: u64,
     ) -> Result<()> {
-        msg!("delegated amount {}", ctx.accounts.signer_wsol.owner);
+        msg!("delegated account {}", ctx.accounts.signer_wsol.key());
+        msg!(
+            "delegated delegated_amount {}",
+            ctx.accounts.signer_wsol.delegated_amount
+        );
+        msg!("delegated amount {}", ctx.accounts.signer_wsol.amount);
         let mut amount_to_approve: u64 = 0;
 
         if ctx.accounts.signer_wsol.delegated_amount > 0 {
             //need reduce delegation
             amount_to_approve = ctx.accounts.signer_wsol.delegated_amount;
+            msg!(
+                "reduce delegation amount_to_approve {} delegated already",
+                amount_to_approve
+            )
         } else if ctx.accounts.signer_wsol.delegated_amount == 0 {
             // proceed to next
         } else if ctx.accounts.signer_wsol.delegated_amount == amount_to_topup {
-            //nothing to change
             return Err(error!(MYERROR::AmountWantedEqualToAlready));
         } else {
             return Err(error!(MYERROR::AmountIncorrect));
         }
 
+        msg!("amount_to_topup amount {}", amount_to_topup);
+        if ctx.accounts.signer_wsol.amount < amount_to_topup {
+            return Err(error!(MYERROR::NotEnoughFunds));
+        }
         // for items_to_buy in ctx.accounts.user_pda.items_to_buy.clone().into_iter() {
         //     amount_to_approve += items_to_buy.amount_maxi
         // }
         amount_to_approve += amount_to_topup;
+        msg!("amount_to_approve {} ", amount_to_approve);
 
         //need increase delegation
         let approve_ix = spl_token::instruction::approve(
@@ -1437,17 +1558,14 @@ pub mod neo_swap {
         )?;
         msg!(
             "{} token {} owned by {} was delegated to {}",
-            amount_to_topup,
+            amount_to_approve,
             ctx.accounts.signer_wsol.mint,
             ctx.accounts.signer.key(),
             ctx.accounts.user_pda.key()
         );
 
         ctx.accounts.user_pda.amount_to_topup = amount_to_topup;
-        msg!(
-            "userPda was updated with {} lamports to topup",
-            amount_to_topup
-        );
+
         Ok(())
     }
 
@@ -1640,7 +1758,7 @@ pub struct DepositSol<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8)]
+#[instruction(seed: Vec<u8>, bump: u8, user_bump: u8)]
 pub struct DepositNftPresigned<'info> {
     #[account()]
     system_program: Program<'info, System>,
@@ -1648,19 +1766,29 @@ pub struct DepositNftPresigned<'info> {
     token_program: Program<'info, Token>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
+
     #[account(mut)]
     signer: Signer<'info>,
+    #[account()]
+    user: AccountInfo<'info>,
     #[account(
         mut,
-        constraint = item_from_deposit.mint.eq(&item_to_deposit.mint) @ MYERROR::MintIncorrect,
-        constraint = item_from_deposit.owner.eq(&signer.key()) @ MYERROR::IncorrectOwner
+        seeds = [&user.key().to_bytes()[..]], 
+        bump = user_bump,
     )]
-    item_from_deposit: Account<'info, TokenAccount>,
+    user_pda: Box<Account<'info, UserPdaData>>,
     #[account(
         mut,
-        constraint = item_to_deposit.owner.eq(&swap_data_account.to_account_info().key())  @ MYERROR::IncorrectOwner
+        constraint = delegated_item_ata.mint.eq(&swap_data_account_ata.mint) @ MYERROR::MintIncorrect,
+        constraint = delegated_item_ata.delegate.unwrap().eq(&user_pda.key()) @ MYERROR::NotDelegated,
+        constraint = delegated_item_ata.owner.eq(&user.key()) @ MYERROR::IncorrectOwner
     )]
-    item_to_deposit: Account<'info, TokenAccount>,
+    delegated_item_ata: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        constraint = swap_data_account_ata.owner.eq(&swap_data_account.to_account_info().key())  @ MYERROR::IncorrectOwner
+    )]
+    swap_data_account_ata: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]
@@ -1668,14 +1796,32 @@ pub struct DepositNftPresigned<'info> {
 pub struct DepositSolPresigned<'info> {
     #[account()]
     system_program: Program<'info, System>,
+    #[account()]
+    token_program: Program<'info, Token>,
     #[account(mut, seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(
         mut,
-        seeds = [&signer.key().to_bytes()[..]], 
+        constraint = swap_data_account_wsol.owner.eq(&swap_data_account.to_account_info().key())  @ MYERROR::IncorrectOwner,
+        constraint = swap_data_account_wsol.is_native() @ MYERROR::MintIncorrect,
+    )]
+    swap_data_account_wsol: Account<'info, TokenAccount>,
+    #[account(mut,
+        constraint = user.key().eq(&user_pda.owner)  @ MYERROR::IncorrectOwner,
+    )]
+    user: AccountInfo<'info>,
+    #[account(
+        mut,
+        seeds = [&user.key().to_bytes()[..]], 
         bump = user_bump,
     )]
     user_pda: Box<Account<'info, UserPdaData>>,
+    #[account(
+        mut,
+        constraint = user_wsol.owner.eq(&user.key())  @ MYERROR::IncorrectOwner,
+        constraint = user_wsol.is_native() @ MYERROR::MintIncorrect,
+    )]
+    user_wsol: Account<'info, TokenAccount>,
     #[account(mut)]
     signer: Signer<'info>,
 }
@@ -2144,5 +2290,8 @@ pub enum MYERROR {
     PresignCantBeReceiveSol,
     #[msg("minimum to sell bigger than max to buy")]
     MinSupMax,
-    
+    #[msg("Item not delegated to it's user PDA")]
+    NotDelegated,
+    #[msg("item was not found in the User PDA to be removed")]
+    PdaDataNotRemoved,
 }

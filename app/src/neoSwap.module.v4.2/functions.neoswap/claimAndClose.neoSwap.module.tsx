@@ -3,8 +3,10 @@ import { PublicKey, Signer, Transaction } from '@solana/web3.js';
 import claim from './subFunctions/claim.neoSwap.sub';
 import validateDeposit from './subFunctions/validateDeposit.neoSwap.sub';
 import validateClaimed from './subFunctions/validateClaimed.neoSwap.sub';
+import depositPresigned from './depositPresigned.neoSwap.module';
 import { getProgram } from '../utils.neoSwap/getProgram.neoswap';
 import SwapData from '../utils.neoSwap/types.neo-swap/swapData.types.neoswap';
+import hasUserDepositedBeforePresigned from './hasUserDepositedBeforePresigned.neoSwap.module';
 
 /**
  * @notice creates claiming & closing instructions.
@@ -30,6 +32,24 @@ export const claimAndClose = async (Data: {
     let swapData = (await program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
     console.log('swapData', swapData);
 
+    // validate not presigned
+    const is_non_presigned_all_deposited = await hasUserDepositedBeforePresigned({
+        provider: program.provider as AnchorProvider,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+        swapDataAccount: Data.swapDataAccount,
+    });
+    if (is_non_presigned_all_deposited === false) {
+        throw { msg: 'swap not ready' };
+    }
+    // deposit presigned
+
+    const { depositPresignedSendAll } = await depositPresigned({
+        provider: program.provider as AnchorProvider,
+        signer: Data.signer,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+        swapDataAccount: Data.swapDataAccount,
+    });
+
     const { validateDepositSendAll } = await validateDeposit({
         program: program,
         signer: Data.signer,
@@ -49,7 +69,12 @@ export const claimAndClose = async (Data: {
         swapDataAccount: Data.swapDataAccount,
     });
 
-    const allClaimSendAllArray = [...validateDepositSendAll, ...claimSendAllArray, ...validateClaimedSendAll];
+    const allClaimSendAllArray = [
+        ...depositPresignedSendAll,
+        ...validateDepositSendAll,
+        ...claimSendAllArray,
+        ...validateClaimedSendAll,
+    ];
 
     return { allClaimSendAllArray };
 };

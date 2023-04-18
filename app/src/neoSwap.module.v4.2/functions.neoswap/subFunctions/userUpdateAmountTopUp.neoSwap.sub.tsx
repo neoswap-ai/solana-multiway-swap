@@ -58,9 +58,10 @@ export const userUpdateAmountTopUp = async (Data: {
 
     const signerWsol = await getAssociatedTokenAddress(NATIVE_MINT, Data.signer);
     // console.log('signerWsol', signerWsol.toBase58());
-    let balance: number | null = null;
+    let balance: (number | null) | undefined = undefined;
     try {
         balance = (await Data.program.provider.connection.getTokenAccountBalance(signerWsol)).value.uiAmount;
+        
     } catch (error) {
         if (!String(error).includes('could not find account')) {
             throw 'error';
@@ -71,16 +72,16 @@ export const userUpdateAmountTopUp = async (Data: {
     // console.log('Balance', balance);
     // console.log('Data.amountToTopup', Data.amountToTopup);
 
-    if (balance === null) {
-        nativeIx.push(createAssociatedTokenAccountInstruction(Data.signer, signerWsol, Data.signer, NATIVE_MINT));
+    if (balance === undefined || balance === null) {
         nativeIx.push(
+            createAssociatedTokenAccountInstruction(Data.signer, signerWsol, Data.signer, NATIVE_MINT),
             SystemProgram.transfer({
                 fromPubkey: Data.signer,
                 toPubkey: signerWsol,
                 lamports: Data.amountToTopup * LAMPORTS_PER_SOL,
-            })
+            }),
+            createSyncNativeInstruction(signerWsol)
         );
-        nativeIx.push(createSyncNativeInstruction(signerWsol));
         userTransaction.push({ tx: new Transaction().add(...nativeIx) });
     } else if (balance < Data.amountToTopup) {
         nativeIx.push(
@@ -88,14 +89,14 @@ export const userUpdateAmountTopUp = async (Data: {
                 fromPubkey: Data.signer,
                 toPubkey: signerWsol,
                 lamports: Math.ceil((Data.amountToTopup - balance) * LAMPORTS_PER_SOL),
-            })
+            }),
+            createSyncNativeInstruction(signerWsol)
         );
-        nativeIx.push(createSyncNativeInstruction(signerWsol));
         userTransaction.push({ tx: new Transaction().add(...nativeIx) });
     }
 
     // console.log('userBump', userBump);
-    // console.log('Data.amountToTopup * LAMPORTS_PER_SOL', Data.amountToTopup * LAMPORTS_PER_SOL);
+    console.log('Data.amountToTopup * LAMPORTS_PER_SOL', Data.amountToTopup * LAMPORTS_PER_SOL);
     // console.log('userPda', userPda);
     // console.log('signerWsol', signerWsol);
     // console.log('Balance', balance);

@@ -1,7 +1,7 @@
 import findOrCreateAta from '../../utils.neoSwap/findOrCreateAta.neoSwap';
 import { Program } from '@project-serum/anchor';
 import { PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { NATIVE_MINT, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 /**
  * @notice creates instruction for depositing a NFT Item
@@ -15,10 +15,10 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
  * @return {TransactionInstruction[]}instruction => list of instruction created for depositing NFT
  * @return {PublicKey[]}mintAta => updated list of ATA created until now
  */
-export async function depositNft(Data: {
+export async function depositSolPresigned(Data: {
     program: Program;
+    user: PublicKey;
     signer: PublicKey;
-    mint: PublicKey;
     swapDataAccount: PublicKey;
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
@@ -27,66 +27,76 @@ export async function depositNft(Data: {
     let instruction: TransactionInstruction[] = [];
     let mintAta: PublicKey[] = Data.ataList;
     // console.log('mintAta', mintAta);
+    const [userPda, userBump] = PublicKey.findProgramAddressSync([Data.user.toBytes()], Data.program.programId);
 
-    const { mintAta: userMintAta, instruction: ixCreateUserMintAta } = await findOrCreateAta({
+    const { mintAta: userWsol, instruction: ixCreateuserWsol } = await findOrCreateAta({
         connection: Data.program.provider.connection,
-        owner: Data.signer,
-        mint: Data.mint,
+        owner: Data.user,
+        mint: NATIVE_MINT,
         signer: Data.signer,
     });
 
     let addUserTx = true;
     mintAta.forEach((ata) => {
-        if (ata.equals(userMintAta)) {
+        if (ata.equals(userWsol)) {
             addUserTx = false;
         }
     });
 
-    if (ixCreateUserMintAta && addUserTx) {
-        console.log('CreateUserAta Deposit Tx added', userMintAta);
-        ixCreateUserMintAta.forEach((ixCreateUserMintAtaItem) => {
-            instruction.push(ixCreateUserMintAtaItem);
+    if (ixCreateuserWsol && addUserTx) {
+        console.log('CreateUserAta Deposit Tx added', userWsol);
+        ixCreateuserWsol.forEach((ixCreateuserWsolItem) => {
+            instruction.push(ixCreateuserWsolItem);
         });
-        mintAta.push(userMintAta);
+        mintAta.push(userWsol);
     }
 
-    const { mintAta: pdaMintAta, instruction: ixCreatePdaMintAta } = await findOrCreateAta({
+    const { mintAta: swapDataAccountWsol, instruction: ixCreateswapDataAccountWsol } = await findOrCreateAta({
         connection: Data.program.provider.connection,
         owner: Data.swapDataAccount,
-        mint: Data.mint,
+        mint: NATIVE_MINT,
         signer: Data.signer,
     });
 
     let addPdaTx = true;
     mintAta.forEach((ata) => {
-        if (ata.equals(pdaMintAta)) {
+        if (ata.equals(swapDataAccountWsol)) {
             addPdaTx = false;
         }
     });
-    if (ixCreatePdaMintAta && addPdaTx) {
-        console.log('CreatePdaAta Deposit Tx added', pdaMintAta.toBase58());
-        ixCreatePdaMintAta.forEach((ixCreatePdaMintAtaItem) => {
-            instruction.push(ixCreatePdaMintAtaItem);
+    if (ixCreateswapDataAccountWsol && addPdaTx) {
+        console.log('CreatePdaAta Deposit Tx added', swapDataAccountWsol.toBase58());
+        ixCreateswapDataAccountWsol.forEach((ixCreateswapDataAccountWsolItem) => {
+            instruction.push(ixCreateswapDataAccountWsolItem);
         });
-        mintAta.push(pdaMintAta);
+        mintAta.push(swapDataAccountWsol);
     }
 
     const depositIx = await Data.program.methods
-        .depositNft(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
+        .depositSolPresigned(Data.swapDataAccount_seed, Data.swapDataAccount_bump, userBump)
         .accounts({
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             swapDataAccount: Data.swapDataAccount,
+            swapDataAccountWsol,
+            user:Data.user,
+            userPda,
+            userWsol,
             signer: Data.signer,
-            itemFromDeposit: userMintAta,
-            itemToDeposit: pdaMintAta,
         })
         .instruction();
 
     instruction.push(depositIx);
-    console.log('from: ', userMintAta.toBase58(), '\nto: ', pdaMintAta.toBase58(), '\nmint: ', Data.mint.toBase58());
-    console.log('mintAta', mintAta);
+    console.log(
+        'from: ',
+        userWsol.toBase58(),
+        '\nto: ',
+        swapDataAccountWsol.toBase58(),
+        '\nmint: ',
+        NATIVE_MINT.toBase58()
+    );
+    // console.log('mintAta', mintAta);
 
     return { instruction, mintAta };
 }
-export default depositNft;
+export default depositSolPresigned;
