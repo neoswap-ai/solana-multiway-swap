@@ -207,6 +207,7 @@ describe("pre-signing", () => {
                 sendArray.push(allInitSendAllArrayUser);
             })
         );
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(sendArray, {
             skipPreflight: true,
         });
@@ -253,6 +254,7 @@ describe("pre-signing", () => {
 
         // console.log("sendArray", sendArray);
 
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(sendArray, {
             skipPreflight: true,
         });
@@ -375,6 +377,7 @@ describe("pre-signing", () => {
         );
         // console.log("sendArray", sendArray);
 
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(sendArray, {
             skipPreflight: true,
         });
@@ -476,6 +479,7 @@ describe("pre-signing", () => {
         // )
         // );
 
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(sendArray, {
             skipPreflight: true,
         });
@@ -529,6 +533,7 @@ describe("pre-signing", () => {
             sendArray.tx.recentBlockhash = recentBlockhash;
         });
 
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(allInitSendAllArray, {
             skipPreflight: true,
         });
@@ -558,8 +563,9 @@ describe("pre-signing", () => {
                 transactionDeposit.tx.feePayer = signer.publicKey;
                 transactionDeposit.tx.recentBlockhash = recentBlockhash;
             });
+            if (!program.provider.sendAll) throw "Nosend"
             const transactionHash = await program.provider.sendAll(depositSendAllArray, {
-                skipPreflight: true,
+        skipPreflight: true,
             });
             console.log("transactionHash", transactionHash);
 
@@ -589,6 +595,7 @@ describe("pre-signing", () => {
         });
 
         // const claimAndCloseHash = await program.provider.sendAll(allCancelSendAllArray);
+        if (!program.provider.sendAll) throw "Nosend"
         const transactionHashs = await program.provider.sendAll(allCancelSendAllArray, {
             skipPreflight: true,
         });
@@ -635,6 +642,7 @@ describe("pre-signing", () => {
 
         // console.log("sendArray", sendArray);
 
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(sendArray, {
             skipPreflight: true,
         });
@@ -688,6 +696,7 @@ describe("pre-signing", () => {
             sendArray.tx.recentBlockhash = recentBlockhash;
         });
 
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(allInitSendAllArray, {
             skipPreflight: true,
         });
@@ -717,7 +726,8 @@ describe("pre-signing", () => {
                 transactionDeposit.tx.feePayer = signer.publicKey;
                 transactionDeposit.tx.recentBlockhash = recentBlockhash;
             });
-            const transactionHash = await program.provider.sendAll(depositSendAllArray, {
+        if (!program.provider.sendAll) throw "Nosend"
+        const transactionHash = await program.provider.sendAll(depositSendAllArray, {
                 skipPreflight: true,
             });
             console.log("transactionHash", transactionHash);
@@ -748,6 +758,7 @@ describe("pre-signing", () => {
         });
 
         // const claimAndCloseHash = await program.provider.sendAll(allClaimSendAllArray);
+        if (!program.provider.sendAll) throw "Nosend"
         const transactionHashs = await program.provider.sendAll(allClaimSendAllArray, {
             skipPreflight: true,
         });

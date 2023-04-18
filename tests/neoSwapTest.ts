@@ -197,6 +197,7 @@ describe("swapCoontractTest", () => {
             sendAllTx.tx.recentBlockhash = recentBlockhash;
         });
 
+        if (!program.provider.sendAll) throw "Nosend"
         const txhashs = await program.provider.sendAll(sendAllArray, {
             skipPreflight: true,
         });
@@ -232,6 +233,7 @@ describe("swapCoontractTest", () => {
         //  console.log( 'XXXXXXXXXXXXXXXXXXXXXXXX',  await program.provider.connection.getAccountInfo(program.programId))
         let txhashs: string[] = [];
         try {
+        if (!program.provider.sendAll) throw "Nosend"
             txhashs = await program.provider.sendAll(allInitSendAllArray, {
                 skipPreflight: true,
             });
@@ -282,6 +284,7 @@ describe("swapCoontractTest", () => {
                 transactionDeposit.tx.feePayer = userKeypair.publicKey;
                 transactionDeposit.tx.recentBlockhash = recentBlockhash;
             });
+        if (!program.provider.sendAll) throw "Nosend"
             const transactionHash = await program.provider.sendAll(depositSendAllArray, {
                 skipPreflight: true,
             });
@@ -312,7 +315,9 @@ describe("swapCoontractTest", () => {
             transactionDeposit.tx.recentBlockhash = recentBlockhash;
         });
 
+        if (!program.provider.sendAll) throw "Nosend"
         // const claimAndCloseHash = await program.provider.sendAll(allClaimSendAllArray);
+        if (!program.provider.sendAll) throw "Nosend"
         const transactionHashs = await program.provider.sendAll(allClaimSendAllArray, {
             skipPreflight: true,
         });
@@ -349,6 +354,7 @@ describe("swapCoontractTest", () => {
         //  console.log( 'XXXXXXXXXXXXXXXXXXXXXXXX',  await program.provider.connection.getAccountInfo(program.programId))
         let txhashs: string[] = [];
         try {
+        if (!program.provider.sendAll) throw "Nosend"
             txhashs = await program.provider.sendAll(allInitSendAllArray, {
                 skipPreflight: true,
             });
@@ -399,6 +405,7 @@ describe("swapCoontractTest", () => {
                 transactionDeposit.tx.feePayer = userKeypair.publicKey;
                 transactionDeposit.tx.recentBlockhash = recentBlockhash;
             });
+        if (!program.provider.sendAll) throw "Nosend"
             const transactionHash = await program.provider.sendAll(depositSendAllArray, {
                 skipPreflight: true,
             });
@@ -429,7 +436,9 @@ describe("swapCoontractTest", () => {
             transactionDeposit.tx.recentBlockhash = recentBlockhash;
         });
 
+        if (!program.provider.sendAll) throw "Nosend"
         // const claimAndCloseHash = await program.provider.sendAll(allCancelSendAllArray);
+        if (!program.provider.sendAll) throw "Nosend"
         const transactionHashs = await program.provider.sendAll(allCancelSendAllArray, {
             skipPreflight: true,
         });
@@ -462,7 +471,9 @@ describe("swapCoontractTest", () => {
     //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //     }
 
-    //     // const txhashs = await program.provider.sendAll(allInitSendAllArray);
+    //     if (!program.provider.sendAll) throw "Nosend"
+    // //     // const txhashs = await program.provider.sendAll(allInitSendAllArray);
+    //     if (!program.provider.sendAll) throw "Nosend"
     //     const transactionHashs = await program.provider.sendAll(allInitSendAllArray, {
     //         skipPreflight: true,
     //     });
@@ -498,6 +509,7 @@ describe("swapCoontractTest", () => {
     //     sendAllArray.forEach((transactionDeposit) => {
     //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //     });
+        // if (!program.provider.sendAll) throw "Nosend"
     //     const transactionHashs = await program.provider.sendAll(sendAllArray);
     //     for await (const transactionHash of transactionHashs) {
     //         await program.provider.connection.confirmTransaction(transactionHash);
@@ -521,6 +533,7 @@ describe("swapCoontractTest", () => {
     //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //     });
 
+        // if (!program.provider.sendAll) throw "Nosend"
     //     const cancelAndCloseHash = await program.provider.sendAll(
     //         allCancelSendAllArray.slice(0, 1)
     //     );
@@ -548,6 +561,7 @@ describe("swapCoontractTest", () => {
     //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //     });
 
+        // if (!program.provider.sendAll) throw "Nosend"
     //     const cancelAndCloseHash = await program.provider.sendAll(allCancelSendAllArray);
 
     //     for await (const hash of cancelAndCloseHash) {
@@ -577,6 +591,7 @@ describe("swapCoontractTest", () => {
     //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //     }
 
+        // if (!program.provider.sendAll) throw "Nosend"
     //     const txhashs = await program.provider.sendAll(allInitSendAllArray);
 
     //     for await (const hash of txhashs) {
@@ -607,6 +622,7 @@ describe("swapCoontractTest", () => {
     //     }
 
     //     try {
+        // if (!program.provider.sendAll) throw "Nosend"
     //         const txhashs = await program.provider.sendAll(allInitSendAllArray);
 
     //         for await (const hash of txhashs) {
@@ -645,6 +661,7 @@ describe("swapCoontractTest", () => {
     //     }
 
     //     try {
+        // if (!program.provider.sendAll) throw "Nosend"
     //         const txhashs = await program.provider.sendAll(allInitSendAllArray);
 
     //         for await (const hash of txhashs) {
@@ -676,6 +693,7 @@ describe("swapCoontractTest", () => {
     //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //     });
     //     try {
+        // if (!program.provider.sendAll) throw "Nosend"
     //         const txhashs = await program.provider.sendAll(allClaimSendAllArray);
 
     //         for await (const hash of txhashs) {
@@ -709,6 +727,7 @@ describe("swapCoontractTest", () => {
     //     depositSendAllArray.forEach((transactionDeposit) => {
     //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //     });
+        // if (!program.provider.sendAll) throw "Nosend"
     //     const transactionHashs = await program.provider.sendAll(depositSendAllArray.slice(0, 1));
     //     for await (const transactionHash of transactionHashs) {
     //         await program.provider.connection.confirmTransaction(transactionHash);
@@ -728,6 +747,7 @@ describe("swapCoontractTest", () => {
     //             transactionDeposit.tx.recentBlockhash = recentBlockhash;
     //         });
 
+        // if (!program.provider.sendAll) throw "Nosend"
     //         const txhashs = await program.provider.sendAll(allCancelSendAllArray);
 
     //         for await (const hash of txhashs) {
