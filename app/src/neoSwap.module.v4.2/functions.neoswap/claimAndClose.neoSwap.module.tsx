@@ -33,22 +33,22 @@ export const claimAndClose = async (Data: {
     console.log('swapData', swapData);
 
     // validate not presigned
-    const is_non_presigned_all_deposited = await hasUserDepositedBeforePresigned({
-        provider: program.provider as AnchorProvider,
-        CONST_PROGRAM: Data.CONST_PROGRAM,
-        swapDataAccount: Data.swapDataAccount,
-    });
-    if (is_non_presigned_all_deposited === false) {
-        throw { msg: 'swap not ready' };
-    }
+    // const is_non_presigned_all_deposited = await hasUserDepositedBeforePresigned({
+    //     provider: program.provider as AnchorProvider,
+    //     CONST_PROGRAM: Data.CONST_PROGRAM,
+    //     swapDataAccount: Data.swapDataAccount,
+    // });
+    // if (is_non_presigned_all_deposited === false) {
+    //     throw { msg: 'swap not ready' };
+    // }
     // deposit presigned
 
-    const { depositPresignedSendAll } = await depositPresigned({
-        provider: program.provider as AnchorProvider,
-        signer: Data.signer,
-        CONST_PROGRAM: Data.CONST_PROGRAM,
-        swapDataAccount: Data.swapDataAccount,
-    });
+    // const { depositPresignedSendAll } = await depositPresigned({
+    //     provider: program.provider as AnchorProvider,
+    //     signer: Data.signer,
+    //     CONST_PROGRAM: Data.CONST_PROGRAM,
+    //     swapDataAccount: Data.swapDataAccount,
+    // });
 
     const { validateDepositSendAll } = await validateDeposit({
         program: program,
@@ -70,7 +70,7 @@ export const claimAndClose = async (Data: {
     });
 
     const allClaimSendAllArray = [
-        ...depositPresignedSendAll,
+        // ...depositPresignedSendAll,
         ...validateDepositSendAll,
         ...claimSendAllArray,
         ...validateClaimedSendAll,
