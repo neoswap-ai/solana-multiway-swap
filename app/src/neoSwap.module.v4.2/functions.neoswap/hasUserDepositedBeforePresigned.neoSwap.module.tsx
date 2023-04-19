@@ -35,7 +35,7 @@ export const hasUserDepositedBeforePresigned = async (Data: {
                 case true:
                     if (swapDataItem.status === ItemStatus.NFTPending) {
                         console.log(
-                            'XXX - Deposit NFT X X ',
+                            'YYYY - error Deposit NFT X X ',
                             swapDataItem.mint.toBase58(),
                             'status',
                             swapDataItem.status,
@@ -47,7 +47,7 @@ export const hasUserDepositedBeforePresigned = async (Data: {
                     break;
                 case false:
                     if (swapDataItem.status === ItemStatus.SolPending) {
-                        console.log('XXXXXXX - Deposit sol item - XXXXXXX', swapDataItem.status);
+                        console.log('YYYYYY error - Deposit sol item - XXXXXXX', swapDataItem.status);
                         return false;
                     }
                     break;

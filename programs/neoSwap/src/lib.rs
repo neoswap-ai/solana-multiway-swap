@@ -270,6 +270,11 @@ pub mod neo_swap {
                                 .mint
                                 .eq(&ctx.accounts.swap_data_account.items[item_id].mint)
                             {
+                                msg!(
+                                    "amount mini updated with {}",
+                                    ctx.accounts.user_pda.items_to_sell[user_pda_item_id]
+                                        .amount_mini
+                                );
                                 amount_min = amount_min
                                     .checked_add(
                                         ctx.accounts.user_pda.items_to_sell[user_pda_item_id]
@@ -289,9 +294,10 @@ pub mod neo_swap {
                             ctx.accounts.swap_data_account.items[item_id].amount;
 
                         if amount_to_receive_from_swap.is_positive() {
-                            amount_min = amount_min
-                                .checked_add(amount_to_receive_from_swap.unsigned_abs())
-                                .unwrap();
+                            msg!("amount mini updated with {}", amount_to_receive_from_swap);
+                            // amount_min = amount_min
+                            //     .checked_add(amount_to_receive_from_swap.unsigned_abs())
+                            //     .unwrap();
                             ctx.accounts.swap_data_account.items[item_id].status =
                                 ItemStatus::SolPendingPresign.to_u8();
                             msg!(
@@ -336,7 +342,7 @@ pub mod neo_swap {
         }
 
         msg! {"amount_min {} / amount_max {} / amount_to_receive_from_swap {} / amount_to_topup {}",amount_min,amount_max,amount_to_receive_from_swap,ctx.accounts.user_pda.amount_to_topup};
-        if amount_min < amount_max {
+        if amount_min.checked_add(ctx.accounts.user_pda.amount_to_topup).unwrap() < amount_max  {// {
             return Err(error!(MYERROR::MinSupMax).into());
         }
 
@@ -809,7 +815,12 @@ pub mod neo_swap {
                         ctx.accounts.swap_data_account.items[item_id]
                             .amount
                             .unsigned_abs(),
-                        ctx.accounts.user_pda.amount_to_topup
+                        ctx.accounts.user_pda.amount_to_topup.checked_sub(
+                            ctx.accounts.swap_data_account.items[item_id]
+                                .amount
+                                .unsigned_abs(),
+                        )
+                        .unwrap()
                     );
                     break;
                 } else {
@@ -1035,6 +1046,7 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8,
     ) -> Result<()> {
+        msg!("validate claimed status {}",ctx.accounts.swap_data_account.status);
         require_eq!(
             ctx.accounts.swap_data_account.status,
             TradeStatus::WaitingToClaim.to_u8(),
@@ -1050,7 +1062,8 @@ pub mod neo_swap {
                 || ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::SolDeposited.to_u8())
             {
-                return Err(error!(MYERROR::NotReady).into());
+        msg!("item {} status {}",item_id,ctx.accounts.swap_data_account.items[item_id].status);
+        return Err(error!(MYERROR::NotReady).into());
             }
         }
 

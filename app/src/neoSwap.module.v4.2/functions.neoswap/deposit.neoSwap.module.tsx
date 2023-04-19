@@ -114,76 +114,76 @@ export const deposit = async (Data: {
                     break;
             }
         } else if (swapDataItem.isPresigning) {
-            switch (swapDataItem.isNft) {
-                case true:
-                    // console.log('presigned  NFT',µ swapDataItem, swapDataItem.owner.toBase58(), Data.user.toBase58());
-                    if (
-                        swapDataItem.owner.toBase58() === Data.user.toBase58() &&
-                        swapDataItem.status === ItemStatus.NFTPendingPresign
-                    ) {
-                        console.log('XXX - Presigned Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
-                        // test.push(i);
-                        // i++;
-                        // console.log('test', test);
+            // switch (swapDataItem.isNft) {
+            //     case true:
+            //         // console.log('presigned  NFT',µ swapDataItem, swapDataItem.owner.toBase58(), Data.user.toBase58());
+            //         if (
+            //             swapDataItem.owner.toBase58() === Data.user.toBase58() &&
+            //             swapDataItem.status === ItemStatus.NFTPendingPresign
+            //         ) {
+            //             console.log('XXX - Presigned Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
+            //             // test.push(i);
+            //             // i++;
+            //             // console.log('test', test);
 
-                        let { instruction: depositNFTInstruction, mintAta: createdMint } = await depositNftPresigned({
-                            program: program,
-                            signer: Data.signer,
-                            mint: swapDataItem.mint,
-                            swapDataAccount: Data.swapDataAccount,
-                            swapDataAccount_seed: swapData.swapDataAccount_seed,
-                            swapDataAccount_bump: swapData.swapDataAccount_bump,
-                            user: Data.user,
-                            ataList,
-                        });
-                        ataList = createdMint;
+            //             let { instruction: depositNFTInstruction, mintAta: createdMint } = await depositNftPresigned({
+            //                 program: program,
+            //                 signer: Data.signer,
+            //                 mint: swapDataItem.mint,
+            //                 swapDataAccount: Data.swapDataAccount,
+            //                 swapDataAccount_seed: swapData.swapDataAccount_seed,
+            //                 swapDataAccount_bump: swapData.swapDataAccount_bump,
+            //                 user: Data.user,
+            //                 ataList,
+            //             });
+            //             ataList = createdMint;
 
-                        depositNFTInstruction.forEach((depositNftAta) => {
-                            depositInstruction.push(depositNftAta);
-                        });
-                        // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList NFT', ataList);
-                        console.log('depositNftInstruction added');
-                    }
+            //             depositNFTInstruction.forEach((depositNftAta) => {
+            //                 depositInstruction.push(depositNftAta);
+            //             });
+            //             // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList NFT', ataList);
+            //             console.log('depositNftInstruction added');
+            //         }
 
-                    break;
-                case false:
-                    // console.log('presigned not NFT', swapDataItem, swapDataItem.owner.toBase58(), Data.user.toBase58());
+            //         break;
+            //     case false:
+            //         // console.log('presigned not NFT', swapDataItem, swapDataItem.owner.toBase58(), Data.user.toBase58());
 
-                    if (
-                        swapDataItem.owner.toBase58() === Data.user.toBase58() &&
-                        swapDataItem.status === ItemStatus.SolPendingPresig
-                    ) {
-                        // test.push(i);
-                        // i++;
-                        // console.log('test', test);
+            //         if (
+            //             swapDataItem.owner.toBase58() === Data.user.toBase58() &&
+            //             swapDataItem.status === ItemStatus.SolPendingPresig
+            //         ) {
+            //             // test.push(i);
+            //             // i++;
+            //             // console.log('test', test);
 
-                        console.log(
-                            'XXXXXXX - Presigned Deposit sol item - XXXXXXX',
-                            'signer:',
-                            Data.signer.toBase58(),
-                            'user:',
-                            Data.user.toBase58(),
-                            // 'swapDataAccount:',
-                            // Data.swapDataAccount,
-                            ataList
-                        );
-                        const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSolPresigned({
-                            program: program,
-                            ataList,
-                            signer: Data.signer,
-                            user: Data.user,
-                            swapDataAccount: Data.swapDataAccount,
-                            swapDataAccount_seed: swapData.swapDataAccount_seed,
-                            swapDataAccount_bump: swapData.swapDataAccount_bump,
-                        });
-                        depositInstruction.push(...depositSolInstruction);
-                        ataList = createdMint;
+            //             console.log(
+            //                 'XXXXXXX - Presigned Deposit sol item - XXXXXXX',
+            //                 'signer:',
+            //                 Data.signer.toBase58(),
+            //                 'user:',
+            //                 Data.user.toBase58(),
+            //                 // 'swapDataAccount:',
+            //                 // Data.swapDataAccount,
+            //                 ataList
+            //             );
+            //             const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSolPresigned({
+            //                 program: program,
+            //                 ataList,
+            //                 signer: Data.signer,
+            //                 user: Data.user,
+            //                 swapDataAccount: Data.swapDataAccount,
+            //                 swapDataAccount_seed: swapData.swapDataAccount_seed,
+            //                 swapDataAccount_bump: swapData.swapDataAccount_bump,
+            //             });
+            //             depositInstruction.push(...depositSolInstruction);
+            //             ataList = createdMint;
 
-                        // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList SOL', ataList);
-                        console.log('depositSolinstruction added');
-                    }
-                    break;
-            }
+            //             // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList SOL', ataList);
+            //             console.log('depositSolinstruction added');
+            //         }
+            //         break;
+            // }
         } else {
             console.log('presigning value error');
             throw { msg: 'presigning value error' };

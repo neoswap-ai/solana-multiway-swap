@@ -20,6 +20,7 @@ export const claim = async (Data: {
     swapDataAccount: PublicKey;
     CONST_PROGRAM: string;
     signer: PublicKey;
+    ataList: PublicKey[];
 }): Promise<{
     claimSendAllArray: Array<{
         tx: Transaction;
@@ -35,60 +36,114 @@ export const claim = async (Data: {
     // if (swapData.swapData.status !== TradeStatus.WaitingToDeposit) throw console.error('Trade not in waiting for deposit state');
 
     let claimTransactionInstruction: TransactionInstruction[] = [];
-    let ataList: Array<PublicKey> = [];
+    let ataList: Array<PublicKey> = Data.ataList;
 
     for (let item = 0; item < swapData.swapData.items.length; item++) {
         let swapDataItem = swapData.swapData.items[item];
-        switch (swapDataItem.isNft) {
-            case true:
-                if (swapDataItem.status === ItemStatus.NFTDeposited) {
-                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
-                    // console.log(Data.user.toBase58(), swapDataItem.destinary.toBase58());
+        if (swapDataItem.isPresigning === false) {
+            switch (swapDataItem.isNft) {
+                case true:
+                    if (swapDataItem.status === ItemStatus.NFTDeposited) {
+                        console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
+                        // console.log(Data.user.toBase58(), swapDataItem.destinary.toBase58());
 
-                    let claimingNft = await claimNft({
-                        program: Data.program,
-                        signer: Data.signer,
-                        user: swapDataItem.destinary,
-                        mint: swapDataItem.mint,
-                        swapDataAccount: Data.swapDataAccount,
-                        swapDataAccount_seed: swapData.swapDataAccount_seed,
-                        swapDataAccount_bump: swapData.swapDataAccount_bump,
-                        ataList,
-                    });
-                    claimingNft.instruction.forEach((element) => {
-                        claimTransactionInstruction.push(element);
-                    });
-                    let isPush = true;
-                    claimingNft.mintAta.forEach((element) => {
-                        ataList.forEach((ataElem) => {
-                            if (element === ataElem) {
-                                isPush = false;
-                            }
+                        let claimingNft = await claimNft({
+                            program: Data.program,
+                            signer: Data.signer,
+                            user: swapDataItem.destinary,
+                            mint: swapDataItem.mint,
+                            swapDataAccount: Data.swapDataAccount,
+                            swapDataAccount_seed: swapData.swapDataAccount_seed,
+                            swapDataAccount_bump: swapData.swapDataAccount_bump,
+                            ataList,
                         });
+                        claimingNft.instruction.forEach((element) => {
+                            claimTransactionInstruction.push(element);
+                        });
+                        let isPush = true;
+                        claimingNft.mintAta.forEach((element) => {
+                            ataList.forEach((ataElem) => {
+                                if (element === ataElem) {
+                                    isPush = false;
+                                }
+                            });
 
-                        if (isPush) ataList.push();
-                    });
-                    console.log('claimNftinstruction added');
-                }
-                break;
-            case false:
-                if (swapDataItem.status === ItemStatus.SolToClaim) {
-                    console.log('XXXXXXX - item n° ', item, ' XXXXXXX', swapDataItem);
-                    const claimingSol = await claimSol({
-                        program: Data.program,
-                        user: swapDataItem.owner,
-                        signer: Data.signer,
-                        swapDataAccount: Data.swapDataAccount,
-                        swapDataAccount_seed: swapData.swapDataAccount_seed,
-                        swapDataAccount_bump: swapData.swapDataAccount_bump,
-                        ataList,
-                    });
-                    claimTransactionInstruction.push(...claimingSol.instruction);
-                    console.log('claimSolinstruction added');
-                } else {
-                    console.log('not to claim item n° ', item);
-                }
-                break;
+                            if (isPush) ataList.push();
+                        });
+                        console.log('claimNftinstruction added');
+                    }
+                    break;
+                case false:
+                    if (swapDataItem.status === ItemStatus.SolToClaim) {
+                        console.log('XXXXXXX - item n° ', item, ' XXXXXXX', swapDataItem);
+                        const claimingSol = await claimSol({
+                            program: Data.program,
+                            user: swapDataItem.owner,
+                            signer: Data.signer,
+                            swapDataAccount: Data.swapDataAccount,
+                            swapDataAccount_seed: swapData.swapDataAccount_seed,
+                            swapDataAccount_bump: swapData.swapDataAccount_bump,
+                            ataList,
+                        });
+                        claimTransactionInstruction.push(...claimingSol.instruction);
+                        console.log('claimSolinstruction added');
+                    } else {
+                        console.log('not to claim item n° ', item);
+                    }
+                    break;
+            }
+        } else {
+            switch (swapDataItem.isNft) {
+                case true:
+                    if (swapDataItem.status === ItemStatus.NFTPendingPresign) {
+                        console.log('XXXXXXX - item n° ', item, ' XXXXXXX');
+                        // console.log(Data.user.toBase58(), swapDataItem.destinary.toBase58());
+
+                        let claimingNft = await claimNft({
+                            program: Data.program,
+                            signer: Data.signer,
+                            user: swapDataItem.destinary,
+                            mint: swapDataItem.mint,
+                            swapDataAccount: Data.swapDataAccount,
+                            swapDataAccount_seed: swapData.swapDataAccount_seed,
+                            swapDataAccount_bump: swapData.swapDataAccount_bump,
+                            ataList,
+                        });
+                        claimingNft.instruction.forEach((element) => {
+                            claimTransactionInstruction.push(element);
+                        });
+                        let isPush = true;
+                        claimingNft.mintAta.forEach((element) => {
+                            ataList.forEach((ataElem) => {
+                                if (element === ataElem) {
+                                    isPush = false;
+                                }
+                            });
+
+                            if (isPush) ataList.push();
+                        });
+                        console.log('claimNftinstructionPresigned added');
+                        break;
+                    }
+                // case false:
+                //     if (swapDataItem.status === ItemStatus.So) {
+                //     console.log('XXXXXXX - item n° ', item, ' XXXXXXX', swapDataItem);
+                //     const claimingSol = await claimSol({
+                //         program: Data.program,
+                //         user: swapDataItem.owner,
+                //         signer: Data.signer,
+                //         swapDataAccount: Data.swapDataAccount,
+                //         swapDataAccount_seed: swapData.swapDataAccount_seed,
+                //         swapDataAccount_bump: swapData.swapDataAccount_bump,
+                //         ataList,
+                //     });
+                //     claimTransactionInstruction.push(...claimingSol.instruction);
+                //     console.log('claimSolinstruction added');
+                //     } else {
+                //         console.log('not to claim item n° ', item);
+                //     }
+                //     break;
+            }
         }
     }
     let claimTransaction = [new Transaction()];

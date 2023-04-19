@@ -28,6 +28,7 @@ export const depositPresigned = async (Data: {
         tx: Transaction;
         signers?: Array<Signer> | undefined;
     }>;
+    ataList: PublicKey[];
 }> => {
     const program = getProgram(Data.provider);
 
@@ -60,9 +61,6 @@ export const depositPresigned = async (Data: {
                         swapDataItem.status === ItemStatus.NFTPendingPresign
                     ) {
                         console.log('XXX - Presigned Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
-                        // test.push(i);
-                        // i++;
-                        // console.log('test', test);
 
                         let { instruction: depositNFTInstruction, mintAta: createdMint } = await depositNftPresigned({
                             program: program,
@@ -91,10 +89,6 @@ export const depositPresigned = async (Data: {
                         // swapDataItem.owner.toBase58() === swapDataItem.owner.toBase58() &&
                         swapDataItem.status === ItemStatus.SolPendingPresig
                     ) {
-                        // test.push(i);
-                        // i++;
-                        // console.log('test', test);
-
                         console.log(
                             'XXXXXXX - Presigned Deposit sol item - XXXXXXX',
                             'signer:',
@@ -135,7 +129,7 @@ export const depositPresigned = async (Data: {
         itemToAdd: depositInstruction,
     });
     const depositPresignedSendAll = await convertAllTransaction(depositTransaction);
-    return { depositPresignedSendAll };
+    return { depositPresignedSendAll, ataList };
 };
 
 export default depositPresigned;
