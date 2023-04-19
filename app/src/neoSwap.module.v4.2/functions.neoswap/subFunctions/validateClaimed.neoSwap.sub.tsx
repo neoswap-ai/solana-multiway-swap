@@ -23,12 +23,12 @@ export const validateClaimed = async (Data: {
         signers?: web3.Signer[] | undefined;
     }[];
 }> => {
-    const { swapDataAccount_seed, swapDataAccount_bump } = await getSwapDataFromPDA({
+    const { swapDataAccount_seed, swapDataAccount_bump, swapData } = await getSwapDataFromPDA({
         swapDataAccount: Data.swapDataAccount,
         provider: Data.program.provider as AnchorProvider,
         CONST_PROGRAM: Data.CONST_PROGRAM,
     });
-
+    console.log('swapData from validate', swapData);
 
     const validateClaimedTransaction = new Transaction().add(
         await Data.program.methods

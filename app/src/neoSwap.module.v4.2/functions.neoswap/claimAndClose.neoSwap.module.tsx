@@ -29,26 +29,28 @@ export const claimAndClose = async (Data: {
     }>;
 }> => {
     const program = getProgram(Data.provider);
-    let swapData = (await program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
-    console.log('swapData', swapData);
+    // let swapData = (await program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
+    // console.log('swapData', swapData);
 
     // validate not presigned
-    // const is_non_presigned_all_deposited = await hasUserDepositedBeforePresigned({
-    //     provider: program.provider as AnchorProvider,
-    //     CONST_PROGRAM: Data.CONST_PROGRAM,
-    //     swapDataAccount: Data.swapDataAccount,
-    // });
-    // if (is_non_presigned_all_deposited === false) {
-    //     throw { msg: 'swap not ready' };
-    // }
+    const is_non_presigned_all_deposited = await hasUserDepositedBeforePresigned({
+        provider: program.provider as AnchorProvider,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+        swapDataAccount: Data.swapDataAccount,
+    });
+    console.log('is_non_presigned_all_deposited', is_non_presigned_all_deposited);
+
+    if (is_non_presigned_all_deposited === false) {
+        throw { msg: 'swap not ready, left some normal user to deposit' };
+    }
     // deposit presigned
 
-    // const { depositPresignedSendAll } = await depositPresigned({
-    //     provider: program.provider as AnchorProvider,
-    //     signer: Data.signer,
-    //     CONST_PROGRAM: Data.CONST_PROGRAM,
-    //     swapDataAccount: Data.swapDataAccount,
-    // });
+    const { depositPresignedSendAll , ataList} = await depositPresigned({
+        provider: program.provider as AnchorProvider,
+        signer: Data.signer,
+        CONST_PROGRAM: Data.CONST_PROGRAM,
+        swapDataAccount: Data.swapDataAccount,
+    });
 
     const { validateDepositSendAll } = await validateDeposit({
         program: program,
@@ -61,6 +63,7 @@ export const claimAndClose = async (Data: {
         signer: Data.signer,
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
+        ataList
     });
     const { validateClaimedSendAll } = await validateClaimed({
         program: program,
@@ -70,7 +73,7 @@ export const claimAndClose = async (Data: {
     });
 
     const allClaimSendAllArray = [
-        // ...depositPresignedSendAll,
+        ...depositPresignedSendAll,
         ...validateDepositSendAll,
         ...claimSendAllArray,
         ...validateClaimedSendAll,
