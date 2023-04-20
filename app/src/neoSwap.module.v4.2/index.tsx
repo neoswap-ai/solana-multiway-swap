@@ -1,5 +1,5 @@
 import { allInitialize } from './functions.neoswap/all.Initialize.neoSwap.module';
-import deposit from './functions.neoswap/deposit.neoSwap.module';
+import { depositUserOnly } from './functions.neoswap/depositUserOnly.neoSwap.module';
 import claimAndClose from './functions.neoswap/claimAndClose.neoSwap.module';
 import cancelAndClose from './functions.neoswap/cancelAndClose.neoSwap.module';
 import { getSwapDataFromPDA } from './utils.neoSwap/getSwapDataFromPDA.neoSwap';
@@ -13,15 +13,24 @@ import transferUserApprovedWsol from './functions.neoswap/subFunctions/transferU
 import validateUserPdaItemsIx from './functions.neoswap/subFunctions/validateUserPdaItems.neoSwap.sub';
 import getUserPdaData from './functions.neoswap/subFunctions/getUserPdaData.neoSwap.sub';
 import validatePresigningSwap from './functions.neoswap/subFunctions/validatePresigningSwap.neoSwap.sub';
+import boradcastToBlockchain from './functions.neoswap/testFunctions/boradcastToBlockchain';
+import depositPresigned from './functions.neoswap/depositPresigned.neoSwap.module';
+import { updateAmountToTopupTest } from './functions.neoswap/testFunctions/updateAmountToTopupTest';
+import createUserPdaTest from './functions.neoswap/testFunctions/createUserPdaTest';
+import createNft from './functions.neoswap/testFunctions/createNft';
+import airdropDev from './utils.neoSwap/airdropDev';
 const NeoSwap = {
     /// Main
     allInitialize, /// creates instruction for initializing PDA, writing data and setting the trade state to depositing
-    deposit, /// creates instruction for depositing all items related to the signer
+    depositUserOnly, /// creates instruction for depositing all items related to the signer
+    depositPresigned,
     claimAndClose, /// creates instruction for sending all assets to users
     cancelAndClose, /// creates instruction for cancelingthe trade and sending back all assets
     /// Utils
     getSwapDataFromPDA, /// fetch and deserialize data from PDA
     getSeedFromData, /// reconstruct seed and
+    boradcastToBlockchain,
+    airdropDev,
     ///Pre-sign
     createUserPda,
     getUserPdaData,
@@ -30,6 +39,11 @@ const NeoSwap = {
     userUpdateAmountTopUp,
     transferUserApprovedNft,
     transferUserApprovedWsol,
+    ///test
+    // fillUserPda,
+    updateAmountToTopupTest,
+    createUserPdaTest,
+    createNft
 };
 
 export default NeoSwap;

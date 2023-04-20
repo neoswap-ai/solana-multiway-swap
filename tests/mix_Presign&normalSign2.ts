@@ -43,15 +43,15 @@ describe("MIX pre-signing", () => {
 
     const program = anchor.workspace.NeoSwap as Program;
     const nbuser = 4;
-    const nftNb = [0, 1];
+    const nftNb = 2;
     let userKeypairs: { keypair: Keypair; tokens: { mint: PublicKey; ata: PublicKey }[] }[] = [];
     let CONST_PROGRAM = "0000";
-    let signer = Keypair.generate();
-    let feeCollector = Keypair.generate();
-    let unauthorizedKeypair = Keypair.generate();
+    let signer = { keypair: Keypair.generate(), tokens: [] };
+    let feeCollector = { keypair: Keypair.generate(), tokens: [] };
+    let unauthorizedKeypair = { keypair: Keypair.generate(), tokens: [] };
     let pda: PublicKey;
     let swapData: SwapData = {
-        initializer: signer.publicKey,
+        initializer: signer.keypair.publicKey,
         items: [
             {
                 isNft: false,
@@ -59,7 +59,7 @@ describe("MIX pre-signing", () => {
                 amount: new anchor.BN(-0.025 * nbuser * LAMPORTS_PER_SOL),
                 destinary: NATIVE_MINT,
                 mint: NATIVE_MINT,
-                owner: feeCollector.publicKey,
+                owner: feeCollector.keypair.publicKey,
                 status: ItemStatus.SolToClaim,
             },
         ],
@@ -71,191 +71,62 @@ describe("MIX pre-signing", () => {
 
     it("Initializing accounts", async () => {
         console.log("programId", program.programId.toBase58());
+        Array.from(Array(nbuser).keys()).map(async () => {
+            userKeypairs.push({ keypair: Keypair.generate(), tokens: [] });
+        });
 
-        await program.provider.connection.requestAirdrop(signer.publicKey, 2 * LAMPORTS_PER_SOL);
-        await program.provider.connection.requestAirdrop(
-            feeCollector.publicKey,
-            2 * LAMPORTS_PER_SOL
-        );
-
-        console.log(
-            "signer airdrop done",
-            signer.publicKey.toBase58(),
-            "with ",
-            (await program.provider.connection.getBalance(signer.publicKey)) / LAMPORTS_PER_SOL
-        );
-
-        for (let userId = 0; userId < nbuser; userId++) {
-            userKeypairs[userId] = { keypair: Keypair.generate(), tokens: [] };
-        }
-
-        for await (const userKeypair of userKeypairs) {
-            await program.provider.connection.confirmTransaction(
-                await program.provider.connection.requestAirdrop(
-                    userKeypair.keypair.publicKey,
-                    2 * LAMPORTS_PER_SOL
-                )
-            );
-            console.log("user airdrop done", userKeypair.keypair.publicKey.toBase58());
-        }
-        await program.provider.connection.requestAirdrop(
-            unauthorizedKeypair.publicKey,
-            2 * LAMPORTS_PER_SOL
-        );
+        await NeoSwap.airdropDev({
+            connection: program.provider.connection,
+            keypairs: [signer, feeCollector, unauthorizedKeypair, ...userKeypairs],
+        });
     });
 
     it("users instruction", async () => {
-        for await (const userKeypair of userKeypairs) {
-            console.log("XXX XXX - user ", userKeypair.keypair.publicKey.toBase58());
+        // signer.tokens = await NeoSwap.createNft({
+        //     program,
+        //     userKeypair: signer,
+        //     nb: nftNb,
+        // });
 
-            for await (let mintNb of nftNb) {
-                let mintPubkey = await createMint(
-                    program.provider.connection, // conneciton
-                    userKeypair.keypair, // fee payer
-                    userKeypair.keypair.publicKey, // mint authority
-                    userKeypair.keypair.publicKey, // freeze authority
-                    0 // decimals
-                );
+        // unauthorizedKeypair.tokens = await NeoSwap.createNft({
+        //     program,
+        //     userKeypair: unauthorizedKeypair,
+        //     nb: nftNb,
+        // });
 
-                let ata = await createAssociatedTokenAccount(
-                    program.provider.connection, // conneciton
-                    userKeypair.keypair, // fee payer
-                    mintPubkey, // mint
-                    userKeypair.keypair.publicKey // owner,
-                );
-                userKeypair.tokens.push({ ata, mint: mintPubkey });
-                await mintToChecked(
-                    program.provider.connection, // conneciton
-                    userKeypair.keypair, // fee payer
-                    mintPubkey, // mint
-                    ata, // receiver
-                    userKeypair.keypair.publicKey, // mint authority
-                    1, // amount.
-                    0 // decimals
-                );
-
-                const ataBalance = await program.provider.connection.getTokenAccountBalance(ata);
+        await Promise.all(
+            userKeypairs.map(async (userKeypair) => {
                 console.log(
-                    "mint ",
-                    mintPubkey.toBase58(),
-                    "\nwith ata: ",
-                    ata.toBase58(),
-                    "\n balance:",
-                    ataBalance.value.uiAmount,
-                    " NFT"
+                    "XXX XXX - user ",
+                    userKeypair.keypair.publicKey.toBase58(),
+                    " XXX XXX"
                 );
-            }
-        }
+                userKeypair.tokens = await NeoSwap.createNft({
+                    program,
+                    userKeypair,
+                    nb: nftNb,
+                });
+            })
+        );
     });
 
     it("create Users Pda", async () => {
         // console.log(swapData);
-        let sendArray: {
-            tx: anchor.web3.Transaction;
-            signers?: anchor.web3.Signer[];
-        }[] = [];
-        const createsignderPdaData = await NeoSwap.createUserPda({
+        const txhashs = await NeoSwap.createUserPdaTest({
             program,
-            user: signer.publicKey,
-            signer: signer.publicKey,
+            userKeypairs: [
+                { keypair: signer.keypair, tokens: [] },
+                { keypair: feeCollector.keypair, tokens: [] },
+                ...userKeypairs,
+            ],
+            signer: signer.keypair,
         });
-
-        let signderPda = createsignderPdaData.userPda;
-        const signerInitSendAllArray = createsignderPdaData.addInitSendAllArray;
-        console.log("XXX-XXX signderPda", signderPda.toBase58());
-
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-        signerInitSendAllArray.signers = [signer];
-        signerInitSendAllArray.tx.feePayer = signer.publicKey;
-        signerInitSendAllArray.tx.recentBlockhash = recentBlockhash;
-        sendArray.push(signerInitSendAllArray);
-
-        const createfeeCollectorPdaData = await NeoSwap.createUserPda({
-            program,
-            user: feeCollector.publicKey,
-            signer: signer.publicKey,
-        });
-
-        let feeCollectorPda = createfeeCollectorPdaData.userPda;
-        const feeCollectorInitSendAllArray = createfeeCollectorPdaData.addInitSendAllArray;
-        console.log("XXX-XXX feeCollectorPda", feeCollectorPda.toBase58());
-
-        feeCollectorInitSendAllArray.signers = [signer];
-        feeCollectorInitSendAllArray.tx.feePayer = signer.publicKey;
-        feeCollectorInitSendAllArray.tx.recentBlockhash = recentBlockhash;
-        sendArray.push(feeCollectorInitSendAllArray);
-
-        await Promise.all(
-            userKeypairs.map(async (userKeypair) => {
-                await program.provider.connection.requestAirdrop(
-                    userKeypair.keypair.publicKey,
-                    2 * LAMPORTS_PER_SOL
-                );
-                const createuserPdaData = await NeoSwap.createUserPda({
-                    program,
-                    user: userKeypair.keypair.publicKey,
-                    signer: signer.publicKey,
-                });
-
-                let userPda = createuserPdaData.userPda;
-                const allInitSendAllArrayUser = createuserPdaData.addInitSendAllArray;
-                console.log("XXX-XXX userPda", userPda.toBase58());
-
-                allInitSendAllArrayUser.signers = [signer];
-                allInitSendAllArrayUser.tx.feePayer = signer.publicKey;
-                allInitSendAllArrayUser.tx.recentBlockhash = recentBlockhash;
-
-                sendArray.push(allInitSendAllArrayUser);
-            })
-        );
-        if (!program.provider.sendAll) throw "noSendAll";
-
-        const txhashs = await program.provider.sendAll(sendArray, {
-            skipPreflight: true,
-        });
-
-        for await (const hash of txhashs) {
-            program.provider.connection.confirmTransaction(hash);
-        }
-
         console.log("initialized", txhashs);
     });
 
     it("Update amount to topup", async () => {
         // console.log(swapData);
-        let sendArray: {
-            tx: anchor.web3.Transaction;
-            signers?: anchor.web3.Signer[];
-        }[] = [];
-
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-        await Promise.all(
-            userKeypairs.map(async (userKeypair) => {
-                const { userTransaction } = await NeoSwap.userUpdateAmountTopUp({
-                    program,
-                    amountToTopup: 1.01,
-                    signer: userKeypair.keypair.publicKey,
-                });
-                userTransaction.forEach((suserTransaction) => {
-                    suserTransaction.signers = [userKeypair.keypair];
-                    suserTransaction.tx.feePayer = userKeypair.keypair.publicKey;
-                    suserTransaction.tx.recentBlockhash = recentBlockhash;
-                });
-                sendArray.push(...userTransaction);
-            })
-        );
-        // console.log("sendArray", sendArray);
-
-        if (!program.provider.sendAll) throw "noSendAll";
-        const txhashs = await program.provider.sendAll(sendArray, {
-            skipPreflight: true,
-        });
-
-        for await (const hash of txhashs) {
-            program.provider.connection.confirmTransaction(hash);
-        }
-
+        const txhashs = await NeoSwap.updateAmountToTopupTest({ program, userKeypairs });
         console.log("amoutn topped up", txhashs);
     });
 
@@ -307,33 +178,13 @@ describe("MIX pre-signing", () => {
     });
 
     it("add Item To buy", async () => {
-        // console.log(swapData);
-        // await delay(5000);
-        let sendArray: {
-            tx: anchor.web3.Transaction;
-            signers?: anchor.web3.Signer[];
-        }[] = [];
+        let txhashs: string[] = [];
 
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-        // let index = 0;
-        // Promise.all(
-        //     userKeypairs.map(async (userKeypair) => {
-        // if (!userKeypairs ) throw "noUserkeypair";
         for (let index = 0; index < userKeypairs.length; index++) {
             const userKeypair = userKeypairs[index];
 
-            // swapData.items.push({
-            //     isNft: false,
-            //     isPresigning: true,
-            //     owner: userKeypair.keypair.publicKey,
-            //     mint: NATIVE_MINT,
-            //     destinary: NATIVE_MINT,
-            //     status: ItemStatus.SolPresigningWaitingForApproval,
-            //     amount: new anchor.BN(0.025 * LAMPORTS_PER_SOL),
-            // });
-
             if (userKeypair.keypair.publicKey.equals(userKeypairs.at(-1).keypair.publicKey)) {
-                console.log(" last itemm", index, userKeypair.keypair.publicKey.toBase58());
+                console.log(" last item", index, userKeypair.keypair.publicKey.toBase58());
                 swapData.items.push({
                     isNft: false,
                     isPresigning: false,
@@ -355,7 +206,6 @@ describe("MIX pre-signing", () => {
                     });
                 });
             } else if (index < userKeypairs.length - 2) {
-                // console.log("else");
                 console.log(" presigned User", index, userKeypair.keypair.publicKey.toBase58());
                 swapData.items.push({
                     isNft: false,
@@ -385,11 +235,12 @@ describe("MIX pre-signing", () => {
                         amount: new BN(1),
                     });
 
-                    userAddItemToBuyTransaction.signers = [userKeypair.keypair];
-                    userAddItemToBuyTransaction.tx.feePayer = userKeypair.keypair.publicKey;
-                    userAddItemToBuyTransaction.tx.recentBlockhash = recentBlockhash;
-
-                    sendArray.push(userAddItemToBuyTransaction);
+                    const transactionHash = await NeoSwap.boradcastToBlockchain({
+                        sendAllArray: [userAddItemToBuyTransaction],
+                        provider: program.provider as anchor.AnchorProvider,
+                        signer: userKeypair.keypair,
+                    });
+                    txhashs.push(...transactionHash);
                 });
             } else {
                 console.log(" not presigned ", index, userKeypair.keypair.publicKey.toBase58());
@@ -415,16 +266,6 @@ describe("MIX pre-signing", () => {
                 });
             }
         }
-        // )
-        // );
-
-        if (!program.provider.sendAll) throw "noSendAll";
-        const txhashs = await program.provider.sendAll(sendArray, {
-            skipPreflight: true,
-        });
-        for await (const hash of txhashs) {
-            program.provider.connection.confirmTransaction(hash);
-        }
 
         console.log("item added to buy", txhashs);
     });
@@ -435,40 +276,20 @@ describe("MIX pre-signing", () => {
         const {
             allInitSendAllArray,
             pda: swapPda,
-            swapData: swapdataResult,
+            // swapData: swapdataResult,
         } = await NeoSwap.allInitialize({
             provider: program.provider as anchor.AnchorProvider,
             CONST_PROGRAM,
             swapDataGiven: swapData,
-            signer: signer.publicKey,
+            signer: signer.keypair.publicKey,
         });
         pda = swapPda;
-        for (let index = 0; index < swapdataResult.items.length; index++) {
-            const item = swapdataResult.items[index];
 
-            console.log(
-                index,
-                "item",
-                item.owner.toBase58(),
-                item.mint.toBase58(),
-                item.isPresigning
-            );
-        }
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-        allInitSendAllArray.forEach((sendArray) => {
-            sendArray.signers = [signer];
-            sendArray.tx.feePayer = signer.publicKey;
-            sendArray.tx.recentBlockhash = recentBlockhash;
+        const txhashs = await NeoSwap.boradcastToBlockchain({
+            sendAllArray: allInitSendAllArray,
+            provider: program.provider as anchor.AnchorProvider,
+            signer: signer.keypair,
         });
-
-        if (!program.provider.sendAll) throw "noSendAll";
-        const txhashs = await program.provider.sendAll(allInitSendAllArray, {
-            skipPreflight: true,
-        });
-
-        for await (const hash of txhashs) {
-            program.provider.connection.confirmTransaction(hash);
-        }
 
         console.log("swap", pda.toBase58(), "initialized", txhashs);
     });
@@ -476,30 +297,19 @@ describe("MIX pre-signing", () => {
     it("Deposit not presigned for claim", async () => {
         let transactionHashs: string[] = [];
         for await (const userKeypair of userKeypairs) {
-            const { depositSendAllArray } = await NeoSwap.deposit({
+            const { depositSendAllArray } = await NeoSwap.depositUserOnly({
                 provider: program.provider as anchor.AnchorProvider,
                 signer: userKeypair.keypair.publicKey,
-                user: userKeypair.keypair.publicKey,
                 swapDataAccount: pda,
                 CONST_PROGRAM,
             });
-            if (depositSendAllArray[0].tx.instructions.length > 0) {
-                const recentBlockhash = (await program.provider.connection.getLatestBlockhash())
-                    .blockhash;
-                depositSendAllArray.forEach((transactionDeposit) => {
-                    transactionDeposit.signers = [userKeypair.keypair];
-                    transactionDeposit.tx.feePayer = userKeypair.keypair.publicKey;
-                    transactionDeposit.tx.recentBlockhash = recentBlockhash;
+            if (depositSendAllArray) {
+                const transactionHash = await NeoSwap.boradcastToBlockchain({
+                    sendAllArray: depositSendAllArray,
+                    provider: program.provider as anchor.AnchorProvider,
+                    signer: userKeypair.keypair,
                 });
-                if (!program.provider.sendAll) throw "noSendAll";
-                const transactionHash = await program.provider.sendAll(depositSendAllArray, {
-                    skipPreflight: true,
-                });
-                console.log("transactionHash", transactionHash);
 
-                for await (const transactionHashh of transactionHash) {
-                    await program.provider.connection.confirmTransaction(transactionHashh);
-                }
                 transactionHashs.push(...transactionHash);
             }
         }
@@ -510,28 +320,16 @@ describe("MIX pre-signing", () => {
     it("claim and close", async () => {
         const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
             provider: program.provider as anchor.AnchorProvider,
-            signer: signer.publicKey,
+            signer: signer.keypair.publicKey,
             swapDataAccount: pda,
             CONST_PROGRAM,
         });
 
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-        allClaimSendAllArray.forEach((transactionDeposit) => {
-            transactionDeposit.signers = [signer];
-            transactionDeposit.tx.feePayer = signer.publicKey;
-            transactionDeposit.tx.recentBlockhash = recentBlockhash;
+        const transactionHashs = await NeoSwap.boradcastToBlockchain({
+            sendAllArray: allClaimSendAllArray,
+            provider: program.provider as anchor.AnchorProvider,
+            signer: signer.keypair,
         });
-
-        // const claimAndCloseHash = await program.provider.sendAll(allClaimSendAllArray);
-        if (!program.provider.sendAll) throw "noSendAll";
-        const transactionHashs = await program.provider.sendAll(allClaimSendAllArray, {
-            skipPreflight: true,
-        });
-        console.log("transactionHashs", transactionHashs);
-        for await (const hash of transactionHashs) {
-            program.provider.connection.confirmTransaction(hash);
-        }
 
         console.log("transactionHashs :", transactionHashs);
     });

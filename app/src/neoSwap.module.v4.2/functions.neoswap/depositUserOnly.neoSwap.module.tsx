@@ -19,17 +19,19 @@ import depositSolPresigned from './createInstruction/deposit.sol.presigned.neosw
  * @param {AnchorProvider} provider with active Connection
  * @return {Array<{tx: Transaction; signers?: Signer[] | undefined;}>}depositSendAllArray => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
  */
-export const deposit = async (Data: {
+export const depositUserOnly = async (Data: {
     swapDataAccount: PublicKey;
-    user: PublicKey;
+    // user: PublicKey;
     signer: PublicKey;
     CONST_PROGRAM: string;
     provider: AnchorProvider;
 }): Promise<{
-    depositSendAllArray: Array<{
-        tx: Transaction;
-        signers?: Array<Signer> | undefined;
-    }>;
+    depositSendAllArray:
+        | Array<{
+              tx: Transaction;
+              signers?: Array<Signer> | undefined;
+          }>
+        | undefined;
 }> => {
     const program = getProgram(Data.provider);
 
@@ -99,7 +101,7 @@ export const deposit = async (Data: {
                         const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSol({
                             program: program,
                             ataList,
-                            signer: Data.user,
+                            signer: Data.signer,
                             ItemToDeposit: swapDataItem,
                             swapDataAccount: Data.swapDataAccount,
                             swapDataAccount_seed: swapData.swapDataAccount_seed,
@@ -125,7 +127,6 @@ export const deposit = async (Data: {
             //             // test.push(i);
             //             // i++;
             //             // console.log('test', test);
-
             //             let { instruction: depositNFTInstruction, mintAta: createdMint } = await depositNftPresigned({
             //                 program: program,
             //                 signer: Data.signer,
@@ -137,18 +138,15 @@ export const deposit = async (Data: {
             //                 ataList,
             //             });
             //             ataList = createdMint;
-
             //             depositNFTInstruction.forEach((depositNftAta) => {
             //                 depositInstruction.push(depositNftAta);
             //             });
             //             // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList NFT', ataList);
             //             console.log('depositNftInstruction added');
             //         }
-
             //         break;
             //     case false:
             //         // console.log('presigned not NFT', swapDataItem, swapDataItem.owner.toBase58(), Data.user.toBase58());
-
             //         if (
             //             swapDataItem.owner.toBase58() === Data.user.toBase58() &&
             //             swapDataItem.status === ItemStatus.SolPendingPresig
@@ -156,7 +154,6 @@ export const deposit = async (Data: {
             //             // test.push(i);
             //             // i++;
             //             // console.log('test', test);
-
             //             console.log(
             //                 'XXXXXXX - Presigned Deposit sol item - XXXXXXX',
             //                 'signer:',
@@ -178,7 +175,6 @@ export const deposit = async (Data: {
             //             });
             //             depositInstruction.push(...depositSolInstruction);
             //             ataList = createdMint;
-
             //             // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList SOL', ataList);
             //             console.log('depositSolinstruction added');
             //         }
@@ -197,7 +193,11 @@ export const deposit = async (Data: {
         itemToAdd: depositInstruction,
     });
     const depositSendAllArray = await convertAllTransaction(depositTransaction);
-    return { depositSendAllArray };
+    if (depositSendAllArray[0].tx.instructions.length > 0) {
+        return { depositSendAllArray };
+    } else {
+        return { depositSendAllArray: undefined };
+    }
 };
 
-export default deposit;
+export default depositUserOnly;
