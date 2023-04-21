@@ -64,7 +64,7 @@ export const allInitialize = async (Data: {
         }
     });
 
-    const { usersValidateItemsTransactions } = await validateUserPdaItems({
+    let { usersValidateItemsTransactions } = await validateUserPdaItems({
         program: program,
         signer: Data.signer,
         CONST_PROGRAM: Data.CONST_PROGRAM,
@@ -78,15 +78,14 @@ export const allInitialize = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapData,
     });
+    let allInitSendAllArray = [...initinitSendAllArray, ...addInitSendAllArray, ...validateInitSendAllArray];
 
-    const allInitSendAllArray = [
-        ...initinitSendAllArray,
-        ...addInitSendAllArray,
-        ...validateInitSendAllArray,
-        ...usersValidateItemsTransactions,
-        ...validatePresigningSwapTransaction,
-    ];
-
+    if (usersValidateItemsTransactions[0].tx.instructions.length > 0) {
+        allInitSendAllArray.push(...usersValidateItemsTransactions);
+    } else {
+        console.log('no Presigned users');
+    }
+    allInitSendAllArray.push(...validatePresigningSwapTransaction);
     return {
         allInitSendAllArray,
         pda: allInitSendAllArray[0].tx.instructions[0]?.keys[0].pubkey,

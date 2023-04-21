@@ -18,7 +18,7 @@ export async function airdropDev(Data: {
     }[];
 }): Promise<boolean> {
     // for await (const userKeypair of userKeypairs) {
-    Promise.all(
+    await Promise.all(
         Data.keypairs.map(async (keypair) => {
             await Data.connection
                 .confirmTransaction(

@@ -27,48 +27,58 @@ export const createNft = async (Data: {
         value: number;
     }[]
 > => {
-    Array.from(Array(Data.nb).keys()).map(async () => {
-        let mintPubkey = await createMint(
-            Data.program.provider.connection, // conneciton
-            Data.userKeypair.keypair, // fee payer
-            Data.userKeypair.keypair.publicKey, // mint authority
-            Data.userKeypair.keypair.publicKey, // freeze authority
-            0 // decimals
-        );
+    await Promise.all(
+        Array.from(Array(Data.nb).keys()).map(async () => {
+            try {
+                let mintPubkey = await createMint(
+                    Data.program.provider.connection, // conneciton
+                    Data.userKeypair.keypair, // fee payer
+                    Data.userKeypair.keypair.publicKey, // mint authority
+                    Data.userKeypair.keypair.publicKey, // freeze authority
+                    0 // decimals
+                );
+                // console.log('mintPubkey', mintPubkey.toBase58());
 
-        let ata = await createAssociatedTokenAccount(
-            Data.program.provider.connection, // conneciton
-            Data.userKeypair.keypair, // fee payer
-            mintPubkey, // mint
-            Data.userKeypair.keypair.publicKey // owner,
-        );
-        Data.userKeypair.tokens.push({
-            ata,
-            mint: mintPubkey,
-            value: Math.ceil((Math.random() * LAMPORTS_PER_SOL) / 10),
-        });
-        await mintToChecked(
-            Data.program.provider.connection, // conneciton
-            Data.userKeypair.keypair, // fee payer
-            mintPubkey, // mint
-            ata, // receiver
-            Data.userKeypair.keypair.publicKey, // mint authority
-            1, // amount.
-            0 // decimals
-        );
+                let ata = await createAssociatedTokenAccount(
+                    Data.program.provider.connection, // conneciton
+                    Data.userKeypair.keypair, // fee payer
+                    mintPubkey, // mint
+                    Data.userKeypair.keypair.publicKey // owner,
+                );
+                // console.log('ata', ata.toBase58());
 
-        const ataBalance = await Data.program.provider.connection.getTokenAccountBalance(ata);
-        console.log(
-            'mint ',
-            mintPubkey.toBase58(),
-            '\nwith ata: ',
-            ata.toBase58(),
-            '\n balance:',
-            ataBalance.value.uiAmount,
-            ' NFT'
-        );
-        // const txhashs = await boradcastToBlockchain({ provider: Data.program.provider as AnchorProvider, sendAllArray });
-    });
+                Data.userKeypair.tokens.push({
+                    ata,
+                    mint: mintPubkey,
+                    value: Math.ceil((Math.random() * LAMPORTS_PER_SOL) / 10),
+                });
+
+                await mintToChecked(
+                    Data.program.provider.connection, // conneciton
+                    Data.userKeypair.keypair, // fee payer
+                    mintPubkey, // mint
+                    ata, // receiver
+                    Data.userKeypair.keypair, // mint authority
+                    1, // amount.
+                    0 // decimals
+                );
+
+                const ataBalance = await Data.program.provider.connection.getTokenAccountBalance(ata);
+                console.log(
+                    'mint ',
+                    mintPubkey.toBase58(),
+                    '\nwith ata: ',
+                    ata.toBase58(),
+                    '\n balance:',
+                    ataBalance.value.uiAmount,
+                    ' NFT'
+                );
+            } catch (error) {
+                console.log('info', Data.userKeypair.keypair.publicKey.toBase58(), 'error', error);
+            }
+            // const txhashs = await boradcastToBlockchain({ provider: Data.program.provider as AnchorProvider, sendAllArray });
+        })
+    );
     return Data.userKeypair.tokens;
 };
 

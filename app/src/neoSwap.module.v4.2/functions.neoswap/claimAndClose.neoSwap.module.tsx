@@ -29,6 +29,10 @@ export const claimAndClose = async (Data: {
     }>;
 }> => {
     const program = getProgram(Data.provider);
+    let allClaimSendAllArray: {
+        tx: Transaction;
+        signers?: Signer[] | undefined;
+    }[] = [];
     // let swapData = (await program.account.swapData.fetch(Data.swapDataAccount)) as SwapData;
     // console.log('swapData', swapData);
 
@@ -45,13 +49,15 @@ export const claimAndClose = async (Data: {
     }
     // deposit presigned
 
-    const { depositPresignedSendAll , ataList} = await depositPresigned({
+    const { depositPresignedSendAll, ataList } = await depositPresigned({
         provider: program.provider as AnchorProvider,
         signer: Data.signer,
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
     });
-
+    if (depositPresignedSendAll[0].tx.instructions.length > 0) {
+        allClaimSendAllArray.push(...depositPresignedSendAll);
+    }
     const { validateDepositSendAll } = await validateDeposit({
         program: program,
         signer: Data.signer,
@@ -63,7 +69,7 @@ export const claimAndClose = async (Data: {
         signer: Data.signer,
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
-        ataList
+        ataList,
     });
     const { validateClaimedSendAll } = await validateClaimed({
         program: program,
@@ -72,12 +78,7 @@ export const claimAndClose = async (Data: {
         swapDataAccount: Data.swapDataAccount,
     });
 
-    const allClaimSendAllArray = [
-        ...depositPresignedSendAll,
-        ...validateDepositSendAll,
-        ...claimSendAllArray,
-        ...validateClaimedSendAll,
-    ];
+    allClaimSendAllArray.push(...validateDepositSendAll, ...claimSendAllArray, ...validateClaimedSendAll);
 
     return { allClaimSendAllArray };
 };

@@ -43,7 +43,7 @@ describe("MIX pre-signing", () => {
 
     const program = anchor.workspace.NeoSwap as Program;
     const nbuserPresigned = 4;
-    const nbuserNormal = 4;
+    const nbuserNormal = 0;
     const nftNb = 2;
     let userKeypairsPresigned: {
         keypair: Keypair;
@@ -79,12 +79,16 @@ describe("MIX pre-signing", () => {
 
     it("Initializing accounts", async () => {
         console.log("programId", program.programId.toBase58());
-        Array.from(Array(nbuserPresigned).keys()).map(async () => {
-            userKeypairsPresigned.push({ keypair: Keypair.generate(), tokens: [] });
-        });
-        Array.from(Array(nbuserNormal).keys()).map(async () => {
-            userKeypairsNormal.push({ keypair: Keypair.generate(), tokens: [] });
-        });
+        if (nbuserPresigned > 0) {
+            Array.from(Array(nbuserPresigned).keys()).map(async () => {
+                userKeypairsPresigned.push({ keypair: Keypair.generate(), tokens: [] });
+            });
+        }
+        if (nbuserNormal > 0) {
+            Array.from(Array(nbuserNormal).keys()).map(async () => {
+                userKeypairsNormal.push({ keypair: Keypair.generate(), tokens: [] });
+            });
+        }
         await NeoSwap.airdropDev({
             connection: program.provider.connection,
             keypairs: [
@@ -95,6 +99,7 @@ describe("MIX pre-signing", () => {
                 ...userKeypairsNormal,
             ],
         });
+        console.log("accounts initialized");
     });
 
     it("users instruction", async () => {
@@ -109,19 +114,29 @@ describe("MIX pre-signing", () => {
         //     userKeypair: unauthorizedKeypair,
         //     nb: nftNb,
         // });
+        [...userKeypairsPresigned, ...userKeypairsNormal].forEach((userKeypair) => {console.log("userKeypair", userKeypair.keypair.publicKey.toBase58());
+        })
+        // console.log("[...userKeypairsPresigned, ...userKeypairsNormal]", [
+        //     ...userKeypairsPresigned,
+        //     ...userKeypairsNormal,
+        // ]);
 
         await Promise.all(
             [...userKeypairsPresigned, ...userKeypairsNormal].map(async (userKeypair) => {
-                console.log(
-                    "XXX XXX - user ",
-                    userKeypair.keypair.publicKey.toBase58(),
-                    " XXX XXX"
-                );
                 userKeypair.tokens = await NeoSwap.createNft({
                     program,
                     userKeypair,
                     nb: nftNb,
                 });
+                let mints = [];
+                // userKeypair.tokens.forEach((token) => mints.push(token.mint.toBase58()));
+                console.log(
+                    "XXX XXX - Create NFT user ",
+                    userKeypair.keypair.publicKey.toBase58(),
+                    " XXX XXX",
+                    // mints
+                    // userKeypair.tokens
+                );
             })
         );
     });
