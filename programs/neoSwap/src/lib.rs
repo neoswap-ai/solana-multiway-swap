@@ -547,7 +547,7 @@ pub mod neo_swap {
         ctx: Context<DepositSol>,
         _seed: Vec<u8>,
         _bump: u8,
-        _user_bump: u8,
+        // _user_bump: u8,
     ) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
@@ -1738,7 +1738,7 @@ pub struct DepositNft<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, user_bump: u8)]
+#[instruction(seed: Vec<u8>, bump: u8)]
 pub struct DepositSol<'info> {
     #[account()]
     system_program: Program<'info, System>,
@@ -1752,12 +1752,12 @@ pub struct DepositSol<'info> {
         constraint = swap_data_account_wsol.owner.eq(&swap_data_account.key())  @ MYERROR::IncorrectOwner
     )]
     swap_data_account_wsol: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        seeds = [&signer.key().to_bytes()[..]], 
-        bump = user_bump,
-    )]
-    user_pda: Box<Account<'info, UserPdaData>>,
+    // #[account(
+    //     mut,
+    //     seeds = [&signer.key().to_bytes()[..]], 
+    //     bump = user_bump,
+    // )]
+    // user_pda: Box<Account<'info, UserPdaData>>,
     #[account(mut)]
     user: AccountInfo<'info>,
     #[account(
