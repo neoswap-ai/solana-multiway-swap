@@ -237,11 +237,6 @@ export const idl = {
                     isSigner: false,
                 },
                 {
-                    name: 'userPda',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
                     name: 'user',
                     isMut: true,
                     isSigner: false,
@@ -264,10 +259,6 @@ export const idl = {
                 },
                 {
                     name: 'bump',
-                    type: 'u8',
-                },
-                {
-                    name: 'userBump',
                     type: 'u8',
                 },
             ],
@@ -1190,6 +1181,9 @@ export const idl = {
                     },
                     {
                         name: 'NotDelegated',
+                    },
+                    {
+                        name: 'PdaDataNotRemoved',
                     },
                 ],
             },

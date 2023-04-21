@@ -1,6 +1,6 @@
-import { createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { splAssociatedTokenAccountProgramId } from './const.neoSwap';
+// import { createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+// import { splAssociatedTokenAccountProgramId } from './const.neoSwap';
 
 /**
  * @notice creates instruction for creating PDA ATA related to mint

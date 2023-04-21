@@ -42,9 +42,17 @@ describe("MIX pre-signing", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     const program = anchor.workspace.NeoSwap as Program;
-    const nbuser = 4;
+    const nbuserPresigned = 4;
+    const nbuserNormal = 4;
     const nftNb = 2;
-    let userKeypairs: { keypair: Keypair; tokens: { mint: PublicKey; ata: PublicKey }[] }[] = [];
+    let userKeypairsPresigned: {
+        keypair: Keypair;
+        tokens: { mint: PublicKey; ata: PublicKey; value: number }[];
+    }[] = [];
+    let userKeypairsNormal: {
+        keypair: Keypair;
+        tokens: { mint: PublicKey; ata: PublicKey; value: number }[];
+    }[] = [];
     let CONST_PROGRAM = "0000";
     let signer = { keypair: Keypair.generate(), tokens: [] };
     let feeCollector = { keypair: Keypair.generate(), tokens: [] };
@@ -56,7 +64,7 @@ describe("MIX pre-signing", () => {
             {
                 isNft: false,
                 isPresigning: false,
-                amount: new anchor.BN(-0.025 * nbuser * LAMPORTS_PER_SOL),
+                amount: new anchor.BN(-0.025 * (nbuserPresigned + nbuserNormal) * LAMPORTS_PER_SOL),
                 destinary: NATIVE_MINT,
                 mint: NATIVE_MINT,
                 owner: feeCollector.keypair.publicKey,
@@ -71,13 +79,21 @@ describe("MIX pre-signing", () => {
 
     it("Initializing accounts", async () => {
         console.log("programId", program.programId.toBase58());
-        Array.from(Array(nbuser).keys()).map(async () => {
-            userKeypairs.push({ keypair: Keypair.generate(), tokens: [] });
+        Array.from(Array(nbuserPresigned).keys()).map(async () => {
+            userKeypairsPresigned.push({ keypair: Keypair.generate(), tokens: [] });
         });
-
+        Array.from(Array(nbuserNormal).keys()).map(async () => {
+            userKeypairsNormal.push({ keypair: Keypair.generate(), tokens: [] });
+        });
         await NeoSwap.airdropDev({
             connection: program.provider.connection,
-            keypairs: [signer, feeCollector, unauthorizedKeypair, ...userKeypairs],
+            keypairs: [
+                signer,
+                feeCollector,
+                unauthorizedKeypair,
+                ...userKeypairsPresigned,
+                ...userKeypairsNormal,
+            ],
         });
     });
 
@@ -95,7 +111,7 @@ describe("MIX pre-signing", () => {
         // });
 
         await Promise.all(
-            userKeypairs.map(async (userKeypair) => {
+            [...userKeypairsPresigned, ...userKeypairsNormal].map(async (userKeypair) => {
                 console.log(
                     "XXX XXX - user ",
                     userKeypair.keypair.publicKey.toBase58(),
@@ -117,7 +133,7 @@ describe("MIX pre-signing", () => {
             userKeypairs: [
                 { keypair: signer.keypair, tokens: [] },
                 { keypair: feeCollector.keypair, tokens: [] },
-                ...userKeypairs,
+                ...userKeypairsPresigned,
             ],
             signer: signer.keypair,
         });
@@ -126,147 +142,29 @@ describe("MIX pre-signing", () => {
 
     it("Update amount to topup", async () => {
         // console.log(swapData);
-        const txhashs = await NeoSwap.updateAmountToTopupTest({ program, userKeypairs });
+        const txhashs = await NeoSwap.updateAmountToTopupTest({
+            program,
+            userKeypairs: userKeypairsPresigned,
+        });
         console.log("amoutn topped up", txhashs);
     });
 
     it("add Item To Sell", async () => {
-        // console.log(swapData);
-        // await delay(5000);
-        let sendArray: {
-            tx: anchor.web3.Transaction;
-            signers?: anchor.web3.Signer[];
-        }[] = [];
-
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-        await Promise.all(
-            userKeypairs.map(async (userKeypair) => {
-                await Promise.all(
-                    userKeypair.tokens.map(async (token) => {
-                        const { userAddItemToSellTransaction } = await NeoSwap.userAddItemToSell({
-                            program,
-                            itemToSell: {
-                                mint: token.mint,
-                                amountMini: new BN(0.1 * LAMPORTS_PER_SOL),
-                            },
-                            signer: userKeypair.keypair.publicKey,
-                        });
-
-                        userAddItemToSellTransaction.signers = [userKeypair.keypair];
-                        userAddItemToSellTransaction.tx.feePayer = userKeypair.keypair.publicKey;
-                        userAddItemToSellTransaction.tx.recentBlockhash = recentBlockhash;
-
-                        sendArray.push(userAddItemToSellTransaction);
-                    })
-                );
-            })
-        );
-
-        // console.log("sendArray", sendArray);
-
-        if (!program.provider.sendAll) throw "noSendAll";
-        const txhashs = await program.provider.sendAll(sendArray, {
-            skipPreflight: true,
+        const txhashs = await NeoSwap.userAddItemToSellTest({
+            program,
+            userKeypairs: userKeypairsPresigned,
         });
-
-        for await (const hash of txhashs) {
-            program.provider.connection.confirmTransaction(hash);
-        }
-
         console.log("item added to sell", txhashs);
     });
 
     it("add Item To buy", async () => {
-        let txhashs: string[] = [];
-
-        for (let index = 0; index < userKeypairs.length; index++) {
-            const userKeypair = userKeypairs[index];
-
-            if (userKeypair.keypair.publicKey.equals(userKeypairs.at(-1).keypair.publicKey)) {
-                console.log(" last item", index, userKeypair.keypair.publicKey.toBase58());
-                swapData.items.push({
-                    isNft: false,
-                    isPresigning: false,
-                    owner: userKeypair.keypair.publicKey,
-                    mint: NATIVE_MINT,
-                    destinary: NATIVE_MINT,
-                    status: ItemStatus.SolPending,
-                    amount: new anchor.BN(0.025 * LAMPORTS_PER_SOL),
-                });
-                userKeypairs[0].tokens.map(async (token) => {
-                    swapData.items.push({
-                        isNft: true,
-                        isPresigning: false,
-                        mint: token.mint,
-                        owner: userKeypairs[0].keypair.publicKey,
-                        status: ItemStatus.NFTPending,
-                        destinary: userKeypair.keypair.publicKey,
-                        amount: new BN(1),
-                    });
-                });
-            } else if (index < userKeypairs.length - 2) {
-                console.log(" presigned User", index, userKeypair.keypair.publicKey.toBase58());
-                swapData.items.push({
-                    isNft: false,
-                    isPresigning: true,
-                    owner: userKeypair.keypair.publicKey,
-                    mint: NATIVE_MINT,
-                    destinary: NATIVE_MINT,
-                    status: ItemStatus.SolPresigningWaitingForApproval,
-                    amount: new anchor.BN(0.025 * LAMPORTS_PER_SOL),
-                });
-                userKeypairs[index + 1].tokens.map(async (token) => {
-                    // console.log("else Token", index, token.mint.toBase58());
-
-                    const { userAddItemToBuyTransaction } = await NeoSwap.userAddItemToBuy({
-                        program,
-                        itemToBuy: { mint: token.mint, amountMaxi: new BN(0.1 * LAMPORTS_PER_SOL) },
-                        signer: userKeypair.keypair.publicKey,
-                    });
-
-                    swapData.items.push({
-                        isNft: true,
-                        isPresigning: true,
-                        mint: token.mint,
-                        owner: userKeypairs[index + 1].keypair.publicKey,
-                        status: ItemStatus.NFTPresigningWaitingForApproval,
-                        destinary: userKeypair.keypair.publicKey,
-                        amount: new BN(1),
-                    });
-
-                    const transactionHash = await NeoSwap.boradcastToBlockchain({
-                        sendAllArray: [userAddItemToBuyTransaction],
-                        provider: program.provider as anchor.AnchorProvider,
-                        signer: userKeypair.keypair,
-                    });
-                    txhashs.push(...transactionHash);
-                });
-            } else {
-                console.log(" not presigned ", index, userKeypair.keypair.publicKey.toBase58());
-                swapData.items.push({
-                    isNft: false,
-                    isPresigning: false,
-                    owner: userKeypair.keypair.publicKey,
-                    mint: NATIVE_MINT,
-                    destinary: NATIVE_MINT,
-                    status: ItemStatus.SolPending,
-                    amount: new anchor.BN(0.025 * LAMPORTS_PER_SOL),
-                });
-                userKeypairs[index + 1].tokens.map(async (token) => {
-                    swapData.items.push({
-                        isNft: true,
-                        isPresigning: false,
-                        mint: token.mint,
-                        owner: userKeypairs[index + 1].keypair.publicKey,
-                        status: ItemStatus.NFTPending,
-                        destinary: userKeypair.keypair.publicKey,
-                        amount: new BN(1),
-                    });
-                });
-            }
-        }
-
+        const { txhashs, swapData: swapDataResult } = await NeoSwap.userAddItemToBuyTest({
+            program,
+            swapData,
+            userKeypairsPresigned,
+            userKeypairsNormal,
+        });
+        swapData = swapDataResult;
         console.log("item added to buy", txhashs);
     });
 
@@ -276,7 +174,8 @@ describe("MIX pre-signing", () => {
         const {
             allInitSendAllArray,
             pda: swapPda,
-            // swapData: swapdataResult,
+            // txhashs,
+            swapData: swapdataResult,
         } = await NeoSwap.allInitialize({
             provider: program.provider as anchor.AnchorProvider,
             CONST_PROGRAM,
@@ -284,7 +183,7 @@ describe("MIX pre-signing", () => {
             signer: signer.keypair.publicKey,
         });
         pda = swapPda;
-
+        swapData = swapdataResult;
         const txhashs = await NeoSwap.boradcastToBlockchain({
             sendAllArray: allInitSendAllArray,
             provider: program.provider as anchor.AnchorProvider,
@@ -296,7 +195,7 @@ describe("MIX pre-signing", () => {
 
     it("Deposit not presigned for claim", async () => {
         let transactionHashs: string[] = [];
-        for await (const userKeypair of userKeypairs) {
+        for await (const userKeypair of userKeypairsNormal) {
             const { depositSendAllArray } = await NeoSwap.depositUserOnly({
                 provider: program.provider as anchor.AnchorProvider,
                 signer: userKeypair.keypair.publicKey,

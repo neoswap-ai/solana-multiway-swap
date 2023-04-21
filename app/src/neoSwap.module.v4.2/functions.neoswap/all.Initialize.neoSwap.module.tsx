@@ -57,7 +57,7 @@ export const allInitialize = async (Data: {
     let users: PublicKey[] = [];
 
     swapData.items.forEach((item) => {
-        if (!String(users).includes(item.owner.toString())) {
+        if (!String(users).includes(item.owner.toString()) && item.isPresigning === true) {
             console.log('item.owner', item.owner.toBase58());
 
             users.push(item.owner);

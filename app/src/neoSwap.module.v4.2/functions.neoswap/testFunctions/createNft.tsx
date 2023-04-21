@@ -14,6 +14,7 @@ export const createNft = async (Data: {
         tokens: {
             mint: PublicKey;
             ata: PublicKey;
+            value: number;
         }[];
     };
     // userKeypairs: { keypair: Keypair[] };
@@ -23,6 +24,7 @@ export const createNft = async (Data: {
     {
         mint: PublicKey;
         ata: PublicKey;
+        value: number;
     }[]
 > => {
     Array.from(Array(Data.nb).keys()).map(async () => {
@@ -40,7 +42,11 @@ export const createNft = async (Data: {
             mintPubkey, // mint
             Data.userKeypair.keypair.publicKey // owner,
         );
-        Data.userKeypair.tokens.push({ ata, mint: mintPubkey });
+        Data.userKeypair.tokens.push({
+            ata,
+            mint: mintPubkey,
+            value: Math.ceil((Math.random() * LAMPORTS_PER_SOL) / 10),
+        });
         await mintToChecked(
             Data.program.provider.connection, // conneciton
             Data.userKeypair.keypair, // fee payer

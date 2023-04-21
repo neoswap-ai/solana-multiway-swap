@@ -39,7 +39,8 @@ export const hasUserDepositedBeforePresigned = async (Data: {
                             swapDataItem.mint.toBase58(),
                             'status',
                             swapDataItem.status,
-                            '- XXX '
+                            '- XXX ',
+                            swapDataItem.owner.toBase58()
                         );
                         return false;
                     }
@@ -47,7 +48,12 @@ export const hasUserDepositedBeforePresigned = async (Data: {
                     break;
                 case false:
                     if (swapDataItem.status === ItemStatus.SolPending) {
-                        console.log('YYYYYY error - Deposit sol item - XXXXXXX', swapDataItem.status);
+                        console.log(
+                            'YYYYYY error - Deposit sol item - XXXXXXX',
+                            swapDataItem.status,
+                            '\n',
+                            swapDataItem.owner.toBase58()
+                        );
                         return false;
                     }
                     break;

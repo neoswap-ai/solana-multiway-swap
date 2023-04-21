@@ -97,7 +97,7 @@ export const depositUserOnly = async (Data: {
                         // i++;
                         // console.log('test', test);
 
-                        console.log('XXXXXXX - Deposit sol item - XXXXXXX', ataList);
+                        console.log('XXXXXXX - Deposit sol item',swapDataItem.owner.toBase58(),' - XXXXXXX', ataList);
                         const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSol({
                             program: program,
                             ataList,

@@ -75,7 +75,7 @@ export async function depositSol(Data: {
         mintAta.push(swapDataAccountWsol);
     }
 
-    const [userPda, userBump] = PublicKey.findProgramAddressSync([Data.signer.toBytes()], Data.program.programId);
+    // const [userPda, userBump] = PublicKey.findProgramAddressSync([Data.signer.toBytes()], Data.program.programId);
     // let wsolBalanceUser = 0;
     let amountToAddToWsol = 0;
     try {
@@ -103,14 +103,14 @@ export async function depositSol(Data: {
     }
 
     let depositInstruction = await Data.program.methods
-        .depositSol(Data.swapDataAccount_seed, Data.swapDataAccount_bump, userBump)
+        .depositSol(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
         .accounts({
             systemProgram: web3.SystemProgram.programId,
             swapDataAccount: Data.swapDataAccount,
             signer: Data.signer,
             tokenProgram: TOKEN_PROGRAM_ID,
             swapDataAccountWsol,
-            userPda,
+            // userPda,
             user: Data.signer,
             userWsol,
         })

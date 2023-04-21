@@ -10,15 +10,17 @@ import userAddItemToBuy from './functions.neoswap/subFunctions/userAddItemToBuy.
 import { userUpdateAmountTopUp } from './functions.neoswap/subFunctions/userUpdateAmountTopUp.neoSwap.sub';
 import { transferUserApprovedNft } from './functions.neoswap/subFunctions/transferUserApprovedNft.neoSwap.sub';
 import transferUserApprovedWsol from './functions.neoswap/subFunctions/transferUserApprovedWsol.neoSwap.sub';
-import validateUserPdaItemsIx from './functions.neoswap/subFunctions/validateUserPdaItems.neoSwap.sub';
 import getUserPdaData from './functions.neoswap/subFunctions/getUserPdaData.neoSwap.sub';
-import validatePresigningSwap from './functions.neoswap/subFunctions/validatePresigningSwap.neoSwap.sub';
+// import validateUserPdaItemsIx from './functions.neoswap/subFunctions/validateUserPdaItems.neoSwap.sub';
+// import validatePresigningSwap from './functions.neoswap/subFunctions/validatePresigningSwap.neoSwap.sub';
 import boradcastToBlockchain from './functions.neoswap/testFunctions/boradcastToBlockchain';
 import depositPresigned from './functions.neoswap/depositPresigned.neoSwap.module';
 import { updateAmountToTopupTest } from './functions.neoswap/testFunctions/updateAmountToTopupTest';
 import createUserPdaTest from './functions.neoswap/testFunctions/createUserPdaTest';
 import createNft from './functions.neoswap/testFunctions/createNft';
 import airdropDev from './utils.neoSwap/airdropDev';
+import userAddItemToSellTest from './functions.neoswap/testFunctions/userAddItemToSellTest';
+import userAddItemToBuyTest from './functions.neoswap/testFunctions/userAddItemToBuyTest';
 const NeoSwap = {
     /// Main
     allInitialize, /// creates instruction for initializing PDA, writing data and setting the trade state to depositing
@@ -43,7 +45,9 @@ const NeoSwap = {
     // fillUserPda,
     updateAmountToTopupTest,
     createUserPdaTest,
-    createNft
+    createNft,
+    userAddItemToSellTest,
+    userAddItemToBuyTest,
 };
 
 export default NeoSwap;
