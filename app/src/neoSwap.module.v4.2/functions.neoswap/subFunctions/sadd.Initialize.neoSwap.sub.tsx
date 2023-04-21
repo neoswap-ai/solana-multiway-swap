@@ -36,7 +36,7 @@ export const saddInitialize = async (Data: {
 
     let addInitTransactionInstruction: Array<TransactionInstruction> = [];
     for (let item = 0; item < Data.swapData.items.length; item++) {
-        console.log('XXXXXXX - added to init item n° ', item, ' XXXXXXX');
+        console.log('\nXXXXXXX - added to init item n° ', item, ' XXXXXXX');
         let userAta = getAssociatedTokenAddressSync(
             seedSwapData.swapData.items[item].mint,
             seedSwapData.swapData.items[item].owner

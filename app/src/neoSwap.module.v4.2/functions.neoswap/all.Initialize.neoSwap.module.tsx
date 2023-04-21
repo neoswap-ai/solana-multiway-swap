@@ -46,7 +46,7 @@ export const allInitialize = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapData: swapData,
     });
-    console.log('test');
+    // console.log('test');
 
     const { validateInitSendAllArray } = await validateInitialize({
         program: program,
@@ -58,7 +58,7 @@ export const allInitialize = async (Data: {
 
     swapData.items.forEach((item) => {
         if (!String(users).includes(item.owner.toString()) && item.isPresigning === true) {
-            console.log('item.owner', item.owner.toBase58());
+            // console.log('item.owner', item.owner.toBase58());
 
             users.push(item.owner);
         }

@@ -60,7 +60,7 @@ export const depositPresigned = async (Data: {
                         // swapDataItem.owner.toBase58() === swapDataItem.owner.toBase58() &&
                         swapDataItem.status === ItemStatus.NFTPendingPresign
                     ) {
-                        console.log('XXX - Presigned Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
+                        console.log('\nXXX - Presigned Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
 
                         let { instruction: depositNFTInstruction, mintAta: createdMint } = await depositNftPresigned({
                             program: program,
@@ -90,14 +90,14 @@ export const depositPresigned = async (Data: {
                         swapDataItem.status === ItemStatus.SolPendingPresig
                     ) {
                         console.log(
-                            'XXXXXXX - Presigned Deposit sol item - XXXXXXX',
+                            '\nXXXXXXX - Presigned Deposit sol item - XXXXXXX',
                             'signer:',
                             Data.signer.toBase58(),
                             'user:',
                             swapDataItem.owner.toBase58(),
                             // 'swapDataAccount:',
                             // Data.swapDataAccount,
-                            ataList
+                            // ataList
                         );
                         const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSolPresigned({
                             program: program,
@@ -121,7 +121,7 @@ export const depositPresigned = async (Data: {
             throw { msg: 'presigning value error' };
         }
     }
-    console.log('depositInstruction', depositInstruction.length);
+    // console.log('depositInstruction', depositInstruction.length);
 
     let depositTransaction = [new Transaction()];
     depositTransaction = appendTransactionToArray({

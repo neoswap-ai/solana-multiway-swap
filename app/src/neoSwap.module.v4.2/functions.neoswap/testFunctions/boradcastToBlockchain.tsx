@@ -48,7 +48,7 @@ export const boradcastToBlockchain = async (Data: {
         skipPreflight: true,
     });
 
-    console.log('transactionHashs', transactionHashs);
+    // console.log('transactionHashs', transactionHashs);
 
     for await (const hash of transactionHashs) {
         Data.provider.connection.confirmTransaction(hash);

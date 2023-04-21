@@ -28,7 +28,7 @@ export const validateClaimed = async (Data: {
         provider: Data.program.provider as AnchorProvider,
         CONST_PROGRAM: Data.CONST_PROGRAM,
     });
-    console.log('swapData from validate', swapData);
+    // console.log('swapData from validate', swapData);
 
     const validateClaimedTransaction = new Transaction().add(
         await Data.program.methods

@@ -52,7 +52,7 @@ export const validateUserPdaItems = async (Data: {
         Data.users.map(async (user) => {
             // if (item.isNft) {
             const [userPda, userBump] = publicKey.findProgramAddressSync([user.toBytes()], Data.program.programId);
-            console.log('userPda', userPda.toBase58());
+            console.log('\n\nowner', user.toBase58(), '\nuserPda', userPda.toBase58());
 
             // const userPdaData = await Data.program.account.userPdaData.fetch(userPda);
             // console.log('userPdaData', userPdaData);

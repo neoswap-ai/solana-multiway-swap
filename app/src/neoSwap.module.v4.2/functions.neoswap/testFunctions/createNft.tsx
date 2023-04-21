@@ -71,7 +71,7 @@ export const createNft = async (Data: {
                     ata.toBase58(),
                     '\n balance:',
                     ataBalance.value.uiAmount,
-                    ' NFT'
+                    ' NFT \n\n'
                 );
             } catch (error) {
                 console.log('info', Data.userKeypair.keypair.publicKey.toBase58(), 'error', error);

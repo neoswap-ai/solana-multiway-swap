@@ -85,7 +85,7 @@ export async function depositNft(Data: {
 
     instruction.push(depositIx);
     console.log('from: ', userMintAta.toBase58(), '\nto: ', pdaMintAta.toBase58(), '\nmint: ', Data.mint.toBase58());
-    console.log('mintAta', mintAta);
+    // console.log('mintAta', mintAta);
 
     return { instruction, mintAta };
 }

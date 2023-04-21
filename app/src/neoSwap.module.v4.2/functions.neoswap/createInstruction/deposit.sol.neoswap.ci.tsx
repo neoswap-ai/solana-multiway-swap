@@ -88,7 +88,7 @@ export async function depositSol(Data: {
         amountToAddToWsol = Data.ItemToDeposit.amount.toNumber();
     }
     if (amountToAddToWsol !== 0) {
-        console.log('added', amountToAddToWsol / LAMPORTS_PER_SOL, ' Wsol to account', userWsol.toBase58());
+        console.log('added', amountToAddToWsol / LAMPORTS_PER_SOL, ' Wsol to account', userWsol.toBase58(), '\n');
 
         instruction.push(
             ...[
@@ -117,7 +117,7 @@ export async function depositSol(Data: {
         .instruction();
 
     instruction.push(depositInstruction);
-    console.log('mintAta', mintAta);
+    // console.log('mintAta', mintAta);
 
     return { instruction, mintAta };
 }

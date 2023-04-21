@@ -63,7 +63,7 @@ export const depositUserOnly = async (Data: {
                     ) {
                         // console.log('not presigned is NFT', swapDataItem);
                         // if (Data.signer)
-                        console.log('XXX - Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
+                        console.log('\nXXX - Deposit NFT X X ', swapDataItem.mint.toBase58(), ' - XXX ');
                         // test.push(i);
                         // i++;
                         // console.log('test', test);
@@ -83,7 +83,7 @@ export const depositUserOnly = async (Data: {
                             depositInstruction.push(depositNftAta);
                         });
                         // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList NFT', ataList);
-                        console.log('depositNftInstruction added');
+                        // console.log('depositNftInstruction added');
                     }
 
                     break;
@@ -97,7 +97,7 @@ export const depositUserOnly = async (Data: {
                         // i++;
                         // console.log('test', test);
 
-                        console.log('XXXXXXX - Deposit sol item',swapDataItem.owner.toBase58(),' - XXXXXXX', ataList);
+                        console.log('XXXXXXX - Deposit sol item', swapDataItem.owner.toBase58(), ' - XXXXXXX');
                         const { instruction: depositSolInstruction, mintAta: createdMint } = await depositSol({
                             program: program,
                             ataList,
@@ -111,7 +111,7 @@ export const depositUserOnly = async (Data: {
                         ataList = createdMint;
 
                         // console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ataList SOL', ataList);
-                        console.log('depositSolinstruction added');
+                        // console.log('depositSolinstruction added');
                     }
                     break;
             }

@@ -61,12 +61,11 @@ export const userUpdateAmountTopUp = async (Data: {
     let balance: (number | null) | undefined = undefined;
     try {
         balance = (await Data.program.provider.connection.getTokenAccountBalance(signerWsol)).value.uiAmount;
-        
     } catch (error) {
         if (!String(error).includes('could not find account')) {
             throw 'error';
         }
-        console.log('could not find account');
+        // console.log('could not find account');
     }
     let nativeIx: TransactionInstruction[] = [];
     // console.log('Balance', balance);
@@ -83,6 +82,7 @@ export const userUpdateAmountTopUp = async (Data: {
             createSyncNativeInstruction(signerWsol)
         );
         userTransaction.push({ tx: new Transaction().add(...nativeIx) });
+        console.log('creating userWsol account', signerWsol.toBase58());
     } else if (balance < Data.amountToTopup) {
         nativeIx.push(
             SystemProgram.transfer({
@@ -93,6 +93,12 @@ export const userUpdateAmountTopUp = async (Data: {
             createSyncNativeInstruction(signerWsol)
         );
         userTransaction.push({ tx: new Transaction().add(...nativeIx) });
+        console.log(
+            'transfering ',
+            Math.ceil((Data.amountToTopup - balance) * LAMPORTS_PER_SOL) / LAMPORTS_PER_SOL,
+            ' to userWsol account',
+            signerWsol.toBase58()
+        );
     }
 
     // console.log('userBump', userBump);

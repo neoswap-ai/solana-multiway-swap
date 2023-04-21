@@ -31,7 +31,7 @@ export const cancel = async (Data: {
         CONST_PROGRAM: Data.CONST_PROGRAM,
         swapDataAccount: Data.swapDataAccount,
     });
-    console.log("swdata",swapData.swapData.status);
+    console.log('swdata', swapData.swapData.status);
     if (
         !(
             swapData.swapData.status === TradeStatus.WaitingToDeposit ||
@@ -48,14 +48,22 @@ export const cancel = async (Data: {
 
         switch (swapDataItem.isNft) {
             case true:
+                console.log(
+                    '\nXXXXXXX -  statuses item',
+                    item,
+                    'status:',
+                    swapDataItem.status,
+                    ' / ',
+                    ItemStatus.NFTDeposited,
+                    ' XXXXXXX'
+                );
+
                 if (swapDataItem.status === ItemStatus.NFTDeposited) {
                     console.log(
-                        'XXXXXXX - cancelling NFT n° ',
-                        item,
-                        ' XXXXXXX',
+                        'cancelling NFT\nmint:',
                         swapDataItem.mint.toBase58(),
-                        swapDataItem.owner.toBase58(),
-                        swapDataItem.status
+                        '\nowner:',
+                        swapDataItem.owner.toBase58()
                     );
                     let cancelingNft = await cancelNft({
                         program: Data.program,
@@ -73,20 +81,22 @@ export const cancel = async (Data: {
                     ataList = cancelingNft.mintAta;
                     console.log('cancelNftinstruction added');
                 } else {
-                    console.log('XXXXXXX - not adding NFT n° ', item);
+                    console.log('not adding NFT n° ');
                 }
                 break;
             case false:
-                console.log(swapDataItem.status, ItemStatus.SolDeposited);
+                console.log(
+                    '\nXXXXXXX - statuses item',
+                    item,
+                    ' status: ',
+                    swapDataItem.status,
+                    ' / ',
+                    ItemStatus.SolDeposited,
+                    ' XXXXXXX'
+                );
 
                 if (swapDataItem.status === ItemStatus.SolDeposited) {
-                    console.log(
-                        'XXXXXXX - cancelling SOL n° ',
-                        item,
-                        ' XXXXXXX',
-                        swapDataItem.status,
-                        swapDataItem.owner.toBase58()
-                    );
+                    console.log('cancelling SOL with owner', swapDataItem.owner.toBase58());
                     let cancelingSol = await cancelSol({
                         program: Data.program,
                         user: swapDataItem.owner,
@@ -99,7 +109,7 @@ export const cancel = async (Data: {
                     cancelTransactionInstruction.push(...cancelingSol.instruction);
                     console.log('cancelSolinstruction added');
                 } else {
-                    console.log('XXXXXXX - not adding SOL n° ', item, swapDataItem.status);
+                    console.log('not adding SOL ');
                 }
                 break;
         }
