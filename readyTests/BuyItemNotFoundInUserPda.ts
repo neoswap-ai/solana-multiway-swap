@@ -1,3 +1,5 @@
+// verify a swap can't be initialized if userPda Item to buy doesn't have some items in swapData  
+
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 const { assert } = require("chai");

@@ -1,3 +1,6 @@
+/// test that user can't buy more than what he sells + topup
+
+
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 const { assert } = require("chai");
@@ -162,7 +165,7 @@ describe("minimum to sell bigger than max to buy", () => {
                 swapData,
                 userKeypairsPresigned,
                 userKeypairsNormal,
-                buyLamportMoreThanSell:0
+                buyLamportMoreThanSell:10
             });
             swapData = swapDataResult;
             const txhashs = await NeoSwap.boradcastToBlockchain({

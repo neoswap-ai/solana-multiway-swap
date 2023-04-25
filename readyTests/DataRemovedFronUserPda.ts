@@ -1,3 +1,7 @@
+// test that missing delegated amount after cancel
+// test that we need the user to enter again items to sell and delegate again before transfering on his behalf
+
+
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 // const { assert } = require("chai");
@@ -496,7 +500,7 @@ describe("DataRemovedFronUserPda", () => {
 
             console.log("claim and close transactionHashs :", transactionHashs);
         } catch (error) {
-            console.log("claim & close missing delegated amounr:", error);
+            console.log("claim & close missing delegated amount:", error);
             assert.ok(String(error).includes(`"Custom":4`), true);
         }
     });

@@ -1,4 +1,4 @@
-/// verify
+/// verify swap was initialized correctly
 
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";

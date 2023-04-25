@@ -1,3 +1,5 @@
+// verify a swap can't be initialized with presigned users missing userPda
+
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 const { assert } = require("chai");
@@ -147,7 +149,7 @@ describe("AccountNotInitialized", () => {
             swapData,
             userKeypairsPresigned,
             userKeypairsNormal,
-            buyLamportMoreThanSell:0
+            buyLamportMoreThanSell: 0,
         });
         swapData = swapDataResult;
         // const txhashs = await NeoSwap.boradcastToBlockchain({
@@ -202,5 +204,4 @@ describe("AccountNotInitialized", () => {
             assert.ok(String(error.logs).includes(`AccountNotInitialized`), true);
         }
     });
-  
 });
