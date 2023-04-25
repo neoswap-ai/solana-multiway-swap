@@ -3,6 +3,7 @@ import { PublicKey } from '@solana/web3.js';
 
 export enum TradeStatus {
     Initializing = 0,
+    WaitingToValidatePresigning=10,
     WaitingToDeposit = 1,
     WaitingToClaim = 2,
     Closed = 3,

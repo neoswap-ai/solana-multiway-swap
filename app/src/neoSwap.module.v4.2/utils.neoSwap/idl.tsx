@@ -725,11 +725,6 @@ export const idl = {
                     isSigner: false,
                 },
                 {
-                    name: 'signerWsol',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
                     name: 'signer',
                     isMut: true,
                     isSigner: true,

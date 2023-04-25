@@ -40,7 +40,10 @@ export const cancelAndClose = async (Data: {
         swapDataAccount: Data.swapDataAccount,
     });
 
-    const allCancelSendAllArray = [...cancelSendAllArray, ...validateCancelSendAll];
+    let allCancelSendAllArray = [];
+    if (cancelSendAllArray) allCancelSendAllArray.push(...cancelSendAllArray);
+    allCancelSendAllArray.push(...validateCancelSendAll);
+    //  [...cancelSen⋅dAllArray, ...validateCancelSendAll];
 
     return { allCancelSendAllArray };
 };

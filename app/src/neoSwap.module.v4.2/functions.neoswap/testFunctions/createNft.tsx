@@ -50,7 +50,7 @@ export const createNft = async (Data: {
                 Data.userKeypair.tokens.push({
                     ata,
                     mint: mintPubkey,
-                    value: Math.ceil((Math.random() * LAMPORTS_PER_SOL) / 10),
+                    value: LAMPORTS_PER_SOL / 100,
                 });
 
                 await mintToChecked(

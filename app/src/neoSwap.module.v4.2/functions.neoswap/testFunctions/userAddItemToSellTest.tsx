@@ -17,9 +17,15 @@ export const userAddItemToSellTest = async (Data: {
         }[];
     }[];
     program: Program;
+    // ataList: PublicKey[];
     // userKeypairs: { keypair: Keypair[] };
     // signer: Keypair;
-}): Promise<string[]> => {
+}): Promise<
+    {
+        tx: Transaction;
+        signers?: Signer[] | undefined;
+    }[]
+> => {
     // console.log(swapData);
     // await delay(5000);
     let sendAllArray: {
@@ -27,7 +33,7 @@ export const userAddItemToSellTest = async (Data: {
         signers?: Signer[];
     }[] = [];
 
-    const recentBlockhash = (await Data.program.provider.connection.getLatestBlockhash()).blockhash;
+    // const recentBlockhash = (await Data.program.provider.connection.getLatestBlockhash()).blockhash;
 
     await Promise.all(
         Data.userKeypairs.map(async (userKeypair) => {
@@ -44,7 +50,7 @@ export const userAddItemToSellTest = async (Data: {
 
                     userAddItemToSellTransaction.signers = [userKeypair.keypair];
                     userAddItemToSellTransaction.tx.feePayer = userKeypair.keypair.publicKey;
-                    userAddItemToSellTransaction.tx.recentBlockhash = recentBlockhash;
+                    // userAddItemToSellTransaction.tx.recentBlockhash = recentBlockhash;
 
                     sendAllArray.push(userAddItemToSellTransaction);
                 })
@@ -62,9 +68,9 @@ export const userAddItemToSellTest = async (Data: {
     // for await (const hash of txhashs) {
     //     program.provider.connection.confirmTransaction(hash);
     // }
-    const txhashs = await boradcastToBlockchain({ provider: Data.program.provider as AnchorProvider, sendAllArray });
+    // const txhashs = await boradcastToBlockchain({ provider: Data.program.provider as AnchorProvider, sendAllArray });
 
-    return txhashs;
+    return sendAllArray;
 };
 
 export default userAddItemToSellTest;

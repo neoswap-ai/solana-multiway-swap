@@ -6,6 +6,7 @@ import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/
 import { appendTransactionToArray } from '../../utils.neoSwap/appendTransactionToArray.neosap';
 import { splAssociatedTokenAccountProgramId } from '../../utils.neoSwap/const.neoSwap';
 import { convertAllTransaction } from '../../utils.neoSwap/convertAllTransaction.neoswap';
+import findOrCreateAta from '../../utils.neoSwap/findOrCreateAta.neoSwap';
 import { getSeedFromData } from '../../utils.neoSwap/getSeedfromData.neoswap';
 import { ItemToBuy, ItemToSell, TradeStatus } from '../../utils.neoSwap/types.neo-swap/status.type.neoswap';
 import SwapData from '../../utils.neoSwap/types.neo-swap/swapData.types.neoswap';
@@ -31,10 +32,18 @@ export const userAddItemToBuy = async (Data: {
     // if (Data.swapData.status !== TradeStatus.Initializing) throw console.error('Trade not in waiting for initialized state');
     const [userPda, userBump] = publicKey.findProgramAddressSync([Data.signer.toBytes()], Data.program.programId);
     const signerWsol = await getAssociatedTokenAddress(NATIVE_MINT, Data.signer);
-
+    // const { mintAta: signerWsol2, instruction: addNativesolTx } = await findOrCreateAta({
+    //     connection: Data.program.provider.connection,
+    //     mint: NATIVE_MINT,
+    //     owner: Data.signer,
+    //     signer: Data.signer,
+    // });
+    // if (!signerWsol.equals(signerWsol2)) throw 'signerWsol not equal to signerWsol2';
     // let itemToSell = { mint: new PublicKey('5EJN7h5eUX8vhGcuZKPTkU9hRHn8zJJmcv6guqKQoUav'), amountMini: new BN(10000) };
     // console.log('Data.itemToSell', Data.itemToSell);
+
     console.log('userPda', userPda.toBase58());
+    // console.log('signerWsol', signerWsol.toBase58());
     // console.log('Data.signer', Data.signer.toBase58());
     // console.log('Data.itemToSell.mint', Data.itemToSell.mint.toBase58());
     // console.log('splAssociatedTokenAccountProgramId', splAssociatedTokenAccountProgramId.toBase58());
@@ -45,7 +54,7 @@ export const userAddItemToBuy = async (Data: {
         .userAddItemToBuy(userBump, Data.itemToBuy)
         .accounts({
             userPda,
-            signerWsol,
+            // signerWsol,
             signer: Data.signer,
             tokenProgram: TOKEN_PROGRAM_ID,
             // splTokenProgram: splAssociatedTokenAccountProgramId,
@@ -56,7 +65,10 @@ export const userAddItemToBuy = async (Data: {
     let userAddItemToBuyTransaction: {
         tx: Transaction;
         signers?: Array<Signer> | undefined;
-    } = { tx: new Transaction().add(addUserItemToAddIx) };
+    } = { tx: new Transaction() };
+
+    // if (addNativesolTx) userAddItemToBuyTransaction.tx.add(...addNativesolTx);
+    userAddItemToBuyTransaction.tx.add(addUserItemToAddIx);
     // userAddItemToBuyTransaction = appendTransactionToArray({
     //     mainArray: userAddItemToBuyTransaction,
     //     itemToAdd: [addUserItemToAddIx],

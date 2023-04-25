@@ -122,7 +122,7 @@ pub mod neo_swap {
                         .owner
                         .eq(&item_to_add.owner)
                 {
-                    return Err(error!(MYERROR::UnexpectedData).into());
+                    return Err(error!(MYERROR::AlreadyExist).into());
                 }
             }
             if item_to_add.destinary
@@ -251,7 +251,7 @@ pub mod neo_swap {
         let mut list_items: Vec<NftSwapItem> = [].to_vec();
         let mut amount_min: u64 = 0;
         let mut amount_max: u64 = 0;
-        let mut amount_to_receive_from_swap: i64 = 0;
+        let mut amount_to_give_to_swap: i64 = 0;
 
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             if ctx.accounts.swap_data_account.items[item_id].is_presigning == true {
@@ -265,6 +265,7 @@ pub mod neo_swap {
                         ctx.accounts.swap_data_account.items[item_id].owner
                     );
                     if ctx.accounts.swap_data_account.items[item_id].is_nft {
+                        let mut found_item_in_user_pda=false;
                         for user_pda_item_id in 0..ctx.accounts.user_pda.items_to_sell.len() {
                             if ctx.accounts.user_pda.items_to_sell[user_pda_item_id]
                                 .mint
@@ -284,20 +285,25 @@ pub mod neo_swap {
                                 ctx.accounts.swap_data_account.items[item_id].status =
                                     ItemStatus::NFTPendingPresign.to_u8();
                                 msg!("Found owner presigning item {} in UserPda and status changed to NFTPendingPresign {}", item_id,ctx.accounts.swap_data_account.items[item_id].mint);
+                                found_item_in_user_pda=true;
+                                // break;    
                             }
                         }
+                        if found_item_in_user_pda==false{
+                            return Err(error!(MYERROR::ItemNotFoundInUserPda).into());
+                        }
                     } else {
-                        if amount_to_receive_from_swap != 0 {
+                        if amount_to_give_to_swap != 0 {
                             return Err(error!(MYERROR::DoubleSend).into());
                         }
-                        amount_to_receive_from_swap =
+                        amount_to_give_to_swap =
                             ctx.accounts.swap_data_account.items[item_id].amount;
 
-                        if amount_to_receive_from_swap.is_positive() {
-                            msg!("amount mini updated with {}", amount_to_receive_from_swap);
-                            // amount_min = amount_min
-                            //     .checked_add(amount_to_receive_from_swap.unsigned_abs())
-                            //     .unwrap();
+                        if amount_to_give_to_swap.is_positive() {
+                            msg!("amount max updated with {}", amount_to_give_to_swap);
+                            amount_max = amount_max
+                                .checked_add(amount_to_give_to_swap.unsigned_abs())
+                                .unwrap();
                             ctx.accounts.swap_data_account.items[item_id].status =
                                 ItemStatus::SolPendingPresign.to_u8();
                             msg!(
@@ -340,19 +346,18 @@ pub mod neo_swap {
                 }
             }
         }
-
-        msg! {"amount_min {} / amount_max {} / amount_to_receive_from_swap {} / amount_to_topup {}",amount_min,amount_max,amount_to_receive_from_swap,ctx.accounts.user_pda.amount_to_topup};
-        if amount_min
-            .checked_add(ctx.accounts.user_pda.amount_to_topup)
-            .unwrap()
-            < amount_max
+       amount_min= amount_min
+        .checked_add(ctx.accounts.user_pda.amount_to_topup)
+        .unwrap();
+        msg! {"amount_min {} / amount_max {} / amount_to_give_to_swap {} / amount_to_topup {}",amount_min,amount_max,amount_to_give_to_swap,ctx.accounts.user_pda.amount_to_topup};
+        if amount_min  < amount_max
         {
             // {
             return Err(error!(MYERROR::MinSupMax).into());
         }
 
-        if amount_to_receive_from_swap.unsigned_abs() > ctx.accounts.user_pda.amount_to_topup
-            && amount_to_receive_from_swap.is_positive()
+        if amount_to_give_to_swap.unsigned_abs() > ctx.accounts.user_pda.amount_to_topup
+            && amount_to_give_to_swap.is_positive()
         {
             return Err(error!(MYERROR::NotEnoughFunds).into());
         }
@@ -486,7 +491,10 @@ pub mod neo_swap {
         let signer = &ctx.accounts.signer;
         let item_to_deposit = &ctx.accounts.item_to_deposit;
         let item_from_deposit = &ctx.accounts.item_from_deposit;
-
+msg!("item_from_deposit.mint {}",ctx.accounts.item_from_deposit.mint);
+msg!("item_from_deposit.owner {}",ctx.accounts.item_from_deposit.owner);
+msg!("signer.key() {}",ctx.accounts.signer.key());
+msg!("item_from_deposit.amount {}",ctx.accounts.item_from_deposit.amount);
         require!(
             swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
@@ -1358,7 +1366,9 @@ pub mod neo_swap {
         _bump: u8,
     ) -> Result<()> {
         if !(ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8()
-            || ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8())
+            || ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
+            || ctx.accounts.swap_data_account.status == TradeStatus::Initializing.to_u8()
+            || ctx.accounts.swap_data_account.status == TradeStatus::WaitingToValidatePresigning.to_u8())
         {
             return Err(error!(MYERROR::NotReady).into());
         }
@@ -1440,7 +1450,7 @@ pub mod neo_swap {
     /// @accounts signer: Pubkey => initializer
     /// @return Void
     pub fn user_add_item_to_buy(
-        ctx: Context<ModifyUserPda>,
+        ctx: Context<ModifyUserPdaBuy>,
         _bump: u8,
         item_to_add: ItemToBuy,
     ) -> Result<()> {
@@ -1973,19 +1983,19 @@ pub struct CreateUserPda<'info> {
 
 #[derive(Accounts)]
 #[instruction( bump: u8)]
-pub struct ModifyUserPda<'info> {
+pub struct ModifyUserPdaBuy<'info> {
     #[account(
         mut,
         seeds = [&signer.key().to_bytes()[..]], 
         bump,
     )]
     user_pda: Box<Account<'info, UserPdaData>>,
-    #[account(
-        mut,
-        constraint = signer_wsol.is_native() @ MYERROR::MintIncorrect,
-        constraint = signer_wsol.owner.eq(&signer.key())  @ MYERROR::IncorrectOwner
-    )]
-    signer_wsol: Account<'info, TokenAccount>,
+    // #[account(
+    //     mut,
+    //     constraint = signer_wsol.is_native() @ MYERROR::MintIncorrect,
+    //     constraint = signer_wsol.owner.eq(&signer.key())  @ MYERROR::IncorrectOwner
+    // )]
+    // signer_wsol: Account<'info, TokenAccount>,
     #[account(mut)]
     signer: Signer<'info>,
     #[account()]
@@ -2330,4 +2340,6 @@ pub enum MYERROR {
     NotDelegated,
     #[msg("item was not found in the User PDA to be removed")]
     PdaDataNotRemoved,
+    #[msg("item was not found in the User PDA")]
+    ItemNotFoundInUserPda
 }

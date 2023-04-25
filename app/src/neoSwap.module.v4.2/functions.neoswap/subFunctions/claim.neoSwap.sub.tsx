@@ -88,7 +88,7 @@ export const claim = async (Data: {
                         claimTransactionInstruction.push(...claimingSol.instruction);
                         console.log('claimSolinstruction added');
                     } else {
-                        console.log('not to claim item n° ', item);
+                        console.log('\nnot to claim item n° ', item);
                     }
                     break;
             }

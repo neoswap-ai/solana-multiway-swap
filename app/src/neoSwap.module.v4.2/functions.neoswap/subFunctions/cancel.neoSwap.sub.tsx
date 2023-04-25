@@ -21,10 +21,12 @@ export const cancel = async (Data: {
     CONST_PROGRAM: string;
     signer: PublicKey;
 }): Promise<{
-    cancelSendAllArray: Array<{
-        tx: Transaction;
-        signers?: Array<Signer> | undefined;
-    }>;
+    cancelSendAllArray:
+        | Array<{
+              tx: Transaction;
+              signers?: Array<Signer> | undefined;
+          }>
+        | undefined;
 }> => {
     const swapData = await getSwapDataFromPDA({
         provider: Data.program.provider as AnchorProvider,
@@ -35,10 +37,12 @@ export const cancel = async (Data: {
     if (
         !(
             swapData.swapData.status === TradeStatus.WaitingToDeposit ||
-            swapData.swapData.status === TradeStatus.Cancelling
+            swapData.swapData.status === TradeStatus.Cancelling ||
+            swapData.swapData.status === TradeStatus.Initializing ||
+            swapData.swapData.status === TradeStatus.WaitingToValidatePresigning
         )
     )
-        throw console.error('Trade not in waiting for deposit state');
+        throw { msg: 'Trade not in waiting for deposit state' };
 
     let cancelTransactionInstruction: TransactionInstruction[] = [];
     let ataList: Array<PublicKey> = [];
@@ -120,7 +124,9 @@ export const cancel = async (Data: {
         itemToAdd: cancelTransactionInstruction,
     });
     const cancelSendAllArray = await convertAllTransaction(cancelTransaction);
-    return { cancelSendAllArray };
+    if (cancelSendAllArray[0].tx.instructions.length > 0) {
+        return { cancelSendAllArray };
+    } else return { cancelSendAllArray: undefined };
 };
 
 export default cancel;

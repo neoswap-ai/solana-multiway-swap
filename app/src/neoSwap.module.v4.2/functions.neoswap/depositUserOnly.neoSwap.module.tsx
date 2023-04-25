@@ -46,7 +46,8 @@ export const depositUserOnly = async (Data: {
     // console.log('swapData', swapData.swapData.items);
 
     if (swapData.swapData.status !== TradeStatus.WaitingToDeposit)
-        throw console.error('Trade not in waiting for deposit state');
+        throw { msg: 'Trade not in waiting for deposit state' };
+        // throw console.error('Trade not in waiting for deposit state');
     // let test: number[] = [];
     // let i = 0;
     let depositInstruction: Array<TransactionInstruction> = [];

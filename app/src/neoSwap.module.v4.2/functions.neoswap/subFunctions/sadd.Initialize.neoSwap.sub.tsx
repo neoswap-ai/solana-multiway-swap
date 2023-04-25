@@ -76,7 +76,7 @@ export const saddInitialize = async (Data: {
                 //         // const ownerPublicKey4 = Number(data.slice(amountoffset, amountoffset + 8));
                 //         // const ownerPublicKey5 = new PublicKey(data.slice(ownerOffset5, ownerOffset5 + 32));
                 //         // const ownerPublicKey6 = new PublicKey(data.slice(ownerOffset6, ownerOffset6 + 32));
-                        // // console.log('ownerPublicKey1', ownerPublicKey1.toBase58(), 'vs', userAta.toBase58());
+                // // console.log('ownerPublicKey1', ownerPublicKey1.toBase58(), 'vs', userAta.toBase58());
                 //         // console.log('ownerPublicKey2', ownerPublicKey2.toBase58(), 'vs', userAta.toBase58());
                 //         // console.log('ownerPublicKey3', ownerPublicKey3.toBase58(), 'vs', userAta.toBase58());
                 //         // console.log('ownerPublicKey4', ownerPublicKey4, 'vs', userAta.toBase58());
@@ -87,27 +87,26 @@ export const saddInitialize = async (Data: {
 
                 // const mint = new PublicKey(data.slice(0, 32));
                 // console.log('mint', mint.toBase58(), 'vs', seedSwapData.swapData.items[item].mint.toBase58());
-                
+
                 // const owner = new PublicKey(data.slice(32, 64));
                 // console.log('owner', owner.toBase58(), 'vs', seedSwapData.swapData.items[item].owner.toBase58());
-                
+
                 // const tokenBalanceBigInt = parseInt(data.slice(64, 76).toString('hex'));
                 // const tokenBalanceBigInt = Number(data.slice(64, 72).readBigUInt64LE());
                 // console.log('tokenBalanceBigInt', tokenBalanceBigInt);
-                
+
                 const delegate = new PublicKey(data.slice(76, 108));
                 // console.log('delegate', delegate.toBase58(), 'vs', userPda.toBase58());
-                
-                // const delegatedAmountBigInt = Number(data.slice(121, 129).toString('hex')) / LAMPORTS_PER_SOL;
-                const delegatedAmountBigInt = Number(data.slice(121, 129).readBigUInt64LE());
-                // console.log('should be 500000000', Buffer.from(Number('500000000').toString()));
-                // console.log('delegatedAmountBigInt', delegatedAmountBigInt);
 
-                if (seedSwapData.swapData.items[item].amount.toNumber() > delegatedAmountBigInt)
-                    throw 'not enough delegatedAmountBigInt';
+                // const delegatedAmountBigInt = Number(data.slice(121, 129).toString('hex')) / LAMPORTS_PER_SOL;
+                const delegatedAmount = Number(data.slice(121, 129).readBigUInt64LE());
+                // console.log('should be 500000000', Buffer.from(Number('500000000').toString()));
+                // console.log('delegatedAmount, delegatedAmount;
+
+                if (seedSwapData.swapData.items[item].amount.toNumber() > delegatedAmount)
+                    throw 'not enough delegatedAmount';
 
                 if (!delegate.equals(userPda)) throw 'incorrect delegated pda';
-              
             }
         } catch (error) {
             console.log('XXXXX delegated check', error);

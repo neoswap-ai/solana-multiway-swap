@@ -28,7 +28,8 @@ export const hasUserDepositedBeforePresigned = async (Data: {
     // console.log('swapData', swapData.swapData.items);
 
     if (swapData.swapData.status !== TradeStatus.WaitingToDeposit)
-        throw console.error('Trade not in waiting for deposit state');
+        throw { msg: 'Trade not in waiting for deposit state' };
+        // throw console.error('Trade not in waiting for deposit state');
     for await (let swapDataItem of swapData.swapData.items) {
         if (!swapDataItem.isPresigning) {
             switch (swapDataItem.isNft) {

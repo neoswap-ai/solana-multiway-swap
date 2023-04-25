@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
-// const { assert } = require("chai");
+const { assert } = require("chai");
 import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
 import {
@@ -38,7 +38,7 @@ import {
 // import { swapDataAccountGiven } from "../app/src/solana.test";
 // import { delay } from "../app/src/solana.utils";
 
-describe("MIX pre-signing", () => {
+describe("minimum to sell bigger than max to buy", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     const program = anchor.workspace.NeoSwap as Program;
@@ -53,7 +53,7 @@ describe("MIX pre-signing", () => {
         keypair: Keypair;
         tokens: { mint: PublicKey; ata: PublicKey; value: number }[];
     }[] = [];
-    let CONST_PROGRAM = "0000";
+    let CONST_PROGRAM = "0002";
     let signer = { keypair: Keypair.generate(), tokens: [] };
     let feeCollector = { keypair: Keypair.generate(), tokens: [] };
     let unauthorizedKeypair = { keypair: Keypair.generate(), tokens: [] };
@@ -155,160 +155,54 @@ describe("MIX pre-signing", () => {
         });
         console.log("initialized", txhashs);
     });
-
-    it("Update amount to topup", async () => {
-        // console.log(swapData);
-        const txhashs = await NeoSwap.updateAmountToTopupTest({
-            program,
-            userKeypairs: userKeypairsPresigned,
-        });
-        console.log("amoutn topped up", txhashs);
-    });
-
-    it("add Item To Sell", async () => {
-        const txhashs = await NeoSwap.userAddItemToSellTest({
-            program,
-            userKeypairs: userKeypairsPresigned,
-        });
-        console.log("item added to sell", txhashs);
-    });
-
     it("add Item To buy", async () => {
-        const { txhashs, swapData: swapDataResult } = await NeoSwap.userAddItemToBuyTest({
-            program,
-            swapData,
-            userKeypairsPresigned,
-            userKeypairsNormal,
-        });
-        swapData = swapDataResult;
-        console.log("item added to buy", txhashs);
-    });
-
-    it("initialize Swap for cancel", async () => {
-        swapData.nb_items = swapData.items.length;
-
-        const {
-            allInitSendAllArray,
-            pda: swapPda,
-            // txhashs,
-            swapData: swapdataResult,
-        } = await NeoSwap.allInitialize({
-            provider: program.provider as anchor.AnchorProvider,
-            CONST_PROGRAM,
-            swapDataGiven: swapData,
-            signer: signer.keypair.publicKey,
-        });
-        pda = swapPda;
-        swapData = swapdataResult;
-        const txhashs = await NeoSwap.boradcastToBlockchain({
-            sendAllArray: allInitSendAllArray,
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair,
-        });
-
-        console.log("swapPda", pda.toBase58(), "\ninitialized TransacrionHashs", txhashs);
-    });
-
-    it("Deposit not presigned for cancel", async () => {
-        let transactionHashs: string[] = [];
-        for await (const userKeypair of userKeypairsNormal) {
-            const { depositSendAllArray } = await NeoSwap.depositUserOnly({
-                provider: program.provider as anchor.AnchorProvider,
-                signer: userKeypair.keypair.publicKey,
-                swapDataAccount: pda,
-                CONST_PROGRAM,
+        // try {
+            const { sendAllArray, swapData: swapDataResult } = await NeoSwap.userAddItemToBuyTest({
+                program,
+                swapData,
+                userKeypairsPresigned,
+                userKeypairsNormal,
+                buyLamportMoreThanSell:0
             });
-            if (depositSendAllArray) {
-                const transactionHash = await NeoSwap.boradcastToBlockchain({
-                    sendAllArray: depositSendAllArray,
-                    provider: program.provider as anchor.AnchorProvider,
-                    signer: userKeypair.keypair,
-                });
-
-                transactionHashs.push(...transactionHash);
-            }
-        }
-
-        console.log("deposited users transactionHashs", transactionHashs);
-    });
-
-    it("cancel and close", async () => {
-        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair.publicKey,
-            swapDataAccount: pda,
-            CONST_PROGRAM,
-        });
-        const txhashs = await NeoSwap.boradcastToBlockchain({
-            sendAllArray: allCancelSendAllArray,
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair,
-        });
-        console.log("Cancel & close transactionHashs :", txhashs);
-    });
-
-    it("initialize Swap for claim", async () => {
-        swapData.nb_items = swapData.items.length;
-
-        const {
-            allInitSendAllArray,
-            pda: swapPda,
-            // txhashs,
-            swapData: swapdataResult,
-        } = await NeoSwap.allInitialize({
-            provider: program.provider as anchor.AnchorProvider,
-            CONST_PROGRAM,
-            swapDataGiven: swapData,
-            signer: signer.keypair.publicKey,
-        });
-        pda = swapPda;
-        swapData = swapdataResult;
-        const txhashs = await NeoSwap.boradcastToBlockchain({
-            sendAllArray: allInitSendAllArray,
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair,
-        });
-
-        console.log("swapPda :", pda.toBase58(), "\ninitialized transactionHashs:", txhashs);
-    });
-
-    it("Deposit not presigned for claim", async () => {
-        let transactionHashs: string[] = [];
-        for await (const userKeypair of userKeypairsNormal) {
-            const { depositSendAllArray } = await NeoSwap.depositUserOnly({
+            swapData = swapDataResult;
+            const txhashs = await NeoSwap.boradcastToBlockchain({
+                sendAllArray,
                 provider: program.provider as anchor.AnchorProvider,
-                signer: userKeypair.keypair.publicKey,
-                swapDataAccount: pda,
-                CONST_PROGRAM,
+                // signer: signer.keypair,
             });
-            if (depositSendAllArray) {
-                const transactionHash = await NeoSwap.boradcastToBlockchain({
-                    sendAllArray: depositSendAllArray,
-                    provider: program.provider as anchor.AnchorProvider,
-                    signer: userKeypair.keypair,
-                });
-
-                transactionHashs.push(...transactionHash);
-            }
-        }
-
-        console.log("deposited users ", transactionHashs);
+            console.log("item added to buy", txhashs);
+        // } catch (error) {
+        //     // console.log("add Item To buy", error);
+        //     throw error;
+        // }
     });
+    it("minimum to sell bigger than max to buy", async () => {
+        swapData.nb_items = swapData.items.length;
+        try {
+            const {
+                allInitSendAllArray,
+                pda: swapPda,
+                // txhashs,
+                swapData: swapdataResult,
+            } = await NeoSwap.allInitialize({
+                provider: program.provider as anchor.AnchorProvider,
+                CONST_PROGRAM,
+                swapDataGiven: swapData,
+                signer: signer.keypair.publicKey,
+            });
+            pda = swapPda;
+            swapData = swapdataResult;
+            const txhashs = await NeoSwap.boradcastToBlockchain({
+                sendAllArray: allInitSendAllArray,
+                provider: program.provider as anchor.AnchorProvider,
+                signer: signer.keypair,
+            });
 
-    it("claim and close", async () => {
-        const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair.publicKey,
-            swapDataAccount: pda,
-            CONST_PROGRAM,
-        });
+            console.log("swapPda :", pda.toBase58(), "\ninitialized transactionHashs:", txhashs);
+        } catch (error) {
+            console.log("Initialize", String(error));
 
-        const transactionHashs = await NeoSwap.boradcastToBlockchain({
-            sendAllArray: allClaimSendAllArray,
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair,
-        });
-
-        console.log("claim and close transactionHashs :", transactionHashs);
+            assert.ok(String(error.logs).includes(`{"Custom":6029}`), true);
+        }
     });
 });
