@@ -1,6 +1,5 @@
 /// test that user can't buy more than what he sells + topup
 
-
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 const { assert } = require("chai");
@@ -158,22 +157,35 @@ describe("minimum to sell bigger than max to buy", () => {
         });
         console.log("initialized", txhashs);
     });
+
+    it("add Item To Sell", async () => {
+        const sendAllArray = await NeoSwap.userAddItemToSellTest({
+            program,
+            userKeypairs: userKeypairsPresigned,
+        });
+        const txhashs = await NeoSwap.boradcastToBlockchain({
+            provider: program.provider as anchor.AnchorProvider,
+            sendAllArray,
+        });
+        console.log("item added to sell", txhashs);
+    });
+
     it("add Item To buy", async () => {
         // try {
-            const { sendAllArray, swapData: swapDataResult } = await NeoSwap.userAddItemToBuyTest({
-                program,
-                swapData,
-                userKeypairsPresigned,
-                userKeypairsNormal,
-                buyLamportMoreThanSell:10
-            });
-            swapData = swapDataResult;
-            const txhashs = await NeoSwap.boradcastToBlockchain({
-                sendAllArray,
-                provider: program.provider as anchor.AnchorProvider,
-                // signer: signer.keypair,
-            });
-            console.log("item added to buy", txhashs);
+        const { sendAllArray, swapData: swapDataResult } = await NeoSwap.userAddItemToBuyTest({
+            program,
+            swapData,
+            userKeypairsPresigned,
+            userKeypairsNormal,
+            buyLamportMoreThanSell: 100,
+        });
+        swapData = swapDataResult;
+        const txhashs = await NeoSwap.boradcastToBlockchain({
+            sendAllArray,
+            provider: program.provider as anchor.AnchorProvider,
+            // signer: signer.keypair,
+        });
+        console.log("item added to buy", txhashs);
         // } catch (error) {
         //     // console.log("add Item To buy", error);
         //     throw error;
@@ -205,7 +217,7 @@ describe("minimum to sell bigger than max to buy", () => {
         } catch (error) {
             console.log("Initialize", String(error));
 
-            assert.ok(String(error.logs).includes(`{"Custom":6029}`), true);
+            assert.ok(String(error).includes(`{"Custom":6029}`), true);
         }
     });
 });

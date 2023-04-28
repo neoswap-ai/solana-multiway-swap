@@ -37,6 +37,7 @@ export const saddInitialize = async (Data: {
     let addInitTransactionInstruction: Array<TransactionInstruction> = [];
     for (let item = 0; item < Data.swapData.items.length; item++) {
         console.log('\nXXXXXXX - added to init item n° ', item, ' XXXXXXX');
+        
         let userAta = getAssociatedTokenAddressSync(
             seedSwapData.swapData.items[item].mint,
             seedSwapData.swapData.items[item].owner
@@ -111,6 +112,7 @@ export const saddInitialize = async (Data: {
         } catch (error) {
             console.log('XXXXX delegated check', error);
         }
+        
         const instructionToAdd = await Data.program.methods
             .initializeAdd(
                 seedSwapData.swapDataAccount_seed,

@@ -39,6 +39,7 @@ import {
     // ItemToSell,
     TradeStatus,
 } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/status.type.neoswap";
+import validateDeposit from "../app/src/neoSwap.module.v4.2/functions.neoswap/subFunctions/validateDeposit.neoSwap.sub";
 // import { swapDataAccountGiven } from "../app/src/solana.test";
 // import { delay } from "../app/src/solana.utils";
 
@@ -297,20 +298,24 @@ describe("Not enough token topped up", () => {
         // });
     });
 
-    it("claim and close", async () => {
-        const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair.publicKey,
-            swapDataAccount: pda,
-            CONST_PROGRAM,
-        });
+    it("swap not ready", async () => {
+        try {
+            const { validateDepositSendAll } = await validateDeposit({
+                program: program,
+                signer: signer.keypair.publicKey,
+                swapDataAccount: pda,
+                CONST_PROGRAM,
+            });
 
-        const transactionHashs = await NeoSwap.boradcastToBlockchain({
-            sendAllArray: allClaimSendAllArray,
-            provider: program.provider as anchor.AnchorProvider,
-            signer: signer.keypair,
-        });
-
-        console.log("claim and close transactionHashs :", transactionHashs);
+            const transactionHashs = await NeoSwap.boradcastToBlockchain({
+                sendAllArray: validateDepositSendAll,
+                provider: program.provider as anchor.AnchorProvider,
+                signer: signer.keypair,
+            });
+            console.log("claim and close transactionHashs :", transactionHashs);
+        } catch (error) {
+            console.log("error", error); //"Custom":6006
+            assert.ok(String(error).includes(`"Custom":6006`), true);
+        }
     });
 });

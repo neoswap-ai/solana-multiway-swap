@@ -193,7 +193,7 @@ describe("Not enough token topped up", () => {
         console.log("item added to sell", txhashs);
     });
 
-    it("initialize swap", async () => {
+    it("not enough funds", async () => {
         swapData.nb_items = swapData.items.length;
         try {
             const {
@@ -220,7 +220,7 @@ describe("Not enough token topped up", () => {
         } catch (error) {
             console.log("Initialize", String(error));
 
-            assert.ok(String(error.logs).includes(`"Custom":6029`), true);
+            assert.ok(String(error).includes(`"Custom":6029`), true);
         }
     });
 });

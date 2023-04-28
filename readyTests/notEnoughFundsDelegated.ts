@@ -143,6 +143,33 @@ describe("AccountNotInitialized", () => {
             })
         );
     });
+
+    it("create Users Pda", async () => {
+        // console.log(swapData);
+        const txhashs = await NeoSwap.createUserPdaTest({
+            program,
+            userKeypairs: [
+                { keypair: signer.keypair, tokens: [] },
+                { keypair: feeCollector.keypair, tokens: [] },
+                ...userKeypairsPresigned,
+            ],
+            signer: signer.keypair,
+        });
+        console.log("initialized", txhashs);
+    });
+    
+    it("add Item To Sell", async () => {
+        const sendAllArray = await NeoSwap.userAddItemToSellTest({
+            program,
+            userKeypairs: userKeypairsPresigned,
+        });
+        const txhashs = await NeoSwap.boradcastToBlockchain({
+            provider: program.provider as anchor.AnchorProvider,
+            sendAllArray,
+        });
+        console.log("item added to sell", txhashs);
+    });
+
     it("add Item To buy", async () => {
         const { sendAllArray, swapData: swapDataResult } = await NeoSwap.userAddItemToBuyTest({
             program,
@@ -160,19 +187,6 @@ describe("AccountNotInitialized", () => {
         // console.log("item added to buy", txhashs);
     });
 
-    it("create Users Pda", async () => {
-        // console.log(swapData);
-        const txhashs = await NeoSwap.createUserPdaTest({
-            program,
-            userKeypairs: [
-                { keypair: signer.keypair, tokens: [] },
-                { keypair: feeCollector.keypair, tokens: [] },
-                ...userKeypairsPresigned,
-            ],
-            signer: signer.keypair,
-        });
-        console.log("initialized", txhashs);
-    });
 
     it("Error Message: Not enough funds", async () => {
         swapData.nb_items = swapData.items.length;
@@ -198,9 +212,10 @@ describe("AccountNotInitialized", () => {
 
             console.log("swapPda :", pda.toBase58(), "\ninitialized transactionHashs:", txhashs);
         } catch (error) {
-            console.log(String(error.logs));
+            console.log(String(error));
 
-            assert.ok(String(error.logs).includes(`Error Message: Not enough funds`), true);
+            assert.ok(String(error).includes(`"Custom":6029`), true);
+            // assert.ok(String(error).includes(`Error Message: Not enough funds`), true);
         }
     });
 });

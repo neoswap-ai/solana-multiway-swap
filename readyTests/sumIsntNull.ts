@@ -125,7 +125,7 @@ describe("Sum isnt null", () => {
         );
     });
 
-    it("Initialize Swap", async () => {
+    it("Sum not null", async () => {
         swapData.nb_items = swapData.items.length;
 
         const {
@@ -150,9 +150,9 @@ describe("Sum isnt null", () => {
 
             console.log("swapPda :", pda.toBase58(), "\ninitialized transactionHashs:", txhashs);
         } catch (error) {
-            // console.log(String(error.logs));
+            console.log(String(error));
 
-            assert.ok(String(error.logs).includes("Error Code: SumNotNull"), true);
+            assert.ok(String(error).includes(`{"Custom":6005}`), true);
         }
     });
 });

@@ -1,4 +1,4 @@
-// verify a swap can't be initialized if userPda Item to buy doesn't have some items in swapData  
+// verify a swap can't be initialized if userPda Item to buy doesn't have some items in swapData
 
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
@@ -211,9 +211,9 @@ describe("Buy ItemNotFoundInUserPda", () => {
 
             console.log("swapPda :", pda.toBase58(), "\ninitialized transactionHashs:", txhashs);
         } catch (error) {
-            console.log("Initialize", String(error));
+            console.log("Initialize", error);
 
-            assert.ok(String(error.logs).includes(`{"Custom":6032}`), true);
+            assert.ok(String(error).includes(`"Custom":6032`), true);
         }
     });
 });

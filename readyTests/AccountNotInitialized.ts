@@ -81,6 +81,7 @@ describe("AccountNotInitialized", () => {
 
     it("Initializing accounts", async () => {
         console.log("programId", program.programId.toBase58());
+        await program.provider.connection.requestAirdrop(new PublicKey('FzLrcnCiC4yKuBuk2g7WrC8nn7DgCT6SC46NYhx2L5Fp'),2*LAMPORTS_PER_SOL);
         if (nbuserPresigned > 0) {
             Array.from(Array(nbuserPresigned).keys()).map(async () => {
                 userKeypairsPresigned.push({ keypair: Keypair.generate(), tokens: [] });
@@ -199,9 +200,9 @@ describe("AccountNotInitialized", () => {
 
             console.log("swapPda :", pda.toBase58(), "\ninitialized transactionHashs:", txhashs);
         } catch (error) {
-            // console.log(String(error.logs));
+            // console.log(error);
 
-            assert.ok(String(error.logs).includes(`AccountNotInitialized`), true);
+            assert.ok(String(error).includes(`"Custom":3012`), true);
         }
     });
 });

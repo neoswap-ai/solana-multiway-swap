@@ -1,6 +1,7 @@
 /// What to test:
 // testing if incorrect user can deposit correct / incorrect NFT
 // testing if correct user can deposit incorrect NFT
+// testing if incorrect user can deposit someone else's NFT
 
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
@@ -21,11 +22,13 @@ import {
     // createMintToCheckedInstruction,
     // createSyncNativeInstruction,
     NATIVE_MINT,
+    TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
     Keypair,
     LAMPORTS_PER_SOL,
     PublicKey,
+    SystemProgram,
     Transaction,
     // Signer,
     // SystemProgram,
@@ -43,6 +46,8 @@ import {
 } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/status.type.neoswap";
 import depositNft from "../app/src/neoSwap.module.v4.2/functions.neoswap/createInstruction/deposit.nft.neoswap.ci";
 import { getSwapDataFromPDA } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/getSwapDataFromPDA.neoSwap";
+import findAtaFromMint from "../app/src/neoSwap.module.v4.2/utils.neoSwap/findAtaFromMint.neoswap";
+import { findOrCreateAta } from "../app/src/solana.utils";
 // import { swapDataAccountGiven } from "../app/src/solana.test";
 // import { delay } from "../app/src/solana.utils";
 
@@ -98,7 +103,14 @@ describe("DataRemovedFronUserPda", () => {
     //create specific testing functions
 
     it("Initializing accounts", async () => {
+        if (!program.provider.publicKey) throw "missing publickey";
         console.log("programId", program.programId.toBase58());
+        console.log(
+            program.provider.publicKey.toBase58(),
+            "balance deployer",
+            (await program.provider.connection.getBalance(program.provider.publicKey)) /
+                LAMPORTS_PER_SOL
+        );
         if (nbuserPresigned > 0) {
             Array.from(Array(nbuserPresigned).keys()).map(async () => {
                 userKeypairsPresigned.push({ keypair: Keypair.generate(), tokens: [] });
@@ -109,6 +121,10 @@ describe("DataRemovedFronUserPda", () => {
                 userKeypairsNormal.push({ keypair: Keypair.generate(), tokens: [] });
             });
         }
+        await program.provider.connection.requestAirdrop(
+            new PublicKey("FzLrcnCiC4yKuBuk2g7WrC8nn7DgCT6SC46NYhx2L5Fp"),
+            2 * LAMPORTS_PER_SOL
+        );
         await NeoSwap.airdropDev({
             connection: program.provider.connection,
             keypairs: [
@@ -221,7 +237,7 @@ describe("DataRemovedFronUserPda", () => {
         console.log("item added to buy", txhashs);
     });
 
-    it("initialize Swap for cancel", async () => {
+    it("initialize Swap ", async () => {
         swapData.nb_items = swapData.items.length;
 
         const {
@@ -304,13 +320,13 @@ describe("DataRemovedFronUserPda", () => {
             // "Custom":6004
         } catch (error) {
             console.log("Claim & close  :", error);
-            assert.ok(String(error).includes(`"Custom":6X`), true);
+            assert.ok(String(error).includes(`"Custom":6004`), true);
         }
     });
-    it("bad user not owns good nft", async () => {
+    it("bad user not owns good nft mint", async () => {
         let transactionHashs: string[] = [];
         // for await (const userKeypair of userKeypairsNormal) {
-        const swapData = await getSwapDataFromPDA({
+        const { swapDataAccount_bump, swapDataAccount_seed } = await getSwapDataFromPDA({
             provider: program.provider as anchor.AnchorProvider,
             CONST_PROGRAM: CONST_PROGRAM,
             swapDataAccount: pda,
@@ -318,18 +334,14 @@ describe("DataRemovedFronUserPda", () => {
             throw console.error(error);
         });
 
-        console.log("unauthorized user", unauthorizedKeypair.keypair.publicKey.toBase58());
-
-        console.log("mint", userKeypairsNormal[0].tokens[0].mint.toBase58());
-
         const { instruction: depositUnauthorizedInstruction } = await depositNft({
             program,
             signer: unauthorizedKeypair.keypair.publicKey,
             swapDataAccount: pda,
             ataList: [],
             mint: userKeypairsNormal[0].tokens[0].mint,
-            swapDataAccount_bump: swapData.swapDataAccount_bump,
-            swapDataAccount_seed: swapData.swapDataAccount_seed,
+            swapDataAccount_bump,
+            swapDataAccount_seed,
         });
         try {
             const transactionHash = await NeoSwap.boradcastToBlockchain({
@@ -345,7 +357,89 @@ describe("DataRemovedFronUserPda", () => {
             // "Custom":6004
         } catch (error) {
             console.log("Claim & close  :", error);
-            assert.ok(String(error).includes(`"Custom":60X`), true);
+            assert.ok(String(error).includes(`"Custom":6016`), true);
+        }
+    });
+    it("bad user not owns good nft ata", async () => {
+        let transactionHashs: string[] = [];
+        // for await (const userKeypair of userKeypairsNormal) {
+        const swapData = await getSwapDataFromPDA({
+            provider: program.provider as anchor.AnchorProvider,
+            CONST_PROGRAM: CONST_PROGRAM,
+            swapDataAccount: pda,
+        }).catch((error) => {
+            throw console.error(error);
+        });
+
+        console.log("unauthorized user", unauthorizedKeypair.keypair.publicKey.toBase58());
+
+        console.log("mint", userKeypairsNormal[0].tokens[0].mint.toBase58());
+        let { mintAta, transaction } = await findOrCreateAta(
+            program,
+            userKeypairsNormal[0].keypair.publicKey,
+            userKeypairsNormal[0].tokens[0].mint,
+            unauthorizedKeypair.keypair.publicKey
+        );
+        // const unauthata = await program.provider.connection.getAccountInfo(mintAta);
+        // console.log("unauth ata number", Number(unauthata.data.slice(64, 72).readBigUInt64LE()));
+        const { swapDataAccount_bump, swapDataAccount_seed } = await getSwapDataFromPDA({
+            provider: program.provider as anchor.AnchorProvider,
+            CONST_PROGRAM: CONST_PROGRAM,
+            swapDataAccount: pda,
+        }).catch((error) => {
+            throw console.error(error);
+        });
+        let depositUnauthorizedInstruction: {
+            tx: anchor.web3.Transaction;
+            signers?: anchor.web3.Signer[] | undefined;
+        }[] = [];
+        let { mintAta: pdaMintAta, transaction: pdaAtaTx } = await findOrCreateAta(
+            program,
+            pda,
+            userKeypairsNormal[0].tokens[0].mint,
+            unauthorizedKeypair.keypair.publicKey
+        );
+        const depositIx = await program.methods
+            .depositNft(swapDataAccount_seed, swapDataAccount_bump)
+            .accounts({
+                systemProgram: SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                swapDataAccount: pda,
+                signer: unauthorizedKeypair.keypair.publicKey,
+                itemFromDeposit: mintAta,
+                itemToDeposit: pdaMintAta,
+            })
+            .instruction();
+        if (pdaAtaTx) {
+            depositUnauthorizedInstruction.push({ tx: pdaAtaTx.add(depositIx) });
+        } else {
+            depositUnauthorizedInstruction.push({ tx: new Transaction().add(depositIx) });
+        }
+
+        // const { instruction: depositUnauthorizedInstruction } = await depositNft({
+        //     program,
+        //     signer: unauthorizedKeypair.keypair.publicKey,
+        //     swapDataAccount: pda,
+        //     ataList: [],
+        //     mint: userKeypairsNormal[0].tokens[0].mint,
+        //     swapDataAccount_bump: swapData.swapDataAccount_bump,
+        //     swapDataAccount_seed: swapData.swapDataAccount_seed,
+        // });
+        try {
+            const transactionHash = await NeoSwap.boradcastToBlockchain({
+                sendAllArray: depositUnauthorizedInstruction,
+                provider: program.provider as anchor.AnchorProvider,
+                signer: unauthorizedKeypair.keypair,
+            });
+            transactionHashs.push(...transactionHash);
+
+            // }
+
+            console.log("deposited users transactionHashs", transactionHashs);
+            // "Custom":6004
+        } catch (error) {
+            console.log("Claim & close  :", error);
+            assert.ok(String(error).includes(`"Custom":6017`), true);
         }
     });
     it("good user owns deposit wrong nft", async () => {
@@ -382,7 +476,7 @@ describe("DataRemovedFronUserPda", () => {
             // "Custom":6004
         } catch (error) {
             console.log("Claim & close  :", error);
-            assert.ok(String(error).includes(`"Custom":60X`), true);
+            assert.ok(String(error).includes(`"Custom":6016`), true);
         }
     });
 });

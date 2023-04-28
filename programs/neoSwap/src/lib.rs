@@ -107,6 +107,19 @@ pub mod neo_swap {
             if item_to_add.amount.is_negative() {
                 return Err(error!(MYERROR::UnexpectedData).into());
             }
+            for item_id in 0..swap_data_account.items.len() {
+                if swap_data_account.items[item_id].mint.eq(&item_to_add.mint)
+                    && swap_data_account.items[item_id]
+                        .owner
+                        .eq(&item_to_add.owner) &&
+                        swap_data_account.items[item_id]
+                        .destinary
+                        .eq(&item_to_add.destinary)
+                {
+                    return Err(error!(MYERROR::AlreadyExist).into());
+                }
+            }
+            
             if item_to_add.is_presigning == true {
                 item_to_add.status = ItemStatus::NFTPresigningWaitingForApproval.to_u8();
                 msg!("NFT item added with status NFTPresigningWaitingForApproval");
@@ -1760,7 +1773,9 @@ pub struct DepositNft<'info> {
     #[account(
         mut,
         constraint = item_from_deposit.mint.eq(&item_to_deposit.mint) @ MYERROR::MintIncorrect,
-        constraint = item_from_deposit.owner.eq(&signer.key()) @ MYERROR::IncorrectOwner
+        constraint = item_from_deposit.owner.eq(&signer.key()) @ MYERROR::IncorrectOwner,
+        constraint = item_from_deposit.amount > 0 @ MYERROR::NotEnoughFunds
+
     )]
     item_from_deposit: Account<'info, TokenAccount>,
     #[account(
@@ -1796,7 +1811,8 @@ pub struct DepositSol<'info> {
     #[account(
         mut,
         constraint = user_wsol.is_native() @ MYERROR::MintIncorrect,
-        constraint = user_wsol.owner.eq(&user.key())  @ MYERROR::IncorrectOwner
+        constraint = user_wsol.owner.eq(&user.key())  @ MYERROR::IncorrectOwner,
+        constraint = user_wsol.amount > 0 @ MYERROR::NotEnoughFunds
     )]
     user_wsol: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -1827,7 +1843,8 @@ pub struct DepositNftPresigned<'info> {
         mut,
         constraint = delegated_item_ata.mint.eq(&swap_data_account_ata.mint) @ MYERROR::MintIncorrect,
         constraint = delegated_item_ata.delegate.unwrap().eq(&user_pda.key()) @ MYERROR::NotDelegated,
-        constraint = delegated_item_ata.owner.eq(&user.key()) @ MYERROR::IncorrectOwner
+        constraint = delegated_item_ata.owner.eq(&user.key()) @ MYERROR::IncorrectOwner,
+        constraint = delegated_item_ata.amount > 0 @ MYERROR::NotEnoughFunds
     )]
     delegated_item_ata: Account<'info, TokenAccount>,
     #[account(
@@ -1866,6 +1883,7 @@ pub struct DepositSolPresigned<'info> {
         mut,
         constraint = user_wsol.owner.eq(&user.key())  @ MYERROR::IncorrectOwner,
         constraint = user_wsol.is_native() @ MYERROR::MintIncorrect,
+        constraint = user_wsol.amount > 0 @ MYERROR::NotEnoughFunds
     )]
     user_wsol: Account<'info, TokenAccount>,
     #[account(mut)]
