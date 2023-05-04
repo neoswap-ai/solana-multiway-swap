@@ -1,14 +1,15 @@
 [programs.devnet]
-neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
+neo_swap = "Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY"
 [programs.localnet]
-neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
+neo_swap = "Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "https://api.devnet.solana.com"
-wallet = "/home/kwiscion/.config/solana/id.json"
+# cluster = "localnet"
+wallet = "/home/florianesm/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

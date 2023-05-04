@@ -6,11 +6,11 @@ import { ItemStatus, TradeStatus } from './neoSwap.module.v4.2/utils.neoSwap/typ
 
 /// DEV
 export const network = WalletAdapterNetwork.Devnet;
-export const programId = new PublicKey('CCzejnwJTxcYzaKioMKoVWkDKnR265FE9eYdnKGVWahx');
+export const programId = new PublicKey('Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY');
 
 /// MAIN
 // export const network = WalletAdapterNetwork.Mainnet;
-// export const programId = new PublicKey('EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu');
+// export const programId = new PublicKey('Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY');
 
 export const CONST_PROGRAM: string = '0139';
 export const swapDataAccountGiven = new PublicKey('J68zLywo7Nrq3PaaAJuZhqK6CEyA2dvufm6hoNgc5V4P');

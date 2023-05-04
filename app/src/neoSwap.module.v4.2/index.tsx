@@ -4,6 +4,8 @@ import claimAndClose from './functions.neoswap/claimAndClose.neoSwap.module';
 import cancelAndClose from './functions.neoswap/cancelAndClose.neoSwap.module';
 import { getSwapDataFromPDA } from './utils.neoSwap/getSwapDataFromPDA.neoSwap';
 import { getSeedFromData } from './utils.neoSwap/getSeedfromData.neoswap';
+import createPnft2 from './functions.neoswap/subFunctions/createPNFT2.neoSwap.sub';
+import transferPNFT from './functions.neoswap/subFunctions/transferPNFT.neoSwap.sub ';
 
 const NeoSwap = {
     /// Main
@@ -14,6 +16,9 @@ const NeoSwap = {
     /// Utils
     getSwapDataFromPDA, /// fetch and deserialize data from PDA
     getSeedFromData, /// reconstruct seed and
+    /// Test
+    createPnft2, /// creates instruction for creating new pNFT
+    transferPNFT, /// creates instruction for transferring pNFT
 };
 
 export default NeoSwap;
