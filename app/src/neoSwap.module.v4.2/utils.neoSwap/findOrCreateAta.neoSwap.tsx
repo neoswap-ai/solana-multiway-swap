@@ -1,11 +1,12 @@
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { createPdaAta } from './createPdaAta.neoswap';
 import { findAtaFromMint } from './findAtaFromMint.neoswap';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 
 /**
  * @notice find token account by owner or create instruction to initialize it
  * @param {Connection} connection Connection with provider
- * @param {PublicKey} owner 
+ * @param {PublicKey} owner
  * @param {PublicKey} mint
  * @param {PublicKey} signer user that will sign transaction and pay fees
  * @return {PublicKey} mintAta => ATA found or created
@@ -20,9 +21,14 @@ export async function findOrCreateAta(Data: {
     let mintAta;
     let txCreate: TransactionInstruction[] = [];
     let ixCreateMintAta;
+    // try {
+    //     const mintAtaData = await findAtaFromMint(Data.connection, Data.mint, Data.owner);
+    //     return { mintAta: mintAtaData[0].pubkey };
+    // } catch (error) {
     try {
-        const mintAtaData = await findAtaFromMint(Data.connection, Data.mint, Data.owner);
-        return { mintAta: mintAtaData[0].pubkey };
+        mintAta = getAssociatedTokenAddressSync(Data.mint, Data.owner);
+        // console.log('found!');
+        return { mintAta };
     } catch (error) {
         const res = await createPdaAta(Data.mint, Data.signer, Data.owner);
         mintAta = res.mintAta;
@@ -31,6 +37,7 @@ export async function findOrCreateAta(Data: {
         txCreate.push(ixCreateMintAta);
         return { mintAta, instruction: txCreate };
     }
+    // }
 }
 
 export default findOrCreateAta;
