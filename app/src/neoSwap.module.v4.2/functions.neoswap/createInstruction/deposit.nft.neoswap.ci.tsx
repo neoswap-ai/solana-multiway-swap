@@ -1,7 +1,16 @@
 import findOrCreateAta from '../../utils.neoSwap/findOrCreateAta.neoSwap';
 import { Program } from '@project-serum/anchor';
-import { PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
+import { PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import {
+    TOKEN_METADATA_PROGRAM,
+    authRules,
+    authRulesProgram,
+    splAssociatedTokenAccountProgramId,
+} from '../../utils.neoSwap/const.neoSwap';
+import { findUserTokenRecord } from '../../utils.neoSwap/findUserTokenRecord';
+import { findNftMetadataAccount } from '../../utils.neoSwap/findNftMetadataAccount';
+import { findNftMasterEdition } from '../../utils.neoSwap/findNftMasterEdition';
 
 /**
  * @notice creates instruction for depositing a NFT Item
@@ -70,19 +79,72 @@ export async function depositNft(Data: {
         mintAta.push(pdaMintAta);
     }
 
-    const depositIx = await Data.program.methods
-        .depositNft(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
-        .accounts({
-            systemProgram: SystemProgram.programId,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            swapDataAccount: Data.swapDataAccount,
-            signer: Data.signer,
-            itemFromDeposit: userMintAta,
-            itemToDeposit: pdaMintAta,
-        })
-        .instruction();
+    const { adddress: nftMetadata, bump: nftMetadata_bump } = findNftMetadataAccount({ mint: Data.mint });
 
-    instruction.push(depositIx);
+    if (true) {
+        ///if pNFT
+        let { adddress: nftMasterEdition, bump: nftMasterEdition_bump } = findNftMasterEdition({ mint: Data.mint });
+        // console.log('nftMasterEdition', nftMasterEdition.toBase58());
+        let { adddress: ownerTokenRecord, bump: ownerTokenRecord_bump } = findUserTokenRecord({
+            mint: Data.mint,
+            userMintAta,
+        });
+        // console.log('ownerTokenRecord', ownerTokenRecord.toBase58());
+        let { adddress: destinationTokenRecord, bump: destinationTokenRecord_bump } = findUserTokenRecord({
+            mint: Data.mint,
+            userMintAta: pdaMintAta,
+        });
+        // console.log('destinationTokenRecord', destinationTokenRecord.toBase58());
+
+        instruction.push(
+            await Data.program.methods
+                .depositNft(
+                    Data.swapDataAccount_seed,
+                    Data.swapDataAccount_bump,
+                    nftMetadata_bump,
+                    nftMasterEdition_bump
+                )
+                .accounts({
+                    systemProgram: SystemProgram.programId,
+                    metadataProgram: TOKEN_METADATA_PROGRAM,
+                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+                    splTokenProgram: TOKEN_PROGRAM_ID,
+                    splAtaProgram: splAssociatedTokenAccountProgramId,
+                    swapDataAccount: Data.swapDataAccount,
+                    signer: Data.signer,
+                    itemFromDeposit: userMintAta,
+                    mint: Data.mint,
+                    nftMetadata,
+                    itemToDeposit: pdaMintAta,
+                    ownerTo: Data.swapDataAccount,
+                    nftMasterEdition,
+                    ownerTokenRecord,
+                    destinationTokenRecord,
+                    authRulesProgram,
+                    authRules,
+                })
+                .instruction()
+        );
+    } else {
+        instruction.push(
+            await Data.program.methods
+                .depositNft()
+                .accounts({
+                    systemProgram: SystemProgram.programId,
+                    metadataProgram: TOKEN_METADATA_PROGRAM,
+                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+                    splTokenProgram: TOKEN_PROGRAM_ID,
+                    splAtaProgram: splAssociatedTokenAccountProgramId,
+                    signer: Data.signer,
+                    itemFromDeposit: userMintAta,
+                    mint: Data.mint,
+                    nftMetadata,
+                    itemToDeposit: pdaMintAta,
+                    ownerTo: Data.swapDataAccount,
+                })
+                .instruction()
+        );
+    }
     console.log('from: ', userMintAta.toBase58(), '\nto: ', pdaMintAta.toBase58(), '\nmint: ', Data.mint.toBase58());
     return { instruction, mintAta };
 }

@@ -153,7 +153,7 @@ export const idl = {
                     isSigner: false,
                 },
                 {
-                    name: 'tokenProgram',
+                    name: 'metadataProgram',
                     isMut: false,
                     isSigner: false,
                 },
@@ -194,11 +194,16 @@ export const idl = {
                 },
                 {
                     name: 'nftMetadata',
-                    isMut: false,
+                    isMut: true,
                     isSigner: false,
                 },
                 {
                     name: 'itemToDeposit',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'ownerTo',
                     isMut: true,
                     isSigner: false,
                 },
@@ -210,13 +215,13 @@ export const idl = {
                 },
                 {
                     name: 'ownerTokenRecord',
-                    isMut: false,
+                    isMut: true,
                     isSigner: false,
                     isOptional: true,
                 },
                 {
                     name: 'destinationTokenRecord',
-                    isMut: false,
+                    isMut: true,
                     isSigner: false,
                     isOptional: true,
                 },
@@ -240,6 +245,14 @@ export const idl = {
                 },
                 {
                     name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'metadataBump',
+                    type: 'u8',
+                },
+                {
+                    name: 'masterBump',
                     type: 'u8',
                 },
             ],
@@ -270,6 +283,11 @@ export const idl = {
                 {
                     name: 'splAtaProgram',
                     isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'swapDataAccount',
+                    isMut: true,
                     isSigner: false,
                 },
                 {
@@ -957,12 +975,17 @@ export const idl = {
         {
             code: 6021,
             name: 'IncorrectSplAta',
-            msg: 'This is not a splAta',
+            msg: 'Incorrect Token ATA Program',
         },
         {
             code: 6022,
             name: 'IncorrectSysvar',
-            msg: 'This is not a Sysvar',
+            msg: 'Incorrect Sysvar Instruction Program',
+        },
+        {
+            code: 6023,
+            name: 'IncorrectMetadata',
+            msg: 'Incorrect Metadata Program',
         },
     ],
 } as Idl;
