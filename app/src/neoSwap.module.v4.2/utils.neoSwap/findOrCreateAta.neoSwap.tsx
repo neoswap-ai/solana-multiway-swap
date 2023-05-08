@@ -22,19 +22,21 @@ export async function findOrCreateAta(Data: {
     let txCreate: TransactionInstruction[] = [];
     let ixCreateMintAta;
     // try {
-    //     const mintAtaData = await findAtaFromMint(Data.connection, Data.mint, Data.owner);
     //     return { mintAta: mintAtaData[0].pubkey };
     // } catch (error) {
     try {
-        mintAta = getAssociatedTokenAddressSync(Data.mint, Data.owner);
-        // console.log('found!');
-        return { mintAta };
+        const mintAtaData = (await findAtaFromMint(Data.connection, Data.mint, Data.owner))[0].pubkey;
+        console.log('found!', mintAtaData.toBase58());
+        return { mintAta: mintAtaData };
+        // mintAta = getAssociatedTokenAddressSync(Data.mint, Data.owner);
     } catch (error) {
         const res = await createPdaAta(Data.mint, Data.signer, Data.owner);
         mintAta = res.mintAta;
         ixCreateMintAta = res.ix;
 
         txCreate.push(ixCreateMintAta);
+        console.log('not found');
+
         return { mintAta, instruction: txCreate };
     }
     // }

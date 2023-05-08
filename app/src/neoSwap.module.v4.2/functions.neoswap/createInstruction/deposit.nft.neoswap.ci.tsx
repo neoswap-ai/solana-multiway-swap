@@ -11,6 +11,9 @@ import {
 import { findUserTokenRecord } from '../../utils.neoSwap/findUserTokenRecord';
 import { findNftMetadataAccount } from '../../utils.neoSwap/findNftMetadataAccount';
 import { findNftMasterEdition } from '../../utils.neoSwap/findNftMasterEdition';
+import { Metadata } from '@metaplex-foundation/js';
+// import from '@metaplex-foundation/js';
+
 
 /**
  * @notice creates instruction for depositing a NFT Item
@@ -80,7 +83,13 @@ export async function depositNft(Data: {
     }
 
     const { adddress: nftMetadata, bump: nftMetadata_bump } = findNftMetadataAccount({ mint: Data.mint });
+    console.log('nftMetadata', nftMetadata.toBase58());
+    // console.log(((await Data.program.provider.connection.getAccountInfo(nftMetadata))?));
+    
+    // const tokenMetadata = programs.metadata.Metadata.findByOwnerV2(connection, walletPublicKey);
 
+    // let res = await Metadata.daata().Metadata.fromAccountAddress(Data.program.provider.connection, nftMetadata);
+    // Data.program.provider.connection.
     if (true) {
         ///if pNFT
         let { adddress: nftMasterEdition, bump: nftMasterEdition_bump } = findNftMasterEdition({ mint: Data.mint });

@@ -1,4 +1,4 @@
-import { Program, utils, Wallet } from '@project-serum/anchor';
+import { BN, Program, utils, Wallet } from '@project-serum/anchor';
 import {
     Keypair,
     PublicKey,
@@ -10,6 +10,7 @@ import {
 } from '@solana/web3.js';
 import { TokenStandard, Uses } from '@metaplex-foundation/mpl-token-metadata';
 // import { createInitializeV2Instruction } from '@metaplex-foundation/mpl-candy-machine-core';
+// import { Metaplex, keypairIdentity } from "@metaplex-foundation/js";
 
 import { appendTransactionToArray } from '../../utils.neoSwap/appendTransactionToArray.neosap';
 import { convertAllTransaction } from '../../utils.neoSwap/convertAllTransaction.neoswap';
@@ -35,6 +36,8 @@ import { splAssociatedTokenAccountProgramId } from '../../utils.neoSwap/const.ne
 
 import { Connection } from '@solana/web3.js';
 import { Metaplex, keypairIdentity, bundlrStorage, toMetaplexFile, toBigNumber } from '@metaplex-foundation/js';
+// i { Token } = require('@solana/spl-token');
+const splToken = require('@solana/spl-token');
 
 // Use the RPC endpoint of your choice.
 /**
@@ -45,14 +48,14 @@ import { Metaplex, keypairIdentity, bundlrStorage, toMetaplexFile, toBigNumber }
  * @param {Program} program program linked to NeoSwap
  * @return {Array<{tx: Transaction; signers?: Signer[] | undefined;}>}addInitSendAllArray => object with all transactions ready to be added recentblockhash and sent using provider.sendAll
  */
-export const createNft = async (Data: {
-    // swapData: SwapData;
+export const createNft = async (Data: { program: Program; signer: Keypair }) => {
+    const metaplex = new Metaplex(Data.program.provider.connection);
 
-    signer: Keypair;
+    // const mintNFTResponse = await metaplex.nfts().create({
+    //     uri: 'https://',
+    //     maxSupply: toBigNumber("1"),
+    // });
 
-    // CONST_PROGRAM: string;
-    program: Program;
-}) => {
     let mintPubkey = await createMint(
         Data.program.provider.connection, // conneciton
         Data.signer, // fee payer
@@ -60,6 +63,7 @@ export const createNft = async (Data: {
         Data.signer.publicKey, // freeze authority
         0 // decimals
     );
+    console.log('mintPubkey', mintPubkey.toBase58());
 
     let ata = await createAssociatedTokenAccount(
         Data.program.provider.connection, // conneciton
@@ -67,6 +71,7 @@ export const createNft = async (Data: {
         mintPubkey, // mint
         Data.signer.publicKey // owner,
     );
+    console.log('ata created');
 
     await mintToChecked(
         Data.program.provider.connection, // conneciton
@@ -77,6 +82,7 @@ export const createNft = async (Data: {
         1, // amount.
         0 // decimals
     );
+    console.log('minted');
 
     return mintPubkey;
     // mintProgrammableNft(

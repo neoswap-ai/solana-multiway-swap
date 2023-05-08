@@ -491,7 +491,22 @@ export const idl = {
                     isSigner: false,
                 },
                 {
-                    name: 'tokenProgram',
+                    name: 'metadataProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'sysvarInstructions',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splTokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splAtaProgram',
                     isMut: false,
                     isSigner: false,
                 },
@@ -520,6 +535,46 @@ export const idl = {
                     isMut: true,
                     isSigner: false,
                 },
+                {
+                    name: 'mint',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'nftMetadata',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'nftMasterEdition',
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'ownerTokenRecord',
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'destinationTokenRecord',
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'authRulesProgram',
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'authRules',
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
             ],
             args: [
                 {
@@ -528,6 +583,14 @@ export const idl = {
                 },
                 {
                     name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'metadataBump',
+                    type: 'u8',
+                },
+                {
+                    name: 'masterBump',
                     type: 'u8',
                 },
             ],
@@ -647,7 +710,22 @@ export const idl = {
                     isSigner: false,
                 },
                 {
-                    name: 'tokenProgram',
+                    name: 'metadataProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'sysvarInstructions',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splTokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'splAtaProgram',
                     isMut: false,
                     isSigner: false,
                 },
@@ -676,6 +754,46 @@ export const idl = {
                     isMut: true,
                     isSigner: false,
                 },
+                {
+                    name: 'mint',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'nftMetadata',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'nftMasterEdition',
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'ownerTokenRecord',
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'destinationTokenRecord',
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'authRulesProgram',
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: 'authRules',
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
             ],
             args: [
                 {
@@ -684,6 +802,14 @@ export const idl = {
                 },
                 {
                     name: 'bump',
+                    type: 'u8',
+                },
+                {
+                    name: 'metadataBump',
+                    type: 'u8',
+                },
+                {
+                    name: 'masterBump',
                     type: 'u8',
                 },
             ],
