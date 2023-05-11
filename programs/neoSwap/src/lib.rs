@@ -34,7 +34,7 @@ use anchor_spl::token::Mint;
 // pub mod utils;
 // use utils::digital_asset::*;
 
-declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
+declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -740,6 +740,7 @@ pub mod neo_swap {
                 //     ],
                 //     &[&[&seed[..], &[bump]]],
                 // )?;
+                // transfered = true;
                 msg!("NFT item Claimed");
                 let _ = ctx.accounts.item_from_deposit.reload();
                 // if no more NFT held, closes the Swap's PDA ATA
@@ -1302,7 +1303,7 @@ pub struct DepositPNft<'info> {
             b"token_record",
             item_from_deposit.key().as_ref()],
         bump = owner_token_record_bump,
-        owner = System::id() @ MYERROR::IncorrectTokenRecord,
+        // owner = metadata_program.key() @ MYERROR::IncorrectTokenRecord,
         seeds::program = metadata_program.key()
     )]
     owner_token_record: Option<AccountInfo<'info>>,
@@ -1316,7 +1317,7 @@ pub struct DepositPNft<'info> {
             b"token_record",
             item_to_deposit.key().as_ref()],
         bump=destination_token_record_bump,
-        owner = System::id() @ MYERROR::IncorrectTokenRecord,
+        // owner = metadata_program.key() @ MYERROR::IncorrectTokenRecord,
         seeds::program = metadata_program.key()
     )]
     destination_token_record: Option<AccountInfo<'info>>,
@@ -1446,7 +1447,7 @@ pub struct ClaimNft<'info> {
             b"token_record",
             item_from_deposit.key().as_ref()],
         bump = owner_token_record_bump,
-        owner = System::id() @ MYERROR::IncorrectTokenRecord,
+        // owner = System::id() @ MYERROR::IncorrectTokenRecord,
         seeds::program = metadata_program.key()
     )]
     owner_token_record: Option<AccountInfo<'info>>,
@@ -1460,7 +1461,7 @@ pub struct ClaimNft<'info> {
             b"token_record",
             item_to_deposit.key().as_ref()],
         bump = destination_token_record_bump,
-        owner = System::id() @ MYERROR::IncorrectTokenRecord,
+        // owner = System::id() @ MYERROR::IncorrectTokenRecord,
         seeds::program = metadata_program.key()
     )]
     destination_token_record: Option<AccountInfo<'info>>,
