@@ -106,7 +106,14 @@ export async function claimNft(Data: {
 
         instruction.push(
             await Data.program.methods
-                .claimNft(Data.swapDataAccount_seed, Data.swapDataAccount_bump, nftMetadata_bump, nftMasterEdition_bump)
+                .claimNft(
+                    Data.swapDataAccount_seed,
+                    Data.swapDataAccount_bump,
+                    nftMetadata_bump,
+                    nftMasterEdition_bump,
+                    ownerTokenRecord_bump,
+                    destinationTokenRecord_bump
+                )
                 .accounts({
                     systemProgram: SystemProgram.programId,
                     metadataProgram: TOKEN_METADATA_PROGRAM,

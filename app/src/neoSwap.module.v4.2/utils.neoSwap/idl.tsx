@@ -203,11 +203,6 @@ export const idl = {
                     isSigner: false,
                 },
                 {
-                    name: 'ownerTo',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
                     name: 'nftMasterEdition',
                     isMut: false,
                     isSigner: false,
@@ -255,98 +250,15 @@ export const idl = {
                     name: 'masterBump',
                     type: 'u8',
                 },
-            ],
-        },
-        {
-            name: 'transferPnft',
-            accounts: [
                 {
-                    name: 'systemProgram',
-                    isMut: false,
-                    isSigner: false,
+                    name: 'ownerTokenRecordBump',
+                    type: 'u8',
                 },
                 {
-                    name: 'metadataProgram',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'sysvarInstructions',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'splTokenProgram',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'splAtaProgram',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'swapDataAccount',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'signer',
-                    isMut: true,
-                    isSigner: true,
-                },
-                {
-                    name: 'itemFromDeposit',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'mint',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'nftMetadata',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'itemToDeposit',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'ownerTo',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'nftMasterEdition',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'ownerTokenRecord',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'destinationTokenRecord',
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: 'authRulesProgram',
-                    isMut: false,
-                    isSigner: false,
-                },
-                {
-                    name: 'authRules',
-                    isMut: false,
-                    isSigner: false,
+                    name: 'destinationTokenRecordBump',
+                    type: 'u8',
                 },
             ],
-            args: [],
         },
         {
             name: 'depositSol',
@@ -593,6 +505,14 @@ export const idl = {
                     name: 'masterBump',
                     type: 'u8',
                 },
+                {
+                    name: 'ownerTokenRecordBump',
+                    type: 'u8',
+                },
+                {
+                    name: 'destinationTokenRecordBump',
+                    type: 'u8',
+                },
             ],
         },
         {
@@ -810,6 +730,14 @@ export const idl = {
                 },
                 {
                     name: 'masterBump',
+                    type: 'u8',
+                },
+                {
+                    name: 'ownerTokenRecordBump',
+                    type: 'u8',
+                },
+                {
+                    name: 'destinationTokenRecordBump',
                     type: 'u8',
                 },
             ],
@@ -1112,6 +1040,11 @@ export const idl = {
             code: 6023,
             name: 'IncorrectMetadata',
             msg: 'Incorrect Metadata Program',
+        },
+        {
+            code: 6024,
+            name: 'IncorrectTokenRecord',
+            msg: 'Incorrect token reccord account',
         },
     ],
 } as Idl;

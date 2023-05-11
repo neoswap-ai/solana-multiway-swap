@@ -9,7 +9,6 @@ export function findUserTokenRecord(Data: { mint: PublicKey; userMintAta: Public
         [
             Buffer.from('metadata'),
             TOKEN_METADATA_PROGRAM.toBuffer(),
-            // TOKEN_PROGRAM_ID.toBuffer(),
             Data.mint.toBuffer(),
             Buffer.from('token_record'),
             Data.userMintAta.toBuffer(),

@@ -107,7 +107,9 @@ export async function cancelNft(Data: {
                     Data.swapDataAccount_seed,
                     Data.swapDataAccount_bump,
                     nftMetadata_bump,
-                    nftMasterEdition_bump
+                    nftMasterEdition_bump,
+                    ownerTokenRecord_bump,
+                    destinationTokenRecord_bump
                 )
                 .accounts({
                     systemProgram: SystemProgram.programId,

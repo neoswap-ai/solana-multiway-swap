@@ -14,7 +14,6 @@ import { findNftMasterEdition } from '../../utils.neoSwap/findNftMasterEdition';
 import { Metadata } from '@metaplex-foundation/js';
 // import from '@metaplex-foundation/js';
 
-
 /**
  * @notice creates instruction for depositing a NFT Item
  * @param {Program} program program linked to NeoSwap
@@ -85,21 +84,19 @@ export async function depositNft(Data: {
     const { adddress: nftMetadata, bump: nftMetadata_bump } = findNftMetadataAccount({ mint: Data.mint });
     console.log('nftMetadata', nftMetadata.toBase58());
     // console.log(((await Data.program.provider.connection.getAccountInfo(nftMetadata))?));
-    
-    // const tokenMetadata = programs.metadata.Metadata.findByOwnerV2(connection, walletPublicKey);
 
+    // const tokenMetadata = programs.metadata.Metadata.findByOwnerV2(connection, walletPublicKey);
     // let res = await Metadata.daata().Metadata.fromAccountAddress(Data.program.provider.connection, nftMetadata);
-    // Data.program.provider.connection.
     if (true) {
-        ///if pNFT
-        let { adddress: nftMasterEdition, bump: nftMasterEdition_bump } = findNftMasterEdition({ mint: Data.mint });
+        ///if New metaplex standard
+        const { adddress: nftMasterEdition, bump: nftMasterEdition_bump } = findNftMasterEdition({ mint: Data.mint });
         // console.log('nftMasterEdition', nftMasterEdition.toBase58());
-        let { adddress: ownerTokenRecord, bump: ownerTokenRecord_bump } = findUserTokenRecord({
+        const { adddress: ownerTokenRecord, bump: ownerTokenRecord_bump } = findUserTokenRecord({
             mint: Data.mint,
             userMintAta,
         });
-        // console.log('ownerTokenRecord', ownerTokenRecord.toBase58());
-        let { adddress: destinationTokenRecord, bump: destinationTokenRecord_bump } = findUserTokenRecord({
+        console.log('ownerTokenRecord', ownerTokenRecord.toBase58());
+        const { adddress: destinationTokenRecord, bump: destinationTokenRecord_bump } = findUserTokenRecord({
             mint: Data.mint,
             userMintAta: pdaMintAta,
         });
@@ -110,8 +107,11 @@ export async function depositNft(Data: {
                 .depositNft(
                     Data.swapDataAccount_seed,
                     Data.swapDataAccount_bump,
+                    // nftMetadata_seed,
                     nftMetadata_bump,
-                    nftMasterEdition_bump
+                    nftMasterEdition_bump,
+                    ownerTokenRecord_bump,
+                    destinationTokenRecord_bump
                 )
                 .accounts({
                     systemProgram: SystemProgram.programId,
@@ -125,7 +125,6 @@ export async function depositNft(Data: {
                     mint: Data.mint,
                     nftMetadata,
                     itemToDeposit: pdaMintAta,
-                    ownerTo: Data.swapDataAccount,
                     nftMasterEdition,
                     ownerTokenRecord,
                     destinationTokenRecord,
