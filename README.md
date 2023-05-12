@@ -131,9 +131,9 @@ for development, the initializer is being a parameter but will be changed to fix
 
 ### BackEnd
 
-> anchor-lang = "0.25.0"
+> anchor-lang = "0.26.0"
 >
-> anchor-spl= "0.25.0"
+> anchor-spl= "0.26.0"
 >
 > spl-associated-token-account = "~1.0.3"
 

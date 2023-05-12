@@ -1,49 +1,36 @@
 use std::str::FromStr;
 use {
     anchor_lang::{
+        // context::CpiContext,
         prelude::*,
         solana_program::{
             program::{invoke, invoke_signed},
             pubkey::Pubkey,
+            sysvar,
         },
+        AnchorDeserialize,
     },
     anchor_spl::{
         associated_token::AssociatedToken,
-        token::{spl_token, Token, TokenAccount},
+        token::{spl_token, Mint, Token, TokenAccount},
     },
-    // mpl_token_metadata::instruction::builders::CreateBuilder,
-    // mpl_token_metadata::instruction::CreateArgs,
-    // mpl_token_metadata::instruction::MetadataDelegateRole::ProgrammableConfig,
-    // mpl_token_metadata::instruction::Transfer,
-    // mpl_token_metadata::state::AssetData,
-    // mpl_token_metadata::utils::puffed_out_string,
     mpl_token_metadata::{
         instruction::{builders::TransferBuilder, InstructionBuilder, TransferArgs},
-        // pda::find_token_record_account,
-        state::{
-            Metadata,
-            TokenMetadataAccount,
-            // TokenStandard
-        },
+        state::{Metadata, TokenMetadataAccount},
     },
-    // open_creator_protocol::*,
+    open_creator_protocol::cpi::{accounts::TransferCtx, transfer},
 };
 
-use anchor_lang::solana_program;
-use anchor_spl::token::Mint;
+// use anchor_lang::solana_program;
+// use anchor_spl::token::Mint;
 // pub mod utils;
 // use utils::digital_asset::*;
 
-declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
-
+// declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
+declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
 pub mod neo_swap {
-    // use mpl_token_metadata::{
-    //     // instruction::{builders::Transfer, MetadataInstruction},
-    //     // state::PrintSupply,
-    // };
-
     use super::*;
 
     /// @notice Initialize Swap's PDA. /!\ Signer will be Initializer
@@ -188,7 +175,7 @@ pub mod neo_swap {
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposit the NFT into the escrow.
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
-    /// @accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits,  item_from_deposit: Pubkey => User ATA related to mint, item_to_deposit: Pubkey => Swap's PDA ATA related to mint}
+    /// @accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits,  item_from_deposit: Pubkey => User ATA related to mint, signer_ata: Pubkey => Swap's PDA ATA related to mint}
     /// @return Void
     pub fn deposit_nft(
         ctx: Context<DepositPNft>,
@@ -336,84 +323,6 @@ pub mod neo_swap {
         }
         Ok(())
     }
-
-    // pub fn deposit_nft_ocp(ctx: Context<DepositNftOCP>, _seed: Vec<u8>, _bump: u8) -> Result<()> {
-    //     let swap_data_account = &ctx.accounts.swap_data_account;
-
-    //     let token_program = &ctx.accounts.token_program;
-    //     let signer = &ctx.accounts.signer;
-    //     let item_to_deposit = &ctx.accounts.item_to_deposit;
-    //     let item_from_deposit = &ctx.accounts.item_from_deposit;
-
-    //     require!(
-    //         swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
-    //         MYERROR::UnexpectedState
-    //     );
-
-    //     let mut transfered: bool = false;
-
-    //     // find the item linked with shared Accounts
-    //     for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-    //         if ctx.accounts.swap_data_account.items[item_id].is_nft
-    //             && ctx.accounts.swap_data_account.items[item_id]
-    //                 .mint
-    //                 .eq(&item_to_deposit.mint)
-    //             && ctx.accounts.swap_data_account.items[item_id].status
-    //                 == ItemStatus::NFTPending.to_u8()
-    //         {
-    //             // Transfer according item to Swap's PDA ATA
-
-    //             // open_creator_protocol::cpi::transfer(CpiContext::new(
-    //             //     ctx.accounts.ocp_program.to_account_info(),
-    //             //     open_creator_protocol::cpi::accounts::TransferCtx {
-    //             //         policy: ctx.accounts.ocp_policy.to_account_info(),
-    //             //         mint: ctx.accounts.token_mint.to_account_info(),
-    //             //         metadata: ctx.accounts.metadata.to_account_info(),
-    //             //         mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
-    //             //         from: ctx.accounts.program_as_signer.to_account_info(),
-    //             //         from_account: ctx.accounts.seller_token_ata.to_account_info(),
-    //             //         cmt_program: ctx.accounts.cmt_program.to_account_info(),
-    //             //         instructions: ctx.accounts.instructions.to_account_info(),
-    //             //         freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
-    //             //         token_program: ctx.accounts.token_program.to_account_info(),
-    //             //         to: ctx.accounts.buyer.to_account_info(),
-    //             //         to_account: ctx.accounts.buyer_token_ata.to_account_info(),
-    //             //     },
-    //             // ))?;
-
-    //             // let ix = spl_token::instruction::transfer(
-    //             //     token_program.key,
-    //             //     &item_from_deposit.key(),
-    //             //     &item_to_deposit.key(),
-    //             //     &signer.key(),
-    //             //     &[&signer.key()],
-    //             //     ctx.accounts.swap_data_account.items[item_id].amount.unsigned_abs()
-    //             // )?;
-
-    //             // invoke(
-    //             //     &ix,
-    //             //     &[
-    //             //         item_from_deposit.to_account_info(),
-    //             //         item_to_deposit.to_account_info(),
-    //             //         signer.to_account_info(),
-    //             //         token_program.to_account_info(),
-    //             //     ]
-    //             // )?;
-
-    //             //update item status to NFTDeposited
-    //             ctx.accounts.swap_data_account.items[item_id].status =
-    //                 ItemStatus::NFTDeposited.to_u8();
-    //             transfered = true;
-    //             msg!("NFTDeposited");
-    //             break;
-    //         }
-    //     }
-
-    //     if transfered == false {
-    //         return Err(error!(MYERROR::NoSend).into());
-    //     }
-    //     Ok(())
-    // }
 
     /// @notice Deposit lamports to escrow.
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposits lamports to escrow. /!\ user that should only receive lamports don't have to deposit.
@@ -722,25 +631,6 @@ pub mod neo_swap {
 
                 invoke_signed(&transfer_ix, &transfer_infos, &[&[&seed[..], &[bump]]])?;
 
-                // let ix = spl_token::instruction::transfer(
-                //     &ctx.accounts.token_program.key,
-                //     &ctx.accounts.item_from_deposit.key(),
-                //     &ctx.accounts.item_to_deposit.key(),
-                //     &ctx.accounts.swap_data_account.key(),
-                //     &[&ctx.accounts.swap_data_account.key()],
-                //     1,
-                // )?;
-                // invoke_signed(
-                //     &ix,
-                //     &[
-                //         ctx.accounts.token_program.to_account_info(),
-                //         ctx.accounts.item_from_deposit.to_account_info(),
-                //         ctx.accounts.item_to_deposit.to_account_info(),
-                //         ctx.accounts.swap_data_account.to_account_info(),
-                //     ],
-                //     &[&[&seed[..], &[bump]]],
-                // )?;
-                // transfered = true;
                 msg!("NFT item Claimed");
                 let _ = ctx.accounts.item_from_deposit.reload();
                 // if no more NFT held, closes the Swap's PDA ATA
@@ -1188,6 +1078,31 @@ pub mod neo_swap {
 
         Ok(())
     }
+    pub fn transfer_ocp(
+        ctx: Context<TransferOcp>,
+        // _seed: Vec<u8>,
+        // _bump: u8,
+    ) -> Result<()> {
+        let _cpi_ctx = transfer(CpiContext::new(
+            ctx.accounts.ocp_program.to_account_info(),
+            TransferCtx {
+                token_program: ctx.accounts.token_program.to_account_info(),
+                policy: ctx.accounts.ocp_policy.to_account_info(),
+                cmt_program: ctx.accounts.cmt_program.to_account_info(),
+                instructions: ctx.accounts.sysvar_instructions.to_account_info(),
+                mint: ctx.accounts.token_mint.to_account_info(),
+                metadata: ctx.accounts.nft_metadata.to_account_info(),
+                mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
+                freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
+                from: ctx.accounts.signer.to_account_info(),
+                from_account: ctx.accounts.signer_ata.to_account_info(),
+                to: ctx.accounts.destinary.to_account_info(),
+                to_account: ctx.accounts.destinary_ata.to_account_info(),
+            },
+        ))?;
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -1245,7 +1160,7 @@ pub struct DepositPNft<'info> {
     #[account(constraint = metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
     metadata_program: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
+    #[account(constraint = sysvar_instructions.key().eq(&sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
     #[account()]
     spl_token_program: Program<'info, Token>,
@@ -1380,7 +1295,7 @@ pub struct ClaimNft<'info> {
     #[account(constraint =metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
     metadata_program: AccountInfo<'info>, //, TokenMetadata>,
     ///CHECK: in constraint
-    #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
+    #[account(constraint = sysvar_instructions.key().eq(&sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
     #[account()]
     spl_token_program: Program<'info, Token>,
@@ -1415,7 +1330,7 @@ pub struct ClaimNft<'info> {
     #[account(constraint = item_from_deposit.mint == mint.key()  @ MYERROR::MintIncorrect)]
     mint: Account<'info, Mint>,
     /// CHECK: in constraints
-    #[account(mut,
+    #[account(
         seeds =[
             b"metadata".as_ref(),
             metadata_program.key().as_ref(),
@@ -1487,6 +1402,63 @@ pub struct ClaimSol<'info> {
     signer: Signer<'info>,
 }
 
+#[derive(Accounts)]
+// #[instruction(seed: Vec<u8>, bump: u8)]
+pub struct TransferOcp<'info> {
+    ///CHECK: in constraint
+    #[account(constraint =metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
+    metadata_program: AccountInfo<'info>,
+    ///CHECK: in constraint
+    #[account(address = open_creator_protocol::id())]
+    ocp_program: AccountInfo<'info>,
+    #[account()]
+    token_program: Program<'info, Token>,
+    ///CHECK: in constraint
+    #[account()]
+    ocp_policy: AccountInfo<'info>,
+    /// CHECK: check in cpi
+    #[account(address = community_managed_token::id())]
+    cmt_program: AccountInfo<'info>,
+    ///CHECK: in constraint
+    #[account(constraint = sysvar_instructions.key().eq(&sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
+    sysvar_instructions: AccountInfo<'info>,
+    #[account(
+        constraint = token_mint.supply == 1 && token_mint.decimals == 0 @ MYERROR::InvalidOcpParameters,
+    )]
+    token_mint: Account<'info, Mint>,
+    /// CHECK: in constraints
+    #[account(
+        seeds =[
+            b"metadata".as_ref(),
+            metadata_program.key().as_ref(),
+            token_mint.key().as_ref()],
+        bump,
+        owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
+        seeds::program = metadata_program.key()
+    )]
+    nft_metadata: AccountInfo<'info>,
+    /// CHECK: check in cpi
+    #[account(mut)]
+    ocp_mint_state: AccountInfo<'info>,
+    /// CHECK: check in cpi
+    #[account()]
+    ocp_freeze_authority: AccountInfo<'info>,
+    #[account()]
+    signer: Signer<'info>,
+    #[account(
+        mut,
+        constraint = signer_ata.owner == signer.key() @ MYERROR::IncorrectOwner
+    )]
+    signer_ata: Account<'info, TokenAccount>,
+    /// CHECK: check in cpi
+    #[account()]
+    destinary: AccountInfo<'info>,
+    #[account(
+        mut,
+        constraint = destinary_ata.owner == destinary.key() @ MYERROR::IncorrectOwner
+    )]
+    destinary_ata: Account<'info, TokenAccount>,
+}
 #[account]
 #[derive(Default)]
 // #[derive(AnchorDeserialize,AnchorSerialize, Clone)]
@@ -1684,4 +1656,6 @@ pub enum MYERROR {
     IncorrectMetadata,
     #[msg("Incorrect token reccord account")]
     IncorrectTokenRecord,
+    #[msg("Not OCP NFT")]
+    InvalidOcpParameters,
 }

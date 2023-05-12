@@ -143,7 +143,7 @@ export const idl = {
                 "@dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposit the NFT into the escrow.",
                 "@param seed: u8[] => Seed buffer corresponding to Swap's PDA",
                 '@param bump: u8 => "Bump corresponding to Swap\'s PDA"',
-                "@accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits,  item_from_deposit: Pubkey => User ATA related to mint, item_to_deposit: Pubkey => Swap's PDA ATA related to mint}",
+                "@accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits,  item_from_deposit: Pubkey => User ATA related to mint, signer_ata: Pubkey => Swap's PDA ATA related to mint}",
                 '@return Void',
             ],
             accounts: [
@@ -454,7 +454,7 @@ export const idl = {
                 },
                 {
                     name: 'nftMetadata',
-                    isMut: true,
+                    isMut: false,
                     isSigner: false,
                 },
                 {
@@ -681,7 +681,7 @@ export const idl = {
                 },
                 {
                     name: 'nftMetadata',
-                    isMut: true,
+                    isMut: false,
                     isSigner: false,
                 },
                 {
@@ -787,6 +787,82 @@ export const idl = {
                     type: 'u8',
                 },
             ],
+        },
+        {
+            name: 'transferOcp',
+            accounts: [
+                {
+                    name: 'metadataProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'ocpProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'tokenProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'ocpPolicy',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'cmtProgram',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'sysvarInstructions',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'tokenMint',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'nftMetadata',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'ocpMintState',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'ocpFreezeAuthority',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'signer',
+                    isMut: false,
+                    isSigner: true,
+                },
+                {
+                    name: 'signerAta',
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: 'destinary',
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: 'destinaryAta',
+                    isMut: true,
+                    isSigner: false,
+                },
+            ],
+            args: [],
         },
     ],
     accounts: [
@@ -1045,6 +1121,11 @@ export const idl = {
             code: 6024,
             name: 'IncorrectTokenRecord',
             msg: 'Incorrect token reccord account',
+        },
+        {
+            code: 6025,
+            name: 'InvalidOcpParameters',
+            msg: 'Not OCP NFT',
         },
     ],
 } as Idl;
