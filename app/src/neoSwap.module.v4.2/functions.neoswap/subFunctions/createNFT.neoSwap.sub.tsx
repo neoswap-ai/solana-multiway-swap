@@ -61,7 +61,10 @@ export const createNft = async (Data: { program: Program; signer: Keypair }) => 
         Data.signer, // fee payer
         Data.signer.publicKey, // mint authority
         Data.signer.publicKey, // freeze authority
-        0 // decimals
+        0, // decimals
+        undefined,
+        undefined,
+        TOKEN_PROGRAM_ID
     );
     console.log('mintPubkey', mintPubkey.toBase58());
 
@@ -79,7 +82,7 @@ export const createNft = async (Data: { program: Program; signer: Keypair }) => 
         mintPubkey, // mint
         ata, // receiver
         Data.signer.publicKey, // mint authority
-        1, // amount.
+        10, // amount.
         0 // decimals
     );
     console.log('minted');
