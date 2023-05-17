@@ -53,7 +53,7 @@ describe("swapCoontractTest", () => {
     const CONST_PROGRAM = "0007";
     const nbuser = 3;
 
-    let pda: PublicKey | undefined = new PublicKey("GAv76PCFHVLA98ZLUQpsq9qnQpGvRPradd3SzDybUjXj"); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
+    let pda: PublicKey | undefined = new PublicKey("qimcp9FM2JvNBwCAtWisSPKNYTqqnkxo8dqrJz7Bwhh"); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
     // let pda: PublicKey | undefined = undefined;
 
     let signer = Keypair.fromSecretKey(signerSk);
@@ -187,7 +187,8 @@ describe("swapCoontractTest", () => {
             mint: user1MintToTransfer,
             status: ItemStatus.NFTPending,
             owner: user1.publicKey,
-            destinary: user2.publicKey,
+            destinary: new PublicKey('5mG4wFjsnuuQWExTGqLN9ca2e5D1DBVZGDQKjGHJvJPQ'),
+            // destinary: user2.publicKey,
         } as NftSwapItem);
 
         swapData.items.push({
@@ -196,7 +197,8 @@ describe("swapCoontractTest", () => {
             mint: user2MintToTransfer,
             status: ItemStatus.NFTPending,
             owner: user2.publicKey,
-            destinary: user3.publicKey,
+            destinary: new PublicKey('5mG4wFjsnuuQWExTGqLN9ca2e5D1DBVZGDQKjGHJvJPQ'),
+            // destinary: user3.publicKey,
         } as NftSwapItem);
 
         swapData.items.push({
@@ -205,7 +207,8 @@ describe("swapCoontractTest", () => {
             mint: user3MintToTransfer,
             status: ItemStatus.NFTPending,
             owner: user3.publicKey,
-            destinary: user1N.publicKey,
+            destinary: new PublicKey('AkKM7KKpe5KMkL4RnV4WYFvMwNyxx5vSEbdRCZhBSPfk'),
+            // destinary: user1N.publicKey,
         } as NftSwapItem);
 
         swapData.items.push({
@@ -214,7 +217,8 @@ describe("swapCoontractTest", () => {
             mint: user1NMintToTransfer,
             status: ItemStatus.NFTPending,
             owner: user1N.publicKey,
-            destinary: user2N.publicKey,
+            destinary: new PublicKey('AkKM7KKpe5KMkL4RnV4WYFvMwNyxx5vSEbdRCZhBSPfk'),
+            // destinary: user2N.publicKey,
         } as NftSwapItem);
 
         swapData.items.push({
@@ -223,7 +227,8 @@ describe("swapCoontractTest", () => {
             mint: user2NMintToTransfer,
             status: ItemStatus.NFTPending,
             owner: user2N.publicKey,
-            destinary: user3N.publicKey,
+            destinary: new PublicKey('AByktSicY21ZoEDRn5dYdnAQc2AREDCB39XpF98zsZJj'),
+            // destinary: user3N.publicKey,
         } as NftSwapItem);
 
         swapData.items.push({
@@ -232,7 +237,8 @@ describe("swapCoontractTest", () => {
             mint: user3NMintToTransfer,
             status: ItemStatus.NFTPending,
             owner: user3N.publicKey,
-            destinary: user1.publicKey,
+            destinary: new PublicKey('AByktSicY21ZoEDRn5dYdnAQc2AREDCB39XpF98zsZJj'),
+            // destinary: user1.publicKey,
         } as NftSwapItem);
         console.log(swapData.items.length);
     });
@@ -311,67 +317,8 @@ describe("swapCoontractTest", () => {
         console.log("transactionhashes", transactionHashs);
     });
 
-    // it("claim and close", async () => {
-    // const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
-    //         provider: program.provider as anchor.AnchorProvider,
-    //         signer: signer.publicKey,
-    //         swapDataAccount: pda,
-    //         CONST_PROGRAM,
-    //     });
-
-    //     const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-    //     allClaimSendAllArray.forEach((transactionDeposit) => {
-    //         transactionDeposit.signers = [signer];
-    //         transactionDeposit.tx.feePayer = signer.publicKey;
-    //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
-    //     });
-
-    //     const claimAndCloseHash = await program.provider.sendAll(allClaimSendAllArray, {
-    //         skipPreflight: true,
-    //     });
-    //     console.log("claimAndCloseHash", claimAndCloseHash);
-
-    //     for await (const hash of claimAndCloseHash) {
-    // console.log(hash);
-    //         program.provider.connection.confirmTransaction(hash);
-
-    //     }
-
-    //     console.log("claimAndCloseHash :", claimAndCloseHash);
-    // });
-
-    it("partial cancel and close from in trade user", async () => {
-        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
-            provider: program.provider as anchor.AnchorProvider,
-            signer: user1.publicKey,
-            swapDataAccount: pda,
-            CONST_PROGRAM,
-        });
-
-        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
-
-        allCancelSendAllArray.forEach((transactionDeposit) => {
-            transactionDeposit.signers = [user1];
-            transactionDeposit.tx.feePayer = user1.publicKey;
-            transactionDeposit.tx.recentBlockhash = recentBlockhash;
-        });
-
-        const cancelAndCloseHash = await program.provider.sendAll(
-            allCancelSendAllArray.slice(0, 1),
-            { skipPreflight: true }
-        );
-
-        for await (const hash of cancelAndCloseHash) {
-            console.log(hash);
-            program.provider.connection.confirmTransaction(hash);
-        }
-
-        console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    });
-
-    it("finish cancel and close from signer", async () => {
-        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+    it("claim and close", async () => {
+    const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
             provider: program.provider as anchor.AnchorProvider,
             signer: signer.publicKey,
             swapDataAccount: pda,
@@ -380,23 +327,82 @@ describe("swapCoontractTest", () => {
 
         const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
 
-        allCancelSendAllArray.forEach((transactionDeposit) => {
+        allClaimSendAllArray.forEach((transactionDeposit) => {
             transactionDeposit.signers = [signer];
             transactionDeposit.tx.feePayer = signer.publicKey;
             transactionDeposit.tx.recentBlockhash = recentBlockhash;
         });
 
-        const cancelAndCloseHash = await program.provider.sendAll(allCancelSendAllArray, {
+        const claimAndCloseHash = await program.provider.sendAll(allClaimSendAllArray, {
             skipPreflight: true,
         });
+        console.log("claimAndCloseHash", claimAndCloseHash);
 
-        for await (const hash of cancelAndCloseHash) {
-            console.log(hash);
+        for await (const hash of claimAndCloseHash) {
+    console.log(hash);
             program.provider.connection.confirmTransaction(hash);
+
         }
 
-        console.log("cancelAndCloseHash :", cancelAndCloseHash);
+        console.log("claimAndCloseHash :", claimAndCloseHash);
     });
+
+    // it("partial cancel and close from in trade user", async () => {
+    //     const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+    //         provider: program.provider as anchor.AnchorProvider,
+    //         signer: user1.publicKey,
+    //         swapDataAccount: pda,
+    //         CONST_PROGRAM,
+    //     });
+
+    //     const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+    //     allCancelSendAllArray.forEach((transactionDeposit) => {
+    //         transactionDeposit.signers = [user1];
+    //         transactionDeposit.tx.feePayer = user1.publicKey;
+    //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
+    //     });
+
+    //     const cancelAndCloseHash = await program.provider.sendAll(
+    //         allCancelSendAllArray.slice(0, 1),
+    //         { skipPreflight: true }
+    //     );
+
+    //     for await (const hash of cancelAndCloseHash) {
+    //         console.log(hash);
+    //         program.provider.connection.confirmTransaction(hash);
+    //     }
+
+    //     console.log("cancelAndCloseHash :", cancelAndCloseHash);
+    // });
+
+    // it("finish cancel and close from signer", async () => {
+    //     const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+    //         provider: program.provider as anchor.AnchorProvider,
+    //         signer: signer.publicKey,
+    //         swapDataAccount: pda,
+    //         CONST_PROGRAM,
+    //     });
+
+    //     const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+
+    //     allCancelSendAllArray.forEach((transactionDeposit) => {
+    //         transactionDeposit.signers = [signer];
+    //         transactionDeposit.tx.feePayer = signer.publicKey;
+    //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
+    //     });
+
+    //     const cancelAndCloseHash = await program.provider.sendAll(allCancelSendAllArray, {
+    //         skipPreflight: true,
+    //     });
+
+    //     for await (const hash of cancelAndCloseHash) {
+    //         console.log(hash);
+    //         program.provider.connection.confirmTransaction(hash);
+    //     }
+
+    //     console.log("cancelAndCloseHash :", cancelAndCloseHash);
+    // });
 
     //UTILS FOR INITIALIZING
     // it("Create keypair", async () => {
