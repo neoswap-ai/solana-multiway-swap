@@ -28,16 +28,15 @@ export const initInitialize = async (Data: {
     swapData: SwapData;
 }> => {
     Data.swapDataGiven.initializer = Data.signer;
-
     const seedSwapData = await getSeedFromData({
         swapDataGiven: Data.swapDataGiven,
         CONST_PROGRAM: Data.CONST_PROGRAM,
     });
-    let swapData = seedSwapData.swapData;
 
+    let swapData = seedSwapData.swapData;
     let sentData: SwapData = {
         initializer: Data.signer,
-        items: [swapData.items[0]],
+        items: [],
         status: TradeStatus.Initializing,
         nb_items: swapData.items.length,
     };

@@ -1,9 +1,9 @@
 [programs.mainnet]
 neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
 [programs.devnet]
-neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
+neo_swap = "Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY"
 [programs.localnet]
-neo_swap = "EsYuHZrno8EjpWVbkAfpxnJeZcQetd3k9ighJFFpgKJu"
+neo_swap = "Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY"
 
 [registry]
 url = "https://anchor.projectserum.com"

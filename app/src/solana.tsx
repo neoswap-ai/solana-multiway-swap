@@ -3,7 +3,7 @@ import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
 import { FC, useCallback } from 'react';
-import { idl } from './idl';
+import { idl } from './neoSwap.module.v4.2/utils.neoSwap/idl';
 import { opts } from './solana.const';
 import { CONST_PROGRAM, fullData, network, programId, swapDataAccountGiven } from './solana.test';
 import { SwapData } from './solana.types';

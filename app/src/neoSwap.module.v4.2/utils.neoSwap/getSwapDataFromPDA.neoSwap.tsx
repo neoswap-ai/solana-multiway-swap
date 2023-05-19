@@ -43,7 +43,7 @@ export const getSwapDataFromPDA = async (Data: {
 
         let swapDataAccount_seed = Buffer.from(hash(preSeed)).subarray(0, 32);
 
-        const [compareSwapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+        const [compareSwapDataAccount, swapDataAccount_bump] = PublicKey.findProgramAddressSync(
             [swapDataAccount_seed],
             program.programId
         );

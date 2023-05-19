@@ -6,7 +6,7 @@ import SwapData from './types.neo-swap/swapData.types.neoswap';
 /**
  * @notice find according PDA related to swapData. /!\ swapData's item order might be modified
  * @dev given swapData, sort data, reconstruct seed & find PDA.
- * @param {SwapData} swapDataGiven Swap's initial data 
+ * @param {SwapData} swapDataGiven Swap's initial data
  * @param {string}CONST_PROGRAM 4 character string to initialize the seed
  * @return {SwapData}swapData => sorted version to be written in the PDA
  * @return {PublicKey}swapDataAccount => Swap's PDA corresponding to given data
@@ -39,7 +39,7 @@ export const getSeedFromData = async (Data: {
     let swapDataAccount_seed = Buffer.from(hash(preSeed)).subarray(0, 32);
 
     try {
-        const [swapDataAccount, swapDataAccount_bump] = await PublicKey.findProgramAddress(
+        const [swapDataAccount, swapDataAccount_bump] = PublicKey.findProgramAddressSync(
             [swapDataAccount_seed],
             neoSwapProgramAddress
         );

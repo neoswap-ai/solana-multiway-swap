@@ -16,6 +16,13 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.25.0"
-anchor-spl= "0.25.0"
-spl-associated-token-account = "~1.0.3"
+anchor-lang = "0.26.0"
+anchor-spl= "0.26.0"
+spl-associated-token-account = "~1.1.1"
+mpl-token-metadata = "1.10.0"
+open_creator_protocol = { version = "0.3.0", features = ["cpi"] }
+# spl-token = { version = "3.2.0", features = ["no-entrypoint"] }
+
+[dev-dependencies]
+# solana-sdk = "1.14"
+# solana-program-test = "1.14"

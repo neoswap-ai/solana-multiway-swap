@@ -33,7 +33,7 @@ export const saddInitialize = async (Data: {
     });
 
     let addInitTransactionInstruction: Array<TransactionInstruction> = [];
-    for (let item = 1; item < Data.swapData.items.length; item++) {
+    for (let item = 0; item < Data.swapData.items.length; item++) {
         console.log('XXXXXXX - added to init item n° ', item, ' XXXXXXX');
         const instructionToAdd = await Data.program.methods
             .initializeAdd(
