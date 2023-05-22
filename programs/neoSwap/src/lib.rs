@@ -20,8 +20,8 @@ use {
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
 
-// declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
-declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
+declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
+// declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -56,6 +56,7 @@ pub mod neo_swap {
         ctx.accounts.swap_data_account.items = [].to_vec();
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
         ctx.accounts.swap_data_account.nb_items = nb_of_items;
+        ctx.accounts.swap_data_account.pre_seed = sent_data.pre_seed;
         Ok(())
     }
 
@@ -1417,12 +1418,14 @@ pub struct SwapData {
     pub status: u8,
     pub items: Vec<NftSwapItem>,
     pub nb_items: u32,
+    pub pre_seed: String,
 }
 
 impl SwapData {
     const LEN: usize = 8 + //Base
         1 + //u8
         4 * 2 + //u32
+        4 + 32 + // max 32 char
         32; //Pubkey
 
     pub fn size(_swap_data_account: SwapData, nb_items: u32) -> usize {
