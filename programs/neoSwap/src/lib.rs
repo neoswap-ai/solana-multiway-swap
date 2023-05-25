@@ -20,8 +20,8 @@ use {
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
 
-declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
-// declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
+// declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
+declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -739,7 +739,7 @@ pub mod neo_swap {
     }
 
     /// @notice Cancels an item from escrow, retrieving funds if deposited previously. /!\ initializer function
-    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary if needed, change the item status to cancelled and Swap's status to 90 (cancelled) if not already. /!\ this function can only be triggered by initializer
+    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary if needed, change the item status to canceled and Swap's status to 90 (canceled) if not already. /!\ this function can only be triggered by initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts system_program: Pubkey = system_program_id
@@ -749,7 +749,7 @@ pub mod neo_swap {
     /// @return Void
     pub fn cancel_sol(ctx: Context<ClaimSol>, _seed: Vec<u8>, _bump: u8) -> Result<()> {
         if !(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
-            || ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8())
+            || ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8())
         {
             return Err(error!(MYERROR::NotReady).into());
         }
@@ -812,8 +812,8 @@ pub mod neo_swap {
                                     - amount_to_send;
 
                             ctx.accounts.swap_data_account.items[item_id].status =
-                                ItemStatus::SolCancelledRecovered.to_u8();
-                            msg!("SolCancelledRecovered");
+                                ItemStatus::SolCanceledRecovered.to_u8();
+                            msg!("SolCanceledRecovered");
                         } else {
                             return Err(error!(MYERROR::NotEnoughFunds).into());
                         }
@@ -835,10 +835,10 @@ pub mod neo_swap {
             return Err(error!(MYERROR::UserNotPartOfTrade).into());
         }
 
-        // if not already, Swap status changed to 90 (Cancelled)
-        if ctx.accounts.swap_data_account.status != TradeStatus::Cancelling.to_u8() {
-            ctx.accounts.swap_data_account.status = TradeStatus::Cancelling.to_u8();
-            msg!("General status changed to Cancelling");
+        // if not already, Swap status changed to 90 (Canceled)
+        if ctx.accounts.swap_data_account.status != TradeStatus::Canceling.to_u8() {
+            ctx.accounts.swap_data_account.status = TradeStatus::Canceling.to_u8();
+            msg!("General status changed to Canceling");
         }
         Ok(())
     }
@@ -880,7 +880,7 @@ pub mod neo_swap {
 
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
-                || ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8(),
+                || ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8(),
             MYERROR::NotReady
         );
 
@@ -1014,7 +1014,7 @@ pub mod neo_swap {
 
                 invoke_signed(&transfer_ix, &transfer_infos, &[&[&seed[..], &[bump]]])?;
 
-                msg!("NFT item Cancelled");
+                msg!("NFT item Canceled");
 
                 let _ = ctx.accounts.item_from_deposit.reload();
 
@@ -1043,7 +1043,7 @@ pub mod neo_swap {
 
                 // Update item status to 91 (CancelRecovered)
                 ctx.accounts.swap_data_account.items[item_id].status =
-                    ItemStatus::NFTCancelledRecovered.to_u8();
+                    ItemStatus::NFTCanceledRecovered.to_u8();
 
                 transfered = true;
             }
@@ -1057,10 +1057,10 @@ pub mod neo_swap {
             return Err(error!(MYERROR::UserNotPartOfTrade).into());
         }
 
-        // If not already, update Swap's status to 90 (Cancelled)
-        if ctx.accounts.swap_data_account.status != TradeStatus::Cancelling.to_u8() {
-            ctx.accounts.swap_data_account.status = TradeStatus::Cancelling.to_u8();
-            msg!("General status changed to Cancelling");
+        // If not already, update Swap's status to 90 (Canceled)
+        if ctx.accounts.swap_data_account.status != TradeStatus::Canceling.to_u8() {
+            ctx.accounts.swap_data_account.status = TradeStatus::Canceling.to_u8();
+            msg!("General status changed to Canceling");
         }
 
         Ok(())
@@ -1080,7 +1080,7 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8,
     ) -> Result<()> {
-        if !(ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8()
+        if !(ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8()
             || ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8())
         {
             return Err(error!(MYERROR::NotReady).into());
@@ -1088,12 +1088,12 @@ pub mod neo_swap {
 
         let nbr_items = ctx.accounts.swap_data_account.items.len();
 
-        // Checks all items are Cancelled
+        // Checks all items are Canceled
         for item_id in 0..nbr_items {
             if !(ctx.accounts.swap_data_account.items[item_id].status
-                == ItemStatus::SolCancelledRecovered.to_u8()
+                == ItemStatus::SolCanceledRecovered.to_u8()
                 || ctx.accounts.swap_data_account.items[item_id].status
-                    == ItemStatus::NFTCancelledRecovered.to_u8()
+                    == ItemStatus::NFTCanceledRecovered.to_u8()
                 || ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::SolPending.to_u8()
                 || ctx.accounts.swap_data_account.items[item_id].status
@@ -1105,7 +1105,7 @@ pub mod neo_swap {
             }
         }
 
-        // Changing Swap status to 91 (CancelledRecovered)
+        // Changing Swap status to 91 (CanceledRecovered)
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
         msg!("General status changed to Closed");
 
@@ -1467,8 +1467,8 @@ pub enum TradeStatus {
     WaitingToDeposit,
     WaitingToClaim,
     Closed,
-    Cancelling,
-    Cancelled,
+    Canceling,
+    Canceled,
 }
 
 impl TradeStatus {
@@ -1479,8 +1479,8 @@ impl TradeStatus {
             2 => TradeStatus::WaitingToClaim,
             3 => TradeStatus::Closed,
 
-            100 => TradeStatus::Cancelling,
-            101 => TradeStatus::Cancelled,
+            100 => TradeStatus::Canceling,
+            101 => TradeStatus::Canceled,
 
             _ => panic!("Invalid Proposal Status"),
         }
@@ -1493,8 +1493,8 @@ impl TradeStatus {
             TradeStatus::WaitingToClaim => 2,
             TradeStatus::Closed => 3,
 
-            TradeStatus::Cancelling => 100,
-            TradeStatus::Cancelled => 101,
+            TradeStatus::Canceling => 100,
+            TradeStatus::Canceled => 101,
         }
     }
 }
@@ -1503,14 +1503,14 @@ pub enum ItemStatus {
     NFTPending,
     NFTDeposited,
     NFTClaimed,
-    NFTCancelled,
-    NFTCancelledRecovered,
+    NFTCanceled,
+    NFTCanceledRecovered,
     SolPending,
     SolDeposited,
     SolToClaim,
     SolClaimed,
-    SolCancelled,
-    SolCancelledRecovered,
+    SolCanceled,
+    SolCanceledRecovered,
 }
 
 impl ItemStatus {
@@ -1526,11 +1526,11 @@ impl ItemStatus {
             30 => ItemStatus::NFTClaimed,
             31 => ItemStatus::SolClaimed,
 
-            100 => ItemStatus::NFTCancelled,
-            101 => ItemStatus::SolCancelled,
+            100 => ItemStatus::NFTCanceled,
+            101 => ItemStatus::SolCanceled,
 
-            110 => ItemStatus::NFTCancelledRecovered,
-            111 => ItemStatus::SolCancelledRecovered,
+            110 => ItemStatus::NFTCanceledRecovered,
+            111 => ItemStatus::SolCanceledRecovered,
 
             _ => panic!("Invalid Proposal Status"),
         }
@@ -1548,11 +1548,11 @@ impl ItemStatus {
             ItemStatus::NFTClaimed => 30,
             ItemStatus::SolClaimed => 31,
 
-            ItemStatus::NFTCancelled => 100,
-            ItemStatus::SolCancelled => 101,
+            ItemStatus::NFTCanceled => 100,
+            ItemStatus::SolCanceled => 101,
 
-            ItemStatus::NFTCancelledRecovered => 110,
-            ItemStatus::SolCancelledRecovered => 111,
+            ItemStatus::NFTCanceledRecovered => 110,
+            ItemStatus::SolCanceledRecovered => 111,
         }
     }
 }
