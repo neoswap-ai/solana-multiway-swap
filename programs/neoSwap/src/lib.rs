@@ -49,7 +49,10 @@ pub mod neo_swap {
             MYERROR::UnexpectedState
         );
         require!(sent_data.items.len() == 0, MYERROR::IncorrectLength);
-
+        require!(
+            sent_data.pre_seed.len() < 30 as usize,
+            MYERROR::PreSeedTooLong
+        );
         // Write according Data into Swap's PDA
         ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
         ctx.accounts.swap_data_account.items = [].to_vec();
@@ -1103,8 +1106,6 @@ pub struct InitInitialize<'info> {
     signer: Signer<'info>,
     #[account()]
     system_program: Program<'info, System>,
-    // #[account()]
-    // associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -1135,7 +1136,7 @@ pub struct VerifyInitialize<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8,metadata_bump:u8)] //, master_bump:u8, owner_token_record_bump:u8,destination_token_record_bump:u8)]
+#[instruction(seed: Vec<u8>, bump: u8,metadata_bump:u8)]
 pub struct DepositPNft<'info> {
     #[account()]
     system_program: Program<'info, System>,
@@ -1180,44 +1181,13 @@ pub struct DepositPNft<'info> {
     )]
     item_to_deposit: Account<'info, TokenAccount>,
     /// CHECK: in constraints
-    #[account(
-        // seeds = [
-        //     b"metadata", 
-        //     metadata_program.key().as_ref(),
-        //     mint.key().as_ref(),
-        //     b"edition"],
-        // bump,
-        // owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
-        // seeds::program = metadata_program.key()
-    )]
+    #[account()]
     nft_master_edition: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(
-        mut,
-        // seeds = [
-        //     b"metadata", 
-        //     metadata_program.key().as_ref(),
-        //     mint.key().as_ref(),
-        //     b"token_record",
-        //     item_from_deposit.key().as_ref()],
-        // bump = owner_token_record_bump,
-        // // owner = metadata_program.key() @ MYERROR::IncorrectTokenRecord,
-        // seeds::program = metadata_program.key()
-    )]
+    #[account(mut)]
     owner_token_record: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(
-        mut,
-        // seeds = [
-        //     b"metadata", 
-        //     metadata_program.key().as_ref(),
-        //     mint.key().as_ref(),
-        //     b"token_record",
-        //     item_to_deposit.key().as_ref()],
-        // bump=destination_token_record_bump,
-        // // owner = metadata_program.key() @ MYERROR::IncorrectTokenRecord,
-        // seeds::program = metadata_program.key()
-    )]
+    #[account(mut)]
     destination_token_record: AccountInfo<'info>,
     /// CHECK: account checked in CPI
     #[account()]
@@ -1270,13 +1240,13 @@ pub struct ValidateAndClose<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, metadata_bump:u8)] //, master_bump:u8, owner_token_record_bump:u8,destination_token_record_bump:u8)]
+#[instruction(seed: Vec<u8>, bump: u8, metadata_bump:u8)]
 pub struct ClaimNft<'info> {
     #[account()]
     system_program: Program<'info, System>,
     /// CHECK: in constraint
     #[account(constraint = metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
-    metadata_program: AccountInfo<'info>, //, TokenMetadata>,
+    metadata_program: AccountInfo<'info>,
     /// CHECK: in constraint
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
@@ -1356,13 +1326,12 @@ pub struct ClaimSol<'info> {
 
 #[account]
 #[derive(Default)]
-// #[derive(AnchorDeserialize,AnchorSerialize, Clone)]
 pub struct SwapData {
-    pub initializer: Pubkey,
-    pub status: u8,
-    pub nb_items: u32,
-    pub pre_seed: String,
-    pub items: Vec<NftSwapItem>,
+    pub initializer: Pubkey,     // Initializer is admin of the PDA
+    pub status: u8,              // Gives the status of the current swap with TradeStatus
+    pub nb_items: u32,           // Required to initialize the PDA account data size
+    pub pre_seed: String,        // String to initialize PDA's seed
+    pub items: Vec<NftSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
 }
 
 impl SwapData {
@@ -1379,16 +1348,14 @@ impl SwapData {
     }
 }
 
-// #[account]
-// #[derive(Default)]
 #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct NftSwapItem {
-    is_nft: bool,
-    mint: Pubkey,
-    amount: i64,
-    owner: Pubkey,
-    destinary: Pubkey,
-    status: u8,
+    is_nft: bool,      // Argument to sort the functions in the program's functions
+    mint: Pubkey,      // Mint of the NFT. if item not NFT expected PublicKey should be system_program
+    amount: i64,       // amount of tokens or lamports to transfer
+    owner: Pubkey,     // owner of the NFT or SOL item
+    destinary: Pubkey, // destinary of the item
+    status: u8,        // Status of the Item with ItemStatus
 }
 
 impl NftSwapItem {
@@ -1397,15 +1364,6 @@ impl NftSwapItem {
         8; //i64
 }
 
-// #[account]
-// #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
-
-// pub struct MetadataAccount {
-//     pub self_bump: u8,
-//     pub mint_bump: u8,
-//     pub mint: Pubkey,
-//     pub item: Item,
-// }
 pub enum TradeStatus {
     Initializing,
     WaitingToDeposit,
@@ -1555,4 +1513,6 @@ pub enum MYERROR {
     IncorrectTokenRecord,
     #[msg("Not authorized to perform this action")]
     NotAuthorized,
+    #[msg("PreSeed has too many character (max: 32)")]
+    PreSeedTooLong,
 }
