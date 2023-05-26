@@ -29,21 +29,20 @@ pub mod neo_swap {
     use super::*;
 
     /// @notice Initialize Swap's PDA. /!\ Signer will be Initializer
-    /// @dev First function to trigger to initialize Swap's PDA with according space, define admin and add Neoswap Fees. /!\ Signer will be Initializer
+    /// @dev First function to trigger to initialize Swap's PDA with according space, define admin and preSeed. /!\ Signer will be Initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
-    /// @param sent_data: SwapData: {initializer: Pubkey => admin of the trade, status: u8  => "status of the trade", items: NftSwapItem = first item [length=1]}, nb_of_items: u32 => number of items engaged in the trade}
+    /// @param sent_data: SwapData
+    /// @param nb_of_items: u32 => "Bump corresponding to Swap's PDA"
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => initializer
     /// @accounts system_program: Pubkey = system_program_id
-    /// @accounts associated_token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
     pub fn init_initialize(
         ctx: Context<InitInitialize>,
         _seed: Vec<u8>,
         _bump: u8,
         sent_data: SwapData,
-        nb_of_items: u32,
     ) -> Result<()> {
         require!(
             sent_data.status == TradeStatus::Initializing.to_u8(),
@@ -55,7 +54,7 @@ pub mod neo_swap {
         ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
         ctx.accounts.swap_data_account.items = [].to_vec();
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
-        ctx.accounts.swap_data_account.nb_items = nb_of_items;
+        ctx.accounts.swap_data_account.nb_items = sent_data.nb_items;
         ctx.accounts.swap_data_account.pre_seed = sent_data.pre_seed;
         Ok(())
     }
@@ -64,7 +63,7 @@ pub mod neo_swap {
     /// @dev Function to add an item to the PDA. /!\ status of item is rewritten to according value in program.  /!\ this function can only be triggered by initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
-    /// @param trade_to_add: NftSwapItem: {is_nft: bool => "return true if the item is en NFT (true)/(false)", mint: Pubkey => "(Mint address)/(Owner address)", amount: i64 => (nbr of NFT engaged in this trade)/(number of lamports the user will exchange with the smart contract if_positive(user will give lamports), if_negative(user will receive lamports)), owner: Pubkey => owner of the NFT or lamports , destinary: Pubkey => (user who should receive the NFT)/(Owner address), status : u8 => /!\ will be rewritten by program, }
+    /// @param trade_to_add: NftSwapItem
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => initializer
     /// @return Void
@@ -83,7 +82,7 @@ pub mod neo_swap {
 
         let mut item_to_add: NftSwapItem = trade_to_add;
 
-        // Write according status to item
+        // Write status according status to item
         if item_to_add.is_nft {
             item_to_add.status = ItemStatus::NFTPending.to_u8();
             if item_to_add.amount.is_negative() || item_to_add.amount == 0 {
@@ -91,7 +90,7 @@ pub mod neo_swap {
             }
             msg!("NFT item added with status NFTPending");
         } else {
-            //Check if already one user has Sol item
+            // Check if already one user has Sol item
             for item_id in 0..swap_data_account.items.len() {
                 if !swap_data_account.items[item_id].is_nft
                     && swap_data_account.items[item_id]
@@ -101,6 +100,7 @@ pub mod neo_swap {
                     return Err(error!(MYERROR::UnexpectedData).into());
                 }
             }
+            // Check that mint and destinary are dummy values
             if item_to_add.destinary
                 != Pubkey::from_str("11111111111111111111111111111111").unwrap()
                 || item_to_add.mint != Pubkey::from_str("11111111111111111111111111111111").unwrap()
@@ -126,7 +126,7 @@ pub mod neo_swap {
     }
 
     /// @notice Verify Swap's PDA items to proceed to waiting for deposit state. /!\ initializer function
-    /// @dev Function verify each item status and sum of lamports to mutate the smart contract status to (waiting for deposit).
+    /// @dev Function verify each item status and sum of lamports to mutate the program status to (waiting for deposit).
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
@@ -171,16 +171,29 @@ pub mod neo_swap {
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposit the NFT into the escrow.
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
-    /// @accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits,  item_from_deposit: Pubkey => User ATA related to mint, item_to_deposit: Pubkey => Swap's PDA ATA related to mint}
+    /// @accounts system_program = SYSTEM_PROGRAM_ID
+    /// @accounts metadata_program => METADATA_PROGRAM_ID
+    /// @accounts sysvar_instructions => SYSVAR_INSTRUCTION_ID
+    /// @accounts spl_token_program => TOKEN_PROGRAM_ID
+    /// @accounts spl_ata_program => SPL_TOKEN_PROGRAM_ID
+    /// @accounts swap_data_account => Swap's PDA corresponding to seeds
+    /// @accounts user => User that will potentially receive the NFT
+    /// @accounts signer => Initializer or User
+    /// @accounts item_from_deposit => Swap's PDA ATA related to mint
+    /// @accounts item_to_deposit => User ATA related to mint
+    /// @accounts mint => mint Account of the NFT
+    /// @accounts nft_metadata => metadata account
+    /// @accounts nft_master_edition => if !pNFT: programId / if pNFT: masterEdition account
+    /// @accounts owner_token_record => if !pNFT: programId / if pNFT: owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts destination_token_record => if !pNFT: programId / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts auth_rules_program => metaplex auth rules program (auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg)
+    /// @accounts auth_rules => auth rules account linked to the mint (get from mint account data)
     /// @return Void
     pub fn deposit_nft(
         ctx: Context<DepositPNft>,
         _seed: Vec<u8>,
         _bump: u8,
         _metadata_bump: u8,
-        // _master_bump: Option<u8>,
-        // _owner_token_record_bump: Option<u8>,
-        // _destination_token_record_bump: Option<u8>,
     ) -> Result<()> {
         let swap_data_account = &ctx.accounts.swap_data_account;
 
@@ -203,7 +216,6 @@ pub mod neo_swap {
                     == ItemStatus::NFTPending.to_u8()
             {
                 msg!("3");
-
                 // creating base transfer builder
                 let mut transfer_builder = TransferBuilder::new();
                 transfer_builder
@@ -247,46 +259,21 @@ pub mod neo_swap {
                     metadata.token_standard,
                     Some(mpl_token_metadata::state::TokenStandard::ProgrammableNonFungible)
                 ) {
-                    // build extra info for pNFT
-                    let nft_master_edition = match &ctx.accounts.nft_master_edition {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let owner_token_record = match &ctx.accounts.owner_token_record {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let destination_token_record = match &ctx.accounts.destination_token_record {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let auth_rules_program = match &ctx.accounts.auth_rules_program {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let auth_rules = match &ctx.accounts.auth_rules {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    // transfer_infos.push([
-
                     transfer_builder
-                        .edition(nft_master_edition.key())
-                        .owner_token_record(owner_token_record.key())
-                        .destination_token_record(destination_token_record.key())
-                        .authorization_rules_program(auth_rules_program.key())
-                        .authorization_rules(auth_rules.key());
+                        .edition(ctx.accounts.nft_master_edition.key())
+                        .owner_token_record(ctx.accounts.owner_token_record.key())
+                        .destination_token_record(ctx.accounts.destination_token_record.key())
+                        .authorization_rules_program(ctx.accounts.auth_rules_program.key())
+                        .authorization_rules(ctx.accounts.auth_rules.key());
 
-                    transfer_infos.push(nft_master_edition.to_account_info());
-                    transfer_infos.push(owner_token_record.to_account_info());
-                    transfer_infos.push(destination_token_record.to_account_info());
-                    transfer_infos.push(auth_rules_program.to_account_info());
-                    transfer_infos.push(auth_rules.to_account_info());
-                    // ][..]);
+                    transfer_infos.push(ctx.accounts.nft_master_edition.to_account_info());
+                    transfer_infos.push(ctx.accounts.owner_token_record.to_account_info());
+                    transfer_infos.push(ctx.accounts.destination_token_record.to_account_info());
+                    transfer_infos.push(ctx.accounts.auth_rules_program.to_account_info());
+                    transfer_infos.push(ctx.accounts.auth_rules.to_account_info());
                     msg!("6.1");
                 } else {
                     msg!("6.2");
-                    // return Err(MYERROR::NotProgrammableNft.into());
                 }
 
                 // Check enough tokens in ATA balance
@@ -298,6 +285,7 @@ pub mod neo_swap {
                     return Err(MYERROR::NotEnoughFunds.into());
                 }
 
+                // Create transfer instruction
                 let transfer_ix = transfer_builder
                     .build(TransferArgs::V1 {
                         amount: ctx.accounts.swap_data_account.items[item_id]
@@ -309,6 +297,7 @@ pub mod neo_swap {
                     .instruction();
                 msg!("7");
 
+                //Bbroadcast transfer instruction
                 invoke(&transfer_ix, &transfer_infos)?;
 
                 ctx.accounts.swap_data_account.items[item_id].status =
@@ -319,14 +308,16 @@ pub mod neo_swap {
             }
         }
 
+        // Returns error if nothing is there to transfer
         if transfered == false {
             return Err(error!(MYERROR::NoSend).into());
         }
+
         Ok(())
     }
 
     /// @notice Deposit lamports to escrow.
-    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposits lamports to escrow. /!\ user that should only receive lamports don't have to deposit.
+    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposits lamports to escrow.
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts system_program: Pubkey = system_program_id
@@ -387,7 +378,7 @@ pub mod neo_swap {
     }
 
     /// @notice Verify Swap's PDA items to proceed to waiting for claiming state. /!\ initializer function
-    /// @dev Function verify each item status to mutate the smart contract status to 1 (waiting for claim).  /!\ this function can only be triggered by initializer
+    /// @dev Function verify each item status to mutate the program status to WaitingToClaim.  /!\ this function can only be triggered by initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
@@ -418,8 +409,8 @@ pub mod neo_swap {
         Ok(())
     }
 
-    /// @notice Claims lamports from escrow. /!\ initializer function
-    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary. /!\ this function can only be triggered by initializer
+    /// @notice Claims lamports from escrow. Initializer can trigger this function
+    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary.
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts system_program: Pubkey = system_program_id
@@ -434,6 +425,16 @@ pub mod neo_swap {
         );
 
         let mut transfered: bool = false;
+        let mut authorized: bool = false;
+
+        if ctx
+            .accounts
+            .signer
+            .key()
+            .eq(&ctx.accounts.swap_data_account.initializer)
+        {
+            authorized = true;
+        }
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
@@ -445,6 +446,16 @@ pub mod neo_swap {
                     .eq(ctx.accounts.user.key)
                 && transfered == false
             {
+                // Bypass function for initializer or the destinary of this solItem
+                if ctx
+                    .accounts
+                    .signer
+                    .key()
+                    .eq(&ctx.accounts.swap_data_account.items[item_id].destinary)
+                {
+                    authorized = true;
+                }
+
                 if ctx.accounts.swap_data_account.items[item_id]
                     .amount
                     .is_negative()
@@ -486,6 +497,9 @@ pub mod neo_swap {
         if transfered == false {
             return Err(error!(MYERROR::NoSend).into());
         }
+        if authorized == false {
+            return Err(error!(MYERROR::UserNotPartOfTrade).into());
+        }
         Ok(())
     }
 
@@ -493,22 +507,30 @@ pub mod neo_swap {
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfers the NFT from the escrow to the shared user. If no more NFT is held by the PDA, close PDA ATA and send rent fund to user. /!\ this function can only be triggered by initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
-    /// @accounts system_program: Pubkey = system_program_id
-    /// @accounts token_program: Pubkey = token_program_id
-    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
-    /// @accounts user: Pubkey => User that will receive the NFT, signer: Pubkey => Initializer
-    /// @accounts signer: Pubkey => Initializer
-    /// @accounts item_from_deposit: Pubkey => Swap's PDA ATA related to mint
-    /// @accounts item_to_deposit: Pubkey => User ATA related to mint
+    /// @param _metadata_bump: u8 => "Bump corresponding to Metadata's PDA"
+    /// @accounts system_program = SYSTEM_PROGRAM_ID
+    /// @accounts metadata_program => METADATA_PROGRAM_ID
+    /// @accounts sysvar_instructions => SYSVAR_INSTRUCTION_ID
+    /// @accounts spl_token_program => TOKEN_PROGRAM_ID
+    /// @accounts spl_ata_program => SPL_TOKEN_PROGRAM_ID
+    /// @accounts swap_data_account => Swap's PDA corresponding to seeds
+    /// @accounts user => User that will receive the NFT
+    /// @accounts signer => Initializer or User
+    /// @accounts item_from_deposit => Swap's PDA ATA related to mint
+    /// @accounts item_to_deposit => User ATA related to mint
+    /// @accounts mint => mint Account of the NFT
+    /// @accounts nft_metadata => metadata account
+    /// @accounts nft_master_edition => if !pNFT: programId / if pNFT: masterEdition account
+    /// @accounts owner_token_record => if !pNFT: programId / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts destination_token_record => if !pNFT: programId / if pNFT: initial owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts auth_rules_program => metaplex auth rules program (auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg)
+    /// @accounts auth_rules => auth rules account linked to the mint (get from mint account data)
     /// @return Void
     pub fn claim_nft(
         ctx: Context<ClaimNft>,
         seed: Vec<u8>,
         bump: u8,
         _metadata_bump: u8,
-        // _master_bump: Option<u8>,
-        // _owner_token_record_bump: Option<u8>,
-        // _destination_token_record_bump: Option<u8>,
     ) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToClaim.to_u8(),
@@ -543,16 +565,14 @@ pub mod neo_swap {
                     .eq(ctx.accounts.user.key)
                 && transfered == false
             {
+                // Bypass function for initializer or the destinary of this NFT
                 if ctx
                     .accounts
                     .signer
                     .key()
-                    .eq(&ctx.accounts.swap_data_account.items[item_id].owner)
-                    || authorized == true
+                    .eq(&ctx.accounts.swap_data_account.items[item_id].destinary)
                 {
                     authorized = true;
-                } else {
-                    return Err(error!(MYERROR::NotAuthorized).into());
                 }
                 // Transfer the NFT to user
 
@@ -600,46 +620,21 @@ pub mod neo_swap {
                     metadata.token_standard,
                     Some(mpl_token_metadata::state::TokenStandard::ProgrammableNonFungible)
                 ) {
-                    // build extra info for pNFT
-                    let nft_master_edition = match &ctx.accounts.nft_master_edition {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let owner_token_record = match &ctx.accounts.owner_token_record {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let destination_token_record = match &ctx.accounts.destination_token_record {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let auth_rules_program = match &ctx.accounts.auth_rules_program {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let auth_rules = match &ctx.accounts.auth_rules {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    // transfer_infos.push([
-
                     transfer_builder
-                        .edition(nft_master_edition.key())
-                        .owner_token_record(owner_token_record.key())
-                        .destination_token_record(destination_token_record.key())
-                        .authorization_rules_program(auth_rules_program.key())
-                        .authorization_rules(auth_rules.key());
+                        .edition(ctx.accounts.nft_master_edition.key())
+                        .owner_token_record(ctx.accounts.owner_token_record.key())
+                        .destination_token_record(ctx.accounts.destination_token_record.key())
+                        .authorization_rules_program(ctx.accounts.auth_rules_program.key())
+                        .authorization_rules(ctx.accounts.auth_rules.key());
 
-                    transfer_infos.push(nft_master_edition.to_account_info());
-                    transfer_infos.push(owner_token_record.to_account_info());
-                    transfer_infos.push(destination_token_record.to_account_info());
-                    transfer_infos.push(auth_rules_program.to_account_info());
-                    transfer_infos.push(auth_rules.to_account_info());
-                    // ][..]);
+                    transfer_infos.push(ctx.accounts.nft_master_edition.to_account_info());
+                    transfer_infos.push(ctx.accounts.owner_token_record.to_account_info());
+                    transfer_infos.push(ctx.accounts.destination_token_record.to_account_info());
+                    transfer_infos.push(ctx.accounts.auth_rules_program.to_account_info());
+                    transfer_infos.push(ctx.accounts.auth_rules.to_account_info());
                     msg!("6.1");
                 } else {
                     msg!("6.2");
-                    // return Err(MYERROR::NotProgrammableNft.into());
                 }
 
                 let transfer_ix = transfer_builder
@@ -700,7 +695,7 @@ pub mod neo_swap {
     }
 
     /// @notice Verify Swap's PDA items to proceed to closed state. /!\ initializer function
-    /// @dev Function verify each item status to mutate the smart contract status to 3 (closed) then close the Swap's PDA.  /!\ this function can only be triggered by initializer
+    /// @dev Function verify each item status to mutate the program status to 3 (closed) then close the Swap's PDA.  /!\ this function can only be triggered by initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer
@@ -768,23 +763,22 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            if (ctx
-                .accounts
-                .signer
-                .key()
-                .eq(&ctx.accounts.swap_data_account.items[item_id].owner)
-                && ctx.accounts.swap_data_account.items[item_id].amount > 0)
-                || authorized == true
-            {
-                authorized = true;
-            }
-
             if !ctx.accounts.swap_data_account.items[item_id].is_nft
                 && ctx.accounts.swap_data_account.items[item_id]
                     .owner
                     .eq(ctx.accounts.user.key)
                 && transfered == false
             {
+                // Bypass function for initializer or the owner of this solItem
+                if ctx
+                    .accounts
+                    .signer
+                    .key()
+                    .eq(&ctx.accounts.swap_data_account.items[item_id].owner)
+                {
+                    authorized = true;
+                }
+
                 // Check if deposited
                 if ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::SolDeposited.to_u8()
@@ -843,30 +837,34 @@ pub mod neo_swap {
         Ok(())
     }
 
-    /// @notice Cancel NFT from escrow, retrieving it if previously deposited. /!\ initializer function
-    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfers the NFT from the shared user to the escrow. If no more NFT is held by the PDA, close PDA ATA and send rent fund to user. /!\ this function can only be triggered by initializer
+    /// @notice Claim NFT from escrow, retrieving it if previously deposited.
+    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfers the NFT from the shared user to the escrow. If no more NFT is held by the PDA ATAs, close PDA ATA and send rent fund to user.
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
-    /// @accounts system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id
-    /// @accounts token_program: Pubkey = token_program_id
-    /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
-    /// @accounts user: Pubkey => User that will potentially receive the NFT
-    /// @accounts signer: Pubkey => Initializer
-    /// @accounts item_from_deposit: Pubkey => Swap's PDA ATA related to mint
-    /// @accounts item_to_deposit: Pubkey => User ATA related to mint
+    /// @accounts system_program = SYSTEM_PROGRAM_ID
+    /// @accounts metadata_program => METADATA_PROGRAM_ID
+    /// @accounts sysvar_instructions => SYSVAR_INSTRUCTION_ID
+    /// @accounts spl_token_program => TOKEN_PROGRAM_ID
+    /// @accounts spl_ata_program => SPL_TOKEN_PROGRAM_ID
+    /// @accounts swap_data_account => Swap's PDA corresponding to seeds
+    /// @accounts user => User that will potentially receive the NFT
+    /// @accounts signer => Initializer or User
+    /// @accounts item_from_deposit => Swap's PDA ATA related to mint
+    /// @accounts item_to_deposit => User ATA related to mint
+    /// @accounts mint => mint Account of the NFT
+    /// @accounts nft_metadata => metadata account
+    /// @accounts nft_master_edition => if !pNFT: programId / if pNFT: masterEdition account
+    /// @accounts owner_token_record => if !pNFT: programId / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts destination_token_record => if !pNFT: programId / if pNFT: initial owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts auth_rules_program => metaplex auth rules program (auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg)
+    /// @accounts auth_rules => auth rules account linked to the mint (get from mint account data)
     /// @return Void
     pub fn cancel_nft(
         ctx: Context<ClaimNft>,
         seed: Vec<u8>,
         bump: u8,
         _metadata_bump: u8,
-        // _master_bump: Option<u8>,
-        // _owner_token_record_bump: Option<u8>,
-        // _destination_token_record_bump: Option<u8>,
     ) -> Result<()> {
-        // let user_ata = &ctx.accounts.item_to_deposit;
-        // let swap_data_ata = &mut ctx.accounts.item_from_deposit;
-
         let mut authorized = false;
 
         if ctx
@@ -902,6 +900,7 @@ pub mod neo_swap {
                     .eq(ctx.accounts.user.key)
                 && transfered == false
             {
+                // Bypass function for initializer or the owner of this NFT
                 if ctx
                     .accounts
                     .signer
@@ -910,8 +909,6 @@ pub mod neo_swap {
                     || authorized == true
                 {
                     authorized = true;
-                } else {
-                    return Err(error!(MYERROR::NotAuthorized).into());
                 }
                 // Transfer deposited NFT back to user
 
@@ -960,45 +957,22 @@ pub mod neo_swap {
                     Some(mpl_token_metadata::state::TokenStandard::ProgrammableNonFungible)
                 ) {
                     // build extra info for pNFT
-                    let nft_master_edition = match &ctx.accounts.nft_master_edition {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let owner_token_record = match &ctx.accounts.owner_token_record {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let destination_token_record = match &ctx.accounts.destination_token_record {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let auth_rules_program = match &ctx.accounts.auth_rules_program {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    let auth_rules = match &ctx.accounts.auth_rules {
-                        Some(m_e) => m_e,
-                        None => return Err(MYERROR::RemainingAccountNotFound.into()),
-                    };
-                    // transfer_infos.push([
-
                     transfer_builder
-                        .edition(nft_master_edition.key())
-                        .owner_token_record(owner_token_record.key())
-                        .destination_token_record(destination_token_record.key())
-                        .authorization_rules_program(auth_rules_program.key())
-                        .authorization_rules(auth_rules.key());
+                        .edition(ctx.accounts.nft_master_edition.key())
+                        .owner_token_record(ctx.accounts.owner_token_record.key())
+                        .destination_token_record(ctx.accounts.destination_token_record.key())
+                        .authorization_rules_program(ctx.accounts.auth_rules_program.key())
+                        .authorization_rules(ctx.accounts.auth_rules.key());
 
-                    transfer_infos.push(nft_master_edition.to_account_info());
-                    transfer_infos.push(owner_token_record.to_account_info());
-                    transfer_infos.push(destination_token_record.to_account_info());
-                    transfer_infos.push(auth_rules_program.to_account_info());
-                    transfer_infos.push(auth_rules.to_account_info());
-                    // ][..]);
+                    transfer_infos.push(ctx.accounts.nft_master_edition.to_account_info());
+                    transfer_infos.push(ctx.accounts.owner_token_record.to_account_info());
+                    transfer_infos.push(ctx.accounts.destination_token_record.to_account_info());
+                    transfer_infos.push(ctx.accounts.auth_rules_program.to_account_info());
+                    transfer_infos.push(ctx.accounts.auth_rules.to_account_info());
                     msg!("6.1");
                 } else {
+                    // Other NFT
                     msg!("6.2");
-                    // return Err(MYERROR::NotProgrammableNft.into());
                 }
 
                 let transfer_ix = transfer_builder
@@ -1014,7 +988,7 @@ pub mod neo_swap {
 
                 invoke_signed(&transfer_ix, &transfer_infos, &[&[&seed[..], &[bump]]])?;
 
-                msg!("NFT item Canceled");
+                msg!("NFT item sent");
 
                 let _ = ctx.accounts.item_from_deposit.reload();
 
@@ -1044,6 +1018,7 @@ pub mod neo_swap {
                 // Update item status to 91 (CancelRecovered)
                 ctx.accounts.swap_data_account.items[item_id].status =
                     ItemStatus::NFTCanceledRecovered.to_u8();
+                msg!("NFT item status changed to NFTCanceledRecovered");
 
                 transfered = true;
             }
@@ -1067,7 +1042,7 @@ pub mod neo_swap {
     }
 
     /// @notice Verify Swap's PDA items to proceed to closed state. /!\ initializer function
-    /// @dev Function verify each item status to mutate the smart contract status to 3 (closed) then close the Swap's PDA.  /!\ this function can only be triggered by initializer
+    /// @dev Function verify each item status to mutate the program status to 3 (closed) then close the Swap's PDA.  /!\ this function can only be triggered by initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
@@ -1215,7 +1190,7 @@ pub struct DepositPNft<'info> {
         // owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
         // seeds::program = metadata_program.key()
     )]
-    nft_master_edition: Option<AccountInfo<'info>>,
+    nft_master_edition: AccountInfo<'info>,
     /// CHECK: in constraints
     #[account(
         mut,
@@ -1229,7 +1204,7 @@ pub struct DepositPNft<'info> {
         // // owner = metadata_program.key() @ MYERROR::IncorrectTokenRecord,
         // seeds::program = metadata_program.key()
     )]
-    owner_token_record: Option<AccountInfo<'info>>,
+    owner_token_record: AccountInfo<'info>,
     /// CHECK: in constraints
     #[account(
         mut,
@@ -1243,13 +1218,13 @@ pub struct DepositPNft<'info> {
         // // owner = metadata_program.key() @ MYERROR::IncorrectTokenRecord,
         // seeds::program = metadata_program.key()
     )]
-    destination_token_record: Option<AccountInfo<'info>>,
+    destination_token_record: AccountInfo<'info>,
     /// CHECK: account checked in CPI
     #[account()]
-    auth_rules_program: Option<AccountInfo<'info>>,
+    auth_rules_program: AccountInfo<'info>,
     /// CHECK: account checked in CPI
     #[account()]
-    auth_rules: Option<AccountInfo<'info>>,
+    auth_rules: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -1299,10 +1274,10 @@ pub struct ValidateAndClose<'info> {
 pub struct ClaimNft<'info> {
     #[account()]
     system_program: Program<'info, System>,
-    /// CHECK: to be done
-    #[account(constraint =metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
+    /// CHECK: in constraint
+    #[account(constraint = metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
     metadata_program: AccountInfo<'info>, //, TokenMetadata>,
-    ///CHECK: in constraint
+    /// CHECK: in constraint
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
     #[account()]
@@ -1349,51 +1324,20 @@ pub struct ClaimNft<'info> {
     )]
     nft_metadata: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(
-        // seeds = [
-        //     b"metadata", 
-        //     metadata_program.key().as_ref(),
-        //     mint.key().as_ref(),
-        //     b"edition"],
-        // bump=master_bump,
-        // owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
-        // seeds::program = metadata_program.key()
-    )]
-    nft_master_edition: Option<AccountInfo<'info>>,
+    #[account()]
+    nft_master_edition: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(
-        mut,
-        // seeds = [
-        //     b"metadata", 
-        //     metadata_program.key().as_ref(),
-        //     mint.key().as_ref(),
-        //     b"token_record",
-        //     item_from_deposit.key().as_ref()],
-        // bump = owner_token_record_bump,
-        // // owner = System::id() @ MYERROR::IncorrectTokenRecord,
-        // seeds::program = metadata_program.key()
-    )]
-    owner_token_record: Option<AccountInfo<'info>>,
+    #[account(mut)]
+    owner_token_record: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(
-        mut,
-        // seeds = [
-        //     b"metadata", 
-        //     metadata_program.key().as_ref(),
-        //     mint.key().as_ref(),
-        //     b"token_record",
-        //     item_to_deposit.key().as_ref()],
-        // bump = destination_token_record_bump,
-        // // owner = System::id() @ MYERROR::IncorrectTokenRecord,
-        // seeds::program = metadata_program.key()
-    )]
-    destination_token_record: Option<AccountInfo<'info>>,
+    #[account(mut)]
+    destination_token_record: AccountInfo<'info>,
     /// CHECK: account checked in CPI
     #[account()]
-    auth_rules_program: Option<AccountInfo<'info>>,
+    auth_rules_program: AccountInfo<'info>,
     /// CHECK: account checked in CPI
     #[account()]
-    auth_rules: Option<AccountInfo<'info>>,
+    auth_rules: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -1567,7 +1511,7 @@ pub enum MYERROR {
     AmountIncorrect,
     #[msg("User shouldn't be sending funds")]
     ShouldntSend,
-    #[msg("Nothing was found in the smart contract to be sent to you")]
+    #[msg("Nothing was found in the program to be sent to you")]
     NoSend,
     #[msg("Sum of trade isn't null")]
     SumNotNull,
