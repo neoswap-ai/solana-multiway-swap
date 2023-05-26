@@ -1128,8 +1128,8 @@ pub struct InitInitialize<'info> {
     signer: Signer<'info>,
     #[account()]
     system_program: Program<'info, System>,
-    #[account()]
-    associated_token_program: Program<'info, AssociatedToken>,
+    // #[account()]
+    // associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -1416,9 +1416,9 @@ pub struct ClaimSol<'info> {
 pub struct SwapData {
     pub initializer: Pubkey,
     pub status: u8,
-    pub items: Vec<NftSwapItem>,
     pub nb_items: u32,
     pub pre_seed: String,
+    pub items: Vec<NftSwapItem>,
 }
 
 impl SwapData {
