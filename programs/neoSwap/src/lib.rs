@@ -186,11 +186,11 @@ pub mod neo_swap {
     /// @accounts item_to_deposit => User ATA related to mint
     /// @accounts mint => mint Account of the NFT
     /// @accounts nft_metadata => metadata account
-    /// @accounts nft_master_edition => if !pNFT: programId / if pNFT: masterEdition account
-    /// @accounts owner_token_record => if !pNFT: programId / if pNFT: owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
-    /// @accounts destination_token_record => if !pNFT: programId / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts nft_master_edition => if !pNFT: signer / if pNFT: masterEdition account
+    /// @accounts owner_token_record => if !pNFT: signer / if pNFT: owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts destination_token_record => if !pNFT: signer / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
     /// @accounts auth_rules_program => metaplex auth rules program (auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg)
-    /// @accounts auth_rules => auth rules account linked to the mint (get from mint account data)
+    /// @accounts auth_rules => if !pNFT: signer / if pNFT: auth rules account linked to the mint (get from mint account data)
     /// @return Void
     pub fn deposit_nft(
         ctx: Context<DepositPNft>,
@@ -523,11 +523,11 @@ pub mod neo_swap {
     /// @accounts item_to_deposit => User ATA related to mint
     /// @accounts mint => mint Account of the NFT
     /// @accounts nft_metadata => metadata account
-    /// @accounts nft_master_edition => if !pNFT: programId / if pNFT: masterEdition account
-    /// @accounts owner_token_record => if !pNFT: programId / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
-    /// @accounts destination_token_record => if !pNFT: programId / if pNFT: initial owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts nft_master_edition => if !pNFT: signer / if pNFT: masterEdition account
+    /// @accounts owner_token_record => if !pNFT: signer / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts destination_token_record => if !pNFT: signer / if pNFT: initial owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
     /// @accounts auth_rules_program => metaplex auth rules program (auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg)
-    /// @accounts auth_rules => auth rules account linked to the mint (get from mint account data)
+    /// @accounts auth_rules => if !pNFT: signer / if pNFT: auth rules account linked to the mint (get from mint account data)
     /// @return Void
     pub fn claim_nft(
         ctx: Context<ClaimNft>,
@@ -856,11 +856,11 @@ pub mod neo_swap {
     /// @accounts item_to_deposit => User ATA related to mint
     /// @accounts mint => mint Account of the NFT
     /// @accounts nft_metadata => metadata account
-    /// @accounts nft_master_edition => if !pNFT: programId / if pNFT: masterEdition account
-    /// @accounts owner_token_record => if !pNFT: programId / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
-    /// @accounts destination_token_record => if !pNFT: programId / if pNFT: initial owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts nft_master_edition => if !pNFT: signer / if pNFT: masterEdition account
+    /// @accounts owner_token_record => if !pNFT: signer / if pNFT: swap_data_account's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',swap_data_account_mint_ata; programAssociated:METADATA_PROGRAM)
+    /// @accounts destination_token_record => if !pNFT: signer / if pNFT: initial owner's token record account (seed:'metadata',METADATA_PROGRAM,mint,'token_record',initial_owner_mint_ata; programAssociated:METADATA_PROGRAM)
     /// @accounts auth_rules_program => metaplex auth rules program (auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg)
-    /// @accounts auth_rules => auth rules account linked to the mint (get from mint account data)
+    /// @accounts auth_rules => if !pNFT: signer / if pNFT: auth rules account linked to the mint (get from mint account data)
     /// @return Void
     pub fn cancel_nft(
         ctx: Context<ClaimNft>,
@@ -1092,14 +1092,14 @@ pub mod neo_swap {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData,_nb_of_items: u32)]
+#[instruction(seed: Vec<u8>, bump: u8, sent_data : SwapData)]
 pub struct InitInitialize<'info> {
     #[account(
         init,
         payer = signer,
         seeds = [&&seed[..]],
         bump,
-        space = SwapData::size(sent_data, _nb_of_items)
+        space = SwapData::size(sent_data)
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -1341,9 +1341,13 @@ impl SwapData {
         4 + 32 + // max 32 char
         32; //Pubkey
 
-    pub fn size(_swap_data_account: SwapData, nb_items: u32) -> usize {
+    pub fn size(swap_data_account: SwapData) -> usize {
         return SwapData::LEN
-            .checked_add(NftSwapItem::LEN.checked_mul(nb_items as usize).unwrap())
+            .checked_add(
+                NftSwapItem::LEN
+                    .checked_mul(swap_data_account.nb_items as usize)
+                    .unwrap(),
+            )
             .unwrap();
     }
 }
@@ -1351,11 +1355,11 @@ impl SwapData {
 #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct NftSwapItem {
     is_nft: bool,      // Argument to sort the functions in the program's functions
-    mint: Pubkey,      // Mint of the NFT. if item not NFT expected PublicKey should be system_program
-    amount: i64,       // amount of tokens or lamports to transfer
-    owner: Pubkey,     // owner of the NFT or SOL item
+    mint: Pubkey, // Mint of the NFT. if item not NFT expected PublicKey should be system_program
+    amount: i64,  // amount of tokens or lamports to transfer
+    owner: Pubkey, // owner of the NFT or SOL item
     destinary: Pubkey, // destinary of the item
-    status: u8,        // Status of the Item with ItemStatus
+    status: u8,   // Status of the Item with ItemStatus
 }
 
 impl NftSwapItem {
