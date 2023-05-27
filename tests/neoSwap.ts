@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 const { assert } = require("chai");
-import { neoSwapNpm } from "@biboux.neoswap/neo-swap-npm";
+import neoSwapNpm from "@biboux.neoswap/neo-swap-npm";
 import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { TokenStandard, Uses } from "@metaplex-foundation/mpl-token-metadata";
@@ -25,9 +25,11 @@ describe("swapCoontractTest", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     let program = anchor.workspace.NeoSwap as Program;
-
-    let pda: PublicKey | undefined = new PublicKey("FjUNomDEpV1rjD1V82KRjYYUUbq2DXZhR6y5j6UzDtYg"); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
-    // let pda: PublicKey | undefined = undefined;
+    let cluster = "devnet";
+    let swapDataAccount: PublicKey | undefined = new PublicKey(
+        "FjUNomDEpV1rjD1V82KRjYYUUbq2DXZhR6y5j6UzDtYg"
+    ); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
+    // let swapDataAccount: PublicKey | undefined = undefined;
 
     let signer = Keypair.fromSecretKey(signerSk);
     let user1 = Keypair.fromSecretKey(user1Sk);
@@ -227,30 +229,34 @@ describe("swapCoontractTest", () => {
     it("initialize", async () => {
         // console.log(swapData.items.length);
 
-        if (!pda) {
+        if (!swapDataAccount) {
             const allInitData = await neoSwapNpm.initializeSwap({
-                cluster: "devnet",
+                cluster,
                 signer: signer,
                 swapData,
             });
 
             console.log("initialized", allInitData);
         } else {
-            console.log("initiaize skipped", pda.toBase58());
+            console.log("initiaize skipped", swapDataAccount.toBase58());
         }
     });
 
     it("deposit NFT", async () => {
-        let transactionHashs: { user: PublicKey; txh?: string[]; error?: unknown }[] = [];
+        let transactionHashs: {
+            user: PublicKey;
+            txh?: string[] | ErrorFeedback;
+            error?: unknown;
+        }[] = [];
         for await (const user of [user1N, user2N, user3N, user1, user2, user3]) {
             try {
-                const { transactionHashes } = await neoSwapNpm.depositSwap({
-                    cluster: "devnet",
+                const depositSwapData = await neoSwapNpm.depositSwap({
+                    cluster,
                     signer: user,
-                    swapDataAccount: pda,
+                    swapDataAccount: swapDataAccount,
                 });
-                console.log("transactionHashes", transactionHashes);
-                transactionHashs.push({ user: user.publicKey, txh: transactionHashes });
+                console.log("transactionHashes", depositSwapData);
+                transactionHashs.push({ user: user.publicKey, txh: depositSwapData });
             } catch (error) {
                 transactionHashs.push({ user: user.publicKey, error });
             }
@@ -259,79 +265,52 @@ describe("swapCoontractTest", () => {
         // console.log("transactionhashes", transactionHashs);
     });
 
-    // it("claim and close", async () => {
-    // const { allClaimSendAllArray } = await NeoSwap.claimAndClose({
-    //         provider: program.provider as anchor.AnchorProvider,
-    //         signer: signer.publicKey,
-    //         swapDataAccount: pda,
-    //         CONST_PROGRAM,
-    //     });
+    it("claim and close", async () => {
+        try {
+            const claimAndCloseData = await neoSwapNpm.claimAndCloseSwap({
+                cluster,
+                signer,
+                swapDataAccount,
+            });
 
-    //     const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+            console.log("claimAndCloseHash :", claimAndCloseData);
+        } catch (error) {
+            console.log("claimAndCloseHash :", error);
+        }
+    });
 
-    //     allClaimSendAllArray.forEach((transactionDeposit) => {
-    //         transactionDeposit.signers = [signer];
-    //         transactionDeposit.tx.feePayer = signer.publicKey;
-    //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
-    //     });
+    // it("partial cancel and close from in trade user", async () => {
+    //     let transactionHashs: {
+    //         user: PublicKey;
+    //         error?: unknown;
+    //         txh?: ErrorFeedback | string[];
+    //     }[] = [];
 
-    //     const claimAndCloseHash = await program.provider.sendAll(allClaimSendAllArray, {
-    //         skipPreflight: true,
-    //     });
-    //     console.log("claimAndCloseHash", claimAndCloseHash);
-
-    //     for await (const hash of claimAndCloseHash) {
-    // console.log(hash);
-    //         program.provider.connection.confirmTransaction(hash);
-
+    //     for await (const user of [user1N, user2N, user3N, user1, user2, user3]) {
+    //         try {
+    //             const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
+    //                 cluster,
+    //                 signer: user,
+    //                 swapDataAccount: swapDataAccount,
+    //             });
+    //             console.log("transactionHashes", cancelAndCloseHash);
+    //             transactionHashs.push({ user: user.publicKey, txh: cancelAndCloseHash });
+    //         } catch (error) {
+    //             transactionHashs.push({ user: user.publicKey, error });
+    //         }
     //     }
-
-    //     console.log("claimAndCloseHash :", claimAndCloseHash);
+    //     transactionHashs.forEach((v) => console.log("res", v));
     // });
 
-    it("partial cancel and close from in trade user", async () => {
-        let transactionHashs: {
-            user: PublicKey;
-            error?: unknown;
-            txh?:
-                | ErrorFeedback
-                | {
-                      transactionHashes: string[];
-                  };
-        }[] = [];
+    // it("finish cancel and close from signer", async () => {
+    //     const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
+    //         signer,
+    //         cluster,
+    //         swapDataAccount: swapDataAccount,
+    //     });
 
-        for await (const user of [user1N, user2N, user3N, user1, user2, user3]) {
-            try {
-                const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-                    cluster: "devnet",
-                    signer: user,
-                    swapDataAccount: pda,
-                });
-                console.log("transactionHashes", cancelAndCloseHash);
-                transactionHashs.push({ user: user.publicKey, txh: cancelAndCloseHash });
-            } catch (error) {
-                transactionHashs.push({ user: user.publicKey, error });
-            }
-        }
-        transactionHashs.forEach((v) => console.log("res", v));
-        const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-            signer,
-            cluster: "devnet",
-            swapDataAccount: pda,
-        });
-
-        console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    });
-
-    it("finish cancel and close from signer", async () => {
-        const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-            signer,
-            cluster: "devnet",
-            swapDataAccount: pda,
-        });
-
-        console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    });
+    //     console.log("cancelAndCloseHash :", cancelAndCloseHash);
+    // });
 
     //UTILS FOR INITIALIZING
     // it("Create keypair", async () => {
