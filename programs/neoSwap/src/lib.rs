@@ -215,6 +215,9 @@ pub mod neo_swap {
                 && ctx.accounts.swap_data_account.items[item_id]
                     .mint
                     .eq(&ctx.accounts.item_to_deposit.mint)
+                && ctx.accounts.swap_data_account.items[item_id]
+                    .owner
+                    .eq(&ctx.accounts.item_to_deposit.owner)
                 && ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::NFTPending.to_u8()
             {

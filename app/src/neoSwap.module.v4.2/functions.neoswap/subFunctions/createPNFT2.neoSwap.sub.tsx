@@ -60,17 +60,17 @@ export const createPnft2 = async (Data: { signer: Keypair; program: Program; sta
     const METAPLEX = Metaplex.make(
         // new Connection('https://localhost:8899')
         // new Connection('http://127.0.0.1:8899')
-        new Connection('https://api.devnet.solana.com')
+        Data.program.provider.connection
     )
         .use(keypairIdentity(Data.signer))
         .use(
             bundlrStorage({
-                // address: 'http://127.0.0.1:8899',
-                address: 'https://devnet.bundlr.network',
+                address: 'https://localhost:8899',
+                // address: 'https://devnet.bundlr.network',
                 providerUrl:
-                    'https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/',
-                // 'http://127.0.0.1:8899',
-                // 'https://localhost:8899',
+                    // 'https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/',
+                    // 'http://127.0.0.1:8899',
+                    'https://localhost:8899',
                 timeout: 60000,
             })
         );
@@ -113,16 +113,23 @@ export const createPnft2 = async (Data: { signer: Keypair; program: Program; sta
     // }
 
     // console.log('transactionBuilder', transactionBuilder);
+    // console.log(METAPLEX);
 
-    let { signature, confirmResponse } = await METAPLEX.rpc().sendAndConfirmTransaction(
-        transactionBuilder
-        // {skipPreflight: true,}
-    );
+    let signature = await METAPLEX.rpc().sendTransaction(transactionBuilder);
+    // const blockData = await Data.program.provider.connection.getLatestBlockhash();
+    // const tx = transactionBuilder.toTransaction(blockData);
+    // tx.feePayer = Data.signer.publicKey;
+    // tx.sign(Data.signer);
+
+    // if (!Data.program.provider.sendAll) throw 'noSendAndConfirm';
+    // let signature = await Data.program.provider.sendAll([{ tx, signers: [Data.signer] }], {
+    //     skipPreflight: true,
+    // });
     console.log('signature0', signature);
 
-    if (confirmResponse.value.err) {
-        throw new Error('failed to confirm transaction');
-    }
+    // if (confirmResponse.value.err) {
+    //     throw new Error('failed to confirm transaction');
+    // }
     const { mintAddress, tokenAddress } = transactionBuilder.getContext();
     console.log(`   Success!🎉`);
     console.log(`   Minted NFT: https://explorer.solana.com/address/${mintAddress.toString()}?cluster=devnet`);
