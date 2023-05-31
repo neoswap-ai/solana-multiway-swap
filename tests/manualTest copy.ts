@@ -2,6 +2,8 @@ import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 const { assert } = require("chai");
 import neoSwapNpm, {
+    ApiProcessorConfigType,
+    ApiProcessorData,
     ErrorFeedback,
     ItemStatus,
     NftSwapItem,
@@ -9,8 +11,8 @@ import neoSwapNpm, {
     TradeStatus,
 } from "@biboux.neoswap/neo-swap-npm";
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
-import { Cluster, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import { TokenStandard, Uses } from "@metaplex-foundation/mpl-token-metadata";
+import { Cluster, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
 // import {
 //     ItemStatus,
@@ -24,7 +26,7 @@ import user3Sk from "../deleteme/user3";
 import user1NSk from "../deleteme/user1Normal";
 import user2NSk from "../deleteme/user2Normal";
 import user3NSk from "../deleteme/user3Normal";
-import { getProgram } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/getProgram.neoswap";
+// import { getProgram } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/getProgram.neoswap";
 // import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
 // import { ErrorFeedback } from "@biboux.neoswap/neo-swap-npm/lib/es5/utils/types";
 
@@ -32,12 +34,12 @@ describe("Failing tests", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     let program = anchor.workspace.NeoSwap as Program;
-    // let cluster = "devnet" as Cluster;
-    let cluster = "devnet";
-    // let swapDataAccount: PublicKey | undefined = new PublicKey(
-    //     "FjUNomDEpV1rjD1V82KRjYYUUbq2DXZhR6y5j6UzDtYg"
-    // ); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
-    let swapDataAccount: PublicKey | undefined = undefined;
+    let cluster = "devnet" as Cluster;
+    // let cluster = "devnet";
+    let swapDataAccount: PublicKey | undefined = new PublicKey(
+        "CkqLYG76jqz7D61GNy9CnL8pU2odbn7v9XnHxKqe8DVm"
+    ); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
+    // let swapDataAccount: PublicKey | undefined = undefined;
 
     let signer = Keypair.fromSecretKey(signerSk);
     let user1 = Keypair.fromSecretKey(user1Sk);
@@ -101,19 +103,7 @@ describe("Failing tests", () => {
     };
 
     it("Initializing Program", async () => {
-        program = getProgram(
-            new anchor.AnchorProvider(
-                new Connection(
-                    "https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/"
-                ), //clusterApiUrl("devnet")),
-                new anchor.Wallet(signer),
-                {
-                    commitment: "confirmed",
-                }
-            )
-        );
-        const p2 = neoSwapNpm.utils.getProgram("devnet", signer);
-        program = p2 as unknown as Program;
+        program = neoSwapNpm.utils.getProgram("devnet", signer) as unknown as Program;
         console.log("programId", program.programId.toBase58());
         console.log("signer", signer.publicKey.toBase58());
     });
@@ -263,28 +253,40 @@ describe("Failing tests", () => {
         }
     });
 
-    // it("deposit NFT", async () => {
-    //     let transactionHashs: {
-    //         user: PublicKey;
-    //         txh?: string[] | ErrorFeedback;
-    //         error?: unknown;
-    //     }[] = [];
-    //     for await (const user of [user1N, user2N, user3N, user1, user2, user3]) {
-    //         try {
-    //             const depositSwapData = await neoSwapNpm.depositSwap({
-    //                 cluster,
-    //                 signer: user,
-    //                 swapDataAccount: swapDataAccount,
-    //             });
-    //             console.log("transactionHashes", depositSwapData);
-    //             transactionHashs.push({ user: user.publicKey, txh: depositSwapData });
-    //         } catch (error) {
-    //             transactionHashs.push({ user: user.publicKey, error });
-    //         }
-    //     }
-    //     transactionHashs.forEach((v) => console.log("res", v));
-    //     // console.log("transactionhashes", transactionHashs);
-    // });
+    it("deposit NFT", async () => {
+        let transactionHashs: {
+            user: PublicKey;
+            txh?: ApiProcessorConfigType[];
+            error?: unknown;
+        }[] = [];
+        for await (const user of [user1N]) {
+            //user2N, user3N, user1, user2, user3]) {
+            const depositSwapData =
+                await neoSwapNpm.createInstructions.prepareDepositSwapInstructions({
+                    cluster,
+                    user: user.publicKey,
+                    swapDataAccount: swapDataAccount,
+                });
+            console.log("transactionHashes", depositSwapData);
+            if (neoSwapNpm.utils.isErrorApiProcessor(depositSwapData)) {
+                console.log("error");
+                transactionHashs.push({ user: user.publicKey, error: depositSwapData });
+                // throw depositSwapData;
+            } else {
+                transactionHashs.push({ user: user.publicKey, txh: depositSwapData[0].config });
+            }
+        }
+
+        for (let index = 0; index < transactionHashs.length; index++) {
+            const v = transactionHashs[index];
+            console.log("res", v.user);
+            v.txh.forEach((element) => {
+                console.log("elem", element);
+            });
+        }
+
+        // console.log("transactionhashes", transactionHashs);
+    });
 
     // it("claim and close", async () => {
     //     try {
