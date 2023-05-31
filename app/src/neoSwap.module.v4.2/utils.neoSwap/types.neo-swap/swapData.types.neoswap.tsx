@@ -5,7 +5,8 @@ type SwapData = {
     initializer: PublicKey;
     status: number;
     items: Array<NftSwapItem>;
-    nb_items: number;
+    nbItems: number;
+    preSeed: string;
 };
 
 export default SwapData;

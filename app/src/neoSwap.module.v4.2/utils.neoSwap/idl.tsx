@@ -248,15 +248,21 @@ export const idl = {
                 },
                 {
                     name: 'masterBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
                 {
                     name: 'ownerTokenRecordBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
                 {
                     name: 'destinationTokenRecordBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
             ],
         },
@@ -503,15 +509,21 @@ export const idl = {
                 },
                 {
                     name: 'masterBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
                 {
                     name: 'ownerTokenRecordBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
                 {
                     name: 'destinationTokenRecordBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
             ],
         },
@@ -730,15 +742,21 @@ export const idl = {
                 },
                 {
                     name: 'masterBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
                 {
                     name: 'ownerTokenRecordBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
                 {
                     name: 'destinationTokenRecordBump',
-                    type: 'u8',
+                    type: {
+                        option: 'u8',
+                    },
                 },
             ],
         },
@@ -1045,6 +1063,11 @@ export const idl = {
             code: 6024,
             name: 'IncorrectTokenRecord',
             msg: 'Incorrect token reccord account',
+        },
+        {
+            code: 6025,
+            name: 'NotAuthorized',
+            msg: 'Not authorized to perform this action',
         },
     ],
 } as Idl;

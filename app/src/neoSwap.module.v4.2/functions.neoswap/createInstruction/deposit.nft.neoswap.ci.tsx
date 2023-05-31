@@ -8,10 +8,13 @@ import {
     authRulesProgram,
     splAssociatedTokenAccountProgramId,
 } from '../../utils.neoSwap/const.neoSwap';
+import { TokenStandard, Uses } from '@metaplex-foundation/mpl-token-metadata';
+
 import { findUserTokenRecord } from '../../utils.neoSwap/findUserTokenRecord';
 import { findNftMetadataAccount } from '../../utils.neoSwap/findNftMetadataAccount';
 import { findNftMasterEdition } from '../../utils.neoSwap/findNftMasterEdition';
 import { Metadata } from '@metaplex-foundation/js';
+import { findNftData } from '../../utils.neoSwap/findNftData';
 // import from '@metaplex-foundation/js';
 
 /**
@@ -80,17 +83,23 @@ export async function depositNft(Data: {
         });
         mintAta.push(pdaMintAta);
     }
-
-    const { adddress: nftMetadata, bump: nftMetadata_bump } = findNftMetadataAccount({ mint: Data.mint });
+    const {
+        tokenStandard,
+        metadataAddress: nftMetadata,
+        metadataBump: nftMetadata_bump,
+    } = await findNftData({
+        connection: Data.program.provider.connection,
+        mint: Data.mint,
+    });
+    // console.log('findData', nftData);
+    // const { bump: nftMetadata_bump } = findNftMetadataAccount({ mint: Data.mint });
     console.log('nftMetadata', nftMetadata.toBase58());
-    // console.log(((await Data.program.provider.connection.getAccountInfo(nftMetadata))?));
+    console.log('tokenStandard', tokenStandard);
 
-    // const tokenMetadata = programs.metadata.Metadata.findByOwnerV2(connection, walletPublicKey);
-    // let res = await Metadata.daata().Metadata.fromAccountAddress(Data.program.provider.connection, nftMetadata);
-    if (true) {
+    if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
         ///if New metaplex standard
         const { adddress: nftMasterEdition, bump: nftMasterEdition_bump } = findNftMasterEdition({ mint: Data.mint });
-        // console.log('nftMasterEdition', nftMasterEdition.toBase58());
+        console.log('nftMasterEdition', nftMasterEdition.toBase58());
         const { adddress: ownerTokenRecord, bump: ownerTokenRecord_bump } = findUserTokenRecord({
             mint: Data.mint,
             userMintAta,
@@ -101,6 +110,27 @@ export async function depositNft(Data: {
             userMintAta: pdaMintAta,
         });
         // console.log('destinationTokenRecord', destinationTokenRecord.toBase58());
+        // console.log('swapDataAccount_seed', Data.swapDataAccount_seed);
+        // console.log('swapDataAccount_bump', Data.swapDataAccount_bump);
+        // console.log('nftMetadata_bump', nftMetadata_bump);
+        // console.log('nftMasterEdition_bump', nftMasterEdition_bump);
+        // console.log('ownerTokenRecord_bump', ownerTokenRecord_bump);
+        // console.log('destinationTokenRecord_bump', destinationTokenRecord_bump);
+        // console.log('TOKEN_METADATA_PROGRAM', TOKEN_METADATA_PROGRAM);
+        // console.log('SYSVAR_INSTRUCTIONS_PUBKEY', SYSVAR_INSTRUCTIONS_PUBKEY);
+        // console.log('TOKEN_PROGRAM_ID', TOKEN_PROGRAM_ID);
+        // console.log('splAssociatedTokenAccountProgramId', splAssociatedTokenAccountProgramId);
+        // console.log('Data.swapDataAccount', Data.swapDataAccount);
+        // console.log('Data.signer', Data.signer);
+        // console.log('userMintAta', userMintAta);
+        // console.log('Data.mint', Data.mint);
+        // console.log('nftMetadata', nftMetadata);
+        // console.log('pdaMintAta', pdaMintAta);
+        // console.log('nftMasterEdition', nftMasterEdition);
+        // console.log('ownerTokenRecord', ownerTokenRecord);
+        // console.log('destinationTokenRecord', destinationTokenRecord);
+        // console.log('authRulesProgram', authRulesProgram);
+        // console.log('authRules', authRules);
 
         instruction.push(
             await Data.program.methods
@@ -108,6 +138,50 @@ export async function depositNft(Data: {
                     Data.swapDataAccount_seed,
                     Data.swapDataAccount_bump,
                     // nftMetadata_seed,
+                    nftMetadata_bump,
+                    nftMasterEdition_bump,
+                    ownerTokenRecord_bump,
+                    destinationTokenRecord_bump
+                )
+                .accounts({
+                    systemProgram: SystemProgram.programId.toString(),
+                    metadataProgram: TOKEN_METADATA_PROGRAM.toString(),
+                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY.toString(),
+                    splTokenProgram: TOKEN_PROGRAM_ID.toString(),
+                    splAtaProgram: splAssociatedTokenAccountProgramId.toString(),
+                    swapDataAccount: Data.swapDataAccount.toString(),
+                    signer: Data.signer.toString(),
+                    itemFromDeposit: userMintAta.toString(),
+                    mint: Data.mint.toString(),
+                    nftMetadata: nftMetadata.toString(),
+                    itemToDeposit: pdaMintAta.toString(),
+                    nftMasterEdition: nftMasterEdition.toString(),
+                    ownerTokenRecord: ownerTokenRecord.toString(),
+                    destinationTokenRecord: destinationTokenRecord.toString(),
+                    authRulesProgram: authRulesProgram.toString(),
+                    authRules: authRules.toString(),
+                })
+                .instruction()
+        );
+    } else {
+        console.log('2');
+        const { adddress: nftMasterEdition, bump: nftMasterEdition_bump } = findNftMasterEdition({ mint: Data.mint });
+        console.log('nftMasterEdition', nftMasterEdition.toBase58());
+        const { adddress: ownerTokenRecord, bump: ownerTokenRecord_bump } = findUserTokenRecord({
+            mint: Data.mint,
+            userMintAta,
+        });
+        console.log('ownerTokenRecord', ownerTokenRecord.toBase58());
+        const { adddress: destinationTokenRecord, bump: destinationTokenRecord_bump } = findUserTokenRecord({
+            mint: Data.mint,
+            userMintAta: pdaMintAta,
+        });
+        instruction.push(
+            await Data.program.methods
+
+                .depositNft(
+                    Data.swapDataAccount_seed,
+                    Data.swapDataAccount_bump,
                     nftMetadata_bump,
                     nftMasterEdition_bump,
                     ownerTokenRecord_bump,
@@ -125,30 +199,16 @@ export async function depositNft(Data: {
                     mint: Data.mint,
                     nftMetadata,
                     itemToDeposit: pdaMintAta,
-                    nftMasterEdition,
-                    ownerTokenRecord,
-                    destinationTokenRecord,
-                    authRulesProgram,
-                    authRules,
-                })
-                .instruction()
-        );
-    } else {
-        instruction.push(
-            await Data.program.methods
-                .depositNft()
-                .accounts({
-                    systemProgram: SystemProgram.programId,
-                    metadataProgram: TOKEN_METADATA_PROGRAM,
-                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-                    splTokenProgram: TOKEN_PROGRAM_ID,
-                    splAtaProgram: splAssociatedTokenAccountProgramId,
-                    signer: Data.signer,
-                    itemFromDeposit: userMintAta,
-                    mint: Data.mint,
-                    nftMetadata,
-                    itemToDeposit: pdaMintAta,
-                    ownerTo: Data.swapDataAccount,
+                    // nftMasterEdition,
+                    // ownerTokenRecord,
+                    // destinationTokenRecord,
+                    // authRulesProgram,
+                    // authRules,
+                    nftMasterEdition: Data.program.programId,
+                    ownerTokenRecord: Data.program.programId,
+                    destinationTokenRecord: Data.program.programId,
+                    authRulesProgram: Data.program.programId,
+                    authRules: Data.program.programId,
                 })
                 .instruction()
         );
