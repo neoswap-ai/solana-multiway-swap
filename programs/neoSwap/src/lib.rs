@@ -48,7 +48,7 @@ pub mod neo_swap {
             sent_data.status == TradeStatus::Initializing.to_u8(),
             MYERROR::UnexpectedState
         );
-        require!(sent_data.items.len() == 0, MYERROR::IncorrectLength);
+        require!(sent_data.items.is_empty(), MYERROR::IncorrectLength);
         // require!(
         //     sent_data.pre_seed.len() < 30 as usize,
         //     MYERROR::PreSeedTooLong
@@ -148,8 +148,8 @@ pub mod neo_swap {
         );
 
         // Check that sum of lamports to trade is null
-        let mut sum = 0 as i64;
-        let mut count = 0 as u32;
+        let mut sum = 0_i64;
+        let mut count = 0_u32;
         for item_id in 0..swap_data_account.items.len() {
             if !swap_data_account.items[item_id].is_nft {
                 sum = sum
@@ -315,7 +315,7 @@ pub mod neo_swap {
         }
 
         // Returns error if nothing is there to transfer
-        if transfered == false {
+        if !transfered {
             return Err(error!(MYERROR::NoSend));
         }
 
@@ -346,7 +346,7 @@ pub mod neo_swap {
                 && ctx.accounts.swap_data_account.items[item_id]
                     .owner
                     .eq(ctx.accounts.signer.key)
-                && transfered == false
+                && !transfered
             {
                 if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
                     // Transfer lamports to Escrow
@@ -377,7 +377,7 @@ pub mod neo_swap {
             }
         }
 
-        if transfered == false {
+        if !transfered {
             return Err(error!(MYERROR::NoSend));
         }
         Ok(())
@@ -450,7 +450,7 @@ pub mod neo_swap {
                 && ctx.accounts.swap_data_account.items[item_id]
                     .owner
                     .eq(ctx.accounts.user.key)
-                && transfered == false
+                && !transfered
             {
                 // Bypass function for initializer or the destinary of this solItem
                 if ctx
@@ -500,10 +500,10 @@ pub mod neo_swap {
                 }
             }
         }
-        if transfered == false {
+        if !transfered {
             return Err(error!(MYERROR::NoSend));
         }
-        if authorized == false {
+        if !authorized {
             return Err(error!(MYERROR::UserNotPartOfTrade));
         }
         Ok(())
@@ -569,7 +569,7 @@ pub mod neo_swap {
                 && ctx.accounts.swap_data_account.items[item_id]
                     .destinary
                     .eq(ctx.accounts.user.key)
-                && transfered == false
+                && !transfered
             {
                 // Bypass function for initializer or the destinary of this NFT
                 if ctx
@@ -662,7 +662,7 @@ pub mod neo_swap {
                 // if no more NFT held, closes the Swap's PDA ATA
                 if ctx.accounts.item_from_deposit.amount == 0 {
                     let ix2 = spl_token::instruction::close_account(
-                        &ctx.accounts.spl_token_program.key,
+                        ctx.accounts.spl_token_program.key,
                         &ctx.accounts.item_from_deposit.key(),
                         &ctx.accounts.user.key(),
                         &ctx.accounts.swap_data_account.key(),
@@ -689,11 +689,11 @@ pub mod neo_swap {
             }
         }
 
-        if transfered == false {
+        if !transfered {
             return Err(error!(MYERROR::NoSend));
         }
 
-        if authorized == false {
+        if !authorized {
             return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
@@ -773,7 +773,7 @@ pub mod neo_swap {
                 && ctx.accounts.swap_data_account.items[item_id]
                     .owner
                     .eq(ctx.accounts.user.key)
-                && transfered == false
+                && !transfered
             {
                 // Bypass function for initializer or the owner of this solItem
                 if ctx
@@ -827,11 +827,11 @@ pub mod neo_swap {
             }
         }
 
-        if transfered == false {
+        if !transfered {
             return Err(error!(MYERROR::NoSend));
         }
 
-        if authorized == false {
+        if !authorized {
             return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
@@ -904,7 +904,7 @@ pub mod neo_swap {
                 && ctx.accounts.swap_data_account.items[item_id]
                     .owner
                     .eq(ctx.accounts.user.key)
-                && transfered == false
+                && !transfered
             {
                 // Bypass function for initializer or the owner of this NFT
                 if ctx
@@ -912,7 +912,7 @@ pub mod neo_swap {
                     .signer
                     .key()
                     .eq(&ctx.accounts.swap_data_account.items[item_id].owner)
-                    || authorized == true
+                    || authorized
                 {
                     authorized = true;
                 }
@@ -1001,7 +1001,7 @@ pub mod neo_swap {
                 // If Swap's PDA ATA balance is null, closes the account and send the rent to user
                 if ctx.accounts.item_from_deposit.amount.eq(&0) {
                     let ix2 = spl_token::instruction::close_account(
-                        &ctx.accounts.spl_token_program.key,
+                        ctx.accounts.spl_token_program.key,
                         &ctx.accounts.item_from_deposit.key(),
                         &ctx.accounts.user.key(),
                         &ctx.accounts.swap_data_account.key(),
@@ -1030,11 +1030,11 @@ pub mod neo_swap {
             }
         }
 
-        if transfered == false {
+        if !transfered {
             return Err(error!(MYERROR::NoSend));
         }
 
-        if authorized == false {
+        if !authorized {
             return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
