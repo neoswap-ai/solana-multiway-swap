@@ -58,7 +58,8 @@ describe("swapCoontractTest", () => {
             },
         ],
         status: TradeStatus.Initializing,
-        nb_items: 1,
+        nbItems: 1,
+        preSeed:"0000"
     };
 
     it("Initializing accounts", async () => {

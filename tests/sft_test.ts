@@ -9,9 +9,10 @@ import neoSwapNpm, {
     NftSwapItem,
     SwapData,
     TradeStatus,
+    TxWithSigner,
 } from "@biboux.neoswap/neo-swap-npm";
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
-import { Cluster, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Cluster, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
 // import {
@@ -30,16 +31,20 @@ import user3NSk from "../deleteme/user3Normal";
 // import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
 // import { ErrorFeedback } from "@biboux.neoswap/neo-swap-npm/lib/es5/utils/types";
 
-describe("Failing tests", () => {
+describe("Failing SFT tests", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     let program = anchor.workspace.NeoSwap as Program;
     let cluster = "devnet" as Cluster;
     // let cluster = "devnet";
-    let swapDataAccount: PublicKey | undefined = new PublicKey(
-        "CkqLYG76jqz7D61GNy9CnL8pU2odbn7v9XnHxKqe8DVm"
-    ); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
-    // let swapDataAccount: PublicKey | undefined = undefined;
+    // let swapDataAccount: PublicKey | undefined = new PublicKey(
+    //     "AExHXz9fYaRgsC6dT9XQT5daGb7c3JsDGfABaR57KxR1"
+    // ); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
+    // let swapDataAccount2: PublicKey | undefined = new PublicKey(
+    //     "E6hBkNhJNGtwBvYtadCp4UAqmjanmMVsDqG3R1sPNFzY"
+    // );
+    let swapDataAccount: PublicKey | undefined = undefined;
+    let swapDataAccount2: PublicKey | undefined = undefined;
 
     let signer = Keypair.fromSecretKey(signerSk);
     let user1 = Keypair.fromSecretKey(user1Sk);
@@ -99,7 +104,7 @@ describe("Failing tests", () => {
         items: [],
         status: TradeStatus.Initializing,
         nbItems: 1,
-        preSeed: "0019",
+        preSeed: "0020",
     };
 
     it("Initializing Program", async () => {
@@ -111,9 +116,9 @@ describe("Failing tests", () => {
     it("Mint NFTs ", async () => {
         // console.log(program);
         if (!user1MintToTransfer) {
-            console.log(
-                await program.provider.connection.requestAirdrop(user1.publicKey, LAMPORTS_PER_SOL)
-            );
+            // console.log(
+            //     await program.provider.connection.requestAirdrop(user1.publicKey, LAMPORTS_PER_SOL)
+            // );
             let { mintAddress } = await NeoSwap.createPnft2({
                 program,
                 signer: user1,
@@ -236,7 +241,7 @@ describe("Failing tests", () => {
         swapData.nbItems = swapData.items.length;
     });
 
-    it("initialize", async () => {
+    it("initialize swapDataAccount", async () => {
         // console.log(swapData.items.length);
 
         if (!swapDataAccount) {
@@ -252,40 +257,153 @@ describe("Failing tests", () => {
             console.log("initiaize skipped", swapDataAccount.toBase58());
         }
     });
+    it("initialize swapDataAccount2", async () => {
+        // console.log(swapData.items.length);
 
-    it("deposit NFT", async () => {
-        let transactionHashs: {
-            user: PublicKey;
-            txh?: ApiProcessorConfigType[];
-            error?: unknown;
-        }[] = [];
-        for await (const user of [user1N]) {
-            //user2N, user3N, user1, user2, user3]) {
-            const depositSwapData =
-                await neoSwapNpm.createInstructions.prepareDepositSwapInstructions({
-                    cluster,
-                    user: user.publicKey,
-                    swapDataAccount: swapDataAccount,
-                });
-            console.log("transactionHashes", depositSwapData);
-            if (neoSwapNpm.utils.isErrorApiProcessor(depositSwapData)) {
-                console.log("error");
-                transactionHashs.push({ user: user.publicKey, error: depositSwapData });
-                // throw depositSwapData;
-            } else {
-                transactionHashs.push({ user: user.publicKey, txh: depositSwapData[0].config });
-            }
-        }
-
-        for (let index = 0; index < transactionHashs.length; index++) {
-            const v = transactionHashs[index];
-            console.log("res", v.user);
-            v.txh.forEach((element) => {
-                console.log("elem", element);
+        if (!swapDataAccount2) {
+            swapData.preSeed = "00020";
+            const allInitData = await neoSwapNpm.initializeSwap({
+                cluster,
+                signer: signer,
+                swapData,
             });
-        }
 
-        // console.log("transactionhashes", transactionHashs);
+            if (neoSwapNpm.utils.isErrorInitializeSwap(allInitData)) throw allInitData;
+            console.log("initialized", allInitData);
+        } else {
+            console.log("initiaize skipped", swapDataAccount2.toBase58());
+        }
+    });
+    it("fail initialize swapDataAccount", async () => {
+        // console.log(swapData.items.length);
+        // if (!swapDataAccount) {
+        let wrongSwapData = swapData;
+        wrongSwapData.items[0].amount = new BN(7);
+        swapData.preSeed = "000020";
+
+        // try {
+        const allInitData = await neoSwapNpm.initializeSwap({
+            cluster,
+            signer: signer,
+            swapData,
+        });
+
+        console.log("initialized", allInitData);
+        if (neoSwapNpm.utils.isErrorInitializeSwap(allInitData)) {
+            assert(String(allInitData[0].description).includes("in the associated token account"));
+            // throw allInitData;
+        }
+        // } catch (error) {
+        //     console.log(String(error), String(error).includes("0x1780"));
+        //     assert(String(error).includes("in the associated token account"));
+        //     console.log("error 0x1780 -> not enough funds to transfer");
+        // }
+        // } else {
+        //     console.log("initiaize skipped", swapDataAccount.toBase58());
+        // }
+    });
+    it("deposit NFT from user that doesn't have", async () => {
+        if (swapDataAccount) {
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+                program,
+                swapDataAccount
+            );
+
+            const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
+                swapData: swapDataRead,
+            });
+            const depositSwapData = await NeoSwap.depositNft({
+                ataList: [],
+                mint: user2MintToTransfer,
+                program,
+                signer: user1N.publicKey,
+                swapIdentity,
+            });
+            console.log("depositSwapData.mintAta", depositSwapData.mintAta);
+            try {
+                const { transactionHashes } = await neoSwapNpm.utils.sendBundledTransactions({
+                    cluster,
+                    signer: user1N,
+                    txsWithoutSigners: [
+                        { tx: new Transaction().add(...depositSwapData.instructions) },
+                    ],
+                    // skipPref
+                });
+                console.log("transactionhashes", transactionHashes);
+            } catch (error) {
+                console.log(String(error), String(error).includes("0x1780"));
+                assert(String(error).includes("0x1780"));
+                console.log("error 0x1780 -> not enough funds to transfer");
+            }
+        } else {
+            console.log("swap not given");
+        }
+    });
+    it("deposit NFT to first swap", async () => {
+        if (swapDataAccount) {
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+                program,
+                swapDataAccount
+            );
+            const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
+                swapData: swapDataRead,
+            });
+            const depositSwapData = await NeoSwap.depositNft({
+                ataList: [],
+                mint: user1MintToTransfer,
+                program,
+                signer: user1N.publicKey,
+                swapIdentity,
+            });
+            console.log("depositSwapData.mintAta", depositSwapData.mintAta);
+
+            const { transactionHashes } = await neoSwapNpm.utils.sendBundledTransactions({
+                cluster,
+                signer: user1N,
+                txsWithoutSigners: [{ tx: new Transaction().add(...depositSwapData.instructions) }],
+                // skipPref
+            });
+            console.log("transactionhashes", transactionHashes);
+        } else {
+            console.log("swap not given");
+        }
+    });
+
+    it("Error deposit NFT to second swap", async () => {
+        if (swapDataAccount2) {
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+                program,
+                swapDataAccount2
+            );
+            const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
+                swapData: swapDataRead,
+            });
+            const depositSwapData = await NeoSwap.depositNft({
+                ataList: [],
+                mint: user1MintToTransfer,
+                program,
+                signer: user1N.publicKey,
+                swapIdentity,
+            });
+            console.log("depositSwapData.mintAta", depositSwapData.mintAta);
+            try {
+                const { transactionHashes } = await neoSwapNpm.utils.sendBundledTransactions({
+                    cluster,
+                    signer: user1N,
+                    txsWithoutSigners: [
+                        { tx: new Transaction().add(...depositSwapData.instructions) },
+                    ],
+                    // skipPref
+                });
+                console.log("transactionhashes", transactionHashes);
+            } catch (error) {
+                console.log(String(error), String(error).includes("0x1780"));
+                assert(String(error).includes("0x1780"));
+                console.log("error 0x1780 -> not enough funds to transfer");
+            }
+        } else {
+            console.log("swap not given");
+        }
     });
 
     // it("claim and close", async () => {
@@ -324,16 +442,83 @@ describe("Failing tests", () => {
     //     }
     //     transactionHashs.forEach((v) => console.log("res", v));
     // });
+    it("partial cancel from user", async () => {
+        if (swapDataAccount) {
+            const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
+                cluster,
+                signer: user1N,
+                swapDataAccount: swapDataAccount,
+            });
+            console.log("transactionHashes", cancelAndCloseHash);
+        } else {
+            console.log("swap not given");
+        }
+    });
 
-    // it("finish cancel and close from signer", async () => {
-    //     const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-    //         signer,
-    //         cluster,
-    //         swapDataAccount: swapDataAccount,
-    //     });
+    it("deposit NFT to second swap", async () => {
+        if (swapDataAccount2) {
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+                program,
+                swapDataAccount2
+            );
+            const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
+                swapData: swapDataRead,
+            });
+            const depositSwapData = await NeoSwap.depositNft({
+                ataList: [],
+                mint: user1MintToTransfer,
+                program,
+                signer: user1N.publicKey,
+                swapIdentity,
+            });
+            // console.log("depositSwapData.mintAta", depositSwapData.mintAta);
+            // try {
+                const { transactionHashes } = await neoSwapNpm.utils.sendBundledTransactions({
+                    cluster,
+                    signer: user1N,
+                    txsWithoutSigners: [
+                        { tx: new Transaction().add(...depositSwapData.instructions) },
+                    ],
+                    // skipPref
+                });
+                console.log("transactionhashes", transactionHashes);
+            // } catch (error) {
+            //     // console.log(error, String(error).includes("6004"));
+            //     assert(String(error).includes("6004"));
+            //     console.log("error 6004 -> nothing to send");
+            // }
+        } else {
+            console.log("swap not given");
+        }
+    });
 
-    //     console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    // });
+    it("finish cancel and close from signer", async () => {
+        if (swapDataAccount) {
+            const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
+                signer,
+                cluster,
+                swapDataAccount: swapDataAccount,
+            });
+
+            console.log("cancelAndCloseHash :", cancelAndCloseHash);
+        } else {
+            console.log("swap not given");
+        }
+    });
+
+    it("finish cancel2 and close from signer", async () => {
+        if (swapDataAccount2) {
+            const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
+                signer,
+                cluster,
+                swapDataAccount: swapDataAccount2,
+            });
+
+            console.log("cancelAndCloseHash :", cancelAndCloseHash);
+        } else {
+            console.log("swap not given");
+        }
+    });
 
     //UTILS FOR INITIALIZING
     // it("Create keypair", async () => {
