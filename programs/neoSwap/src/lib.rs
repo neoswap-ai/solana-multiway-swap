@@ -89,7 +89,7 @@ pub mod neo_swap {
         if item_to_add.is_nft {
             item_to_add.status = ItemStatus::NFTPending.to_u8();
             if item_to_add.amount.is_negative() || item_to_add.amount == 0 {
-                return Err(error!(MYERROR::UnexpectedData).into());
+                return Err(error!(MYERROR::UnexpectedData));
             }
             msg!("NFT item added with status NFTPending");
         } else {
@@ -100,7 +100,7 @@ pub mod neo_swap {
                         .owner
                         .eq(&item_to_add.owner)
                 {
-                    return Err(error!(MYERROR::UnexpectedData).into());
+                    return Err(error!(MYERROR::UnexpectedData));
                 }
             }
             // Check that mint and destinary are dummy values
@@ -108,14 +108,14 @@ pub mod neo_swap {
                 != Pubkey::from_str("11111111111111111111111111111111").unwrap()
                 || item_to_add.mint != Pubkey::from_str("11111111111111111111111111111111").unwrap()
             {
-                return Err(error!(MYERROR::UnexpectedData).into());
+                return Err(error!(MYERROR::UnexpectedData));
             }
 
             if item_to_add.amount.is_positive() {
                 item_to_add.status = ItemStatus::SolPending.to_u8();
                 msg!("SOL item added with status SolPending");
             } else if item_to_add.amount == 0 {
-                return Err(error!(MYERROR::UnexpectedData).into());
+                return Err(error!(MYERROR::UnexpectedData));
             } else {
                 item_to_add.status = ItemStatus::SolToClaim.to_u8();
                 msg!("SOL item added with status SolToClaim");
@@ -316,7 +316,7 @@ pub mod neo_swap {
 
         // Returns error if nothing is there to transfer
         if transfered == false {
-            return Err(error!(MYERROR::NoSend).into());
+            return Err(error!(MYERROR::NoSend));
         }
 
         Ok(())
@@ -372,13 +372,13 @@ pub mod neo_swap {
                     msg!("SolDeposited");
                     break;
                 } else {
-                    return Err(error!(MYERROR::NoSend).into());
+                    return Err(error!(MYERROR::NoSend));
                 }
             }
         }
 
         if transfered == false {
-            return Err(error!(MYERROR::NoSend).into());
+            return Err(error!(MYERROR::NoSend));
         }
         Ok(())
     }
@@ -405,7 +405,7 @@ pub mod neo_swap {
                 || ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::SolToClaim.to_u8())
             {
-                return Err(error!(MYERROR::NotReady).into());
+                return Err(error!(MYERROR::NotReady));
             }
         }
 
@@ -493,18 +493,18 @@ pub mod neo_swap {
                         msg!("SOL item Claimed");
                         break;
                     } else {
-                        return Err(error!(MYERROR::NotEnoughFunds).into());
+                        return Err(error!(MYERROR::NotEnoughFunds));
                     }
                 } else {
-                    return Err(error!(MYERROR::NoSend).into());
+                    return Err(error!(MYERROR::NoSend));
                 }
             }
         }
         if transfered == false {
-            return Err(error!(MYERROR::NoSend).into());
+            return Err(error!(MYERROR::NoSend));
         }
         if authorized == false {
-            return Err(error!(MYERROR::UserNotPartOfTrade).into());
+            return Err(error!(MYERROR::UserNotPartOfTrade));
         }
         Ok(())
     }
@@ -690,11 +690,11 @@ pub mod neo_swap {
         }
 
         if transfered == false {
-            return Err(error!(MYERROR::NoSend).into());
+            return Err(error!(MYERROR::NoSend));
         }
 
         if authorized == false {
-            return Err(error!(MYERROR::UserNotPartOfTrade).into());
+            return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
         Ok(())
@@ -729,7 +729,7 @@ pub mod neo_swap {
                 || ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::SolDeposited.to_u8())
             {
-                return Err(error!(MYERROR::NotReady).into());
+                return Err(error!(MYERROR::NotReady));
             }
         }
 
@@ -752,7 +752,7 @@ pub mod neo_swap {
         if !(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
             || ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8())
         {
-            return Err(error!(MYERROR::NotReady).into());
+            return Err(error!(MYERROR::NotReady));
         }
 
         let mut transfered: bool = false;
@@ -815,11 +815,11 @@ pub mod neo_swap {
                                 ItemStatus::SolcancelledRecovered.to_u8();
                             msg!("SolcancelledRecovered");
                         } else {
-                            return Err(error!(MYERROR::NotEnoughFunds).into());
+                            return Err(error!(MYERROR::NotEnoughFunds));
                         }
                     }
                 } else {
-                    return Err(error!(MYERROR::NotReady).into());
+                    return Err(error!(MYERROR::NotReady));
                     // msg!("${}",ItemStatus::SolDeposited.to_u8())
                 }
 
@@ -828,11 +828,11 @@ pub mod neo_swap {
         }
 
         if transfered == false {
-            return Err(error!(MYERROR::NoSend).into());
+            return Err(error!(MYERROR::NoSend));
         }
 
         if authorized == false {
-            return Err(error!(MYERROR::UserNotPartOfTrade).into());
+            return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
         // if not already, Swap status changed to 90 (Cancelled)
@@ -1031,11 +1031,11 @@ pub mod neo_swap {
         }
 
         if transfered == false {
-            return Err(error!(MYERROR::NoSend).into());
+            return Err(error!(MYERROR::NoSend));
         }
 
         if authorized == false {
-            return Err(error!(MYERROR::UserNotPartOfTrade).into());
+            return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
         // If not already, update Swap's status to 90 (Cancelled)
@@ -1064,7 +1064,7 @@ pub mod neo_swap {
         if !(ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8()
             || ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8())
         {
-            return Err(error!(MYERROR::NotReady).into());
+            return Err(error!(MYERROR::NotReady));
         }
 
         let nbr_items = ctx.accounts.swap_data_account.items.len();
@@ -1082,7 +1082,7 @@ pub mod neo_swap {
                 || ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::SolToClaim.to_u8())
             {
-                return Err(error!(MYERROR::NotReady).into());
+                return Err(error!(MYERROR::NotReady));
             }
         }
 
@@ -1100,7 +1100,7 @@ pub struct InitInitialize<'info> {
     #[account(
         init,
         payer = signer,
-        seeds = [&&seed[..]],
+        seeds = [&seed[..]],
         bump,
         space = SwapData::size(sent_data)
     )]
@@ -1330,9 +1330,9 @@ pub struct ClaimSol<'info> {
 #[account]
 #[derive(Default)]
 pub struct SwapData {
-    pub initializer: Pubkey,     // Initializer is admin of the PDA
-    pub status: u8,              // Gives the status of the current swap with TradeStatus
-    pub nb_items: u32,           // Required to initialize the PDA account data size
+    pub initializer: Pubkey, // Initializer is admin of the PDA
+    pub status: u8,          // Gives the status of the current swap with TradeStatus
+    pub nb_items: u32,       // Required to initialize the PDA account data size
     // pub pre_seed: String,        // String to initialize PDA's seed
     pub items: Vec<NftSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
 }
@@ -1345,13 +1345,13 @@ impl SwapData {
         32; //Pubkey
 
     pub fn size(swap_data_account: SwapData) -> usize {
-        return SwapData::LEN
+        SwapData::LEN
             .checked_add(
                 NftSwapItem::LEN
                     .checked_mul(swap_data_account.nb_items as usize)
                     .unwrap(),
             )
-            .unwrap();
+            .unwrap()
     }
 }
 
@@ -1490,7 +1490,7 @@ pub enum MYERROR {
     NotTokenProgram,
     #[msg("wrong Pda program Id passed")]
     NotPda,
-    #[msg("wrong signer, should be initializer to perform this action")]
+    #[msg("wrong signer, only initializer can perform this action")]
     NotInit,
     #[msg("wrong bump")]
     NotBump,
