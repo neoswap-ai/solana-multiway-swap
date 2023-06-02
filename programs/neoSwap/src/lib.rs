@@ -58,7 +58,7 @@ pub mod neo_swap {
         ctx.accounts.swap_data_account.items = [].to_vec();
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
         ctx.accounts.swap_data_account.nb_items = sent_data.nb_items;
-        // ctx.accounts.swap_data_account.pre_seed = sent_data.pre_seed;
+        ctx.accounts.swap_data_account.pre_seed = sent_data.pre_seed;
         Ok(())
     }
 
@@ -1333,7 +1333,7 @@ pub struct SwapData {
     pub initializer: Pubkey, // Initializer is admin of the PDA
     pub status: u8,          // Gives the status of the current swap with TradeStatus
     pub nb_items: u32,       // Required to initialize the PDA account data size
-    // pub pre_seed: String,        // String to initialize PDA's seed
+    pub pre_seed: String,        // String to initialize PDA's seed
     pub items: Vec<NftSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
 }
 
