@@ -135,13 +135,15 @@ export const createPnft2 = async (Data: { signer: Keypair; program: Program; sta
     console.log(`   Minted NFT: https://explorer.solana.com/address/${mintAddress.toString()}?cluster=devnet`);
     console.log(`   Tx: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
-    if (Data.standard === TokenStandard.FungibleAsset) {
+    if (Data.standard === TokenStandard.FungibleAsset || Data.standard === TokenStandard.Fungible) {
+        let amount = 5;
+        if (Data.standard === TokenStandard.Fungible) amount = 150000;
         const tx = new Transaction().add(
             createMintToInstruction(
                 mintAddress,
                 tokenAddress,
                 Data.signer.publicKey,
-                5
+                amount
                 // [Data.signer],
                 // TOKEN_PROGRAM_ID
             )

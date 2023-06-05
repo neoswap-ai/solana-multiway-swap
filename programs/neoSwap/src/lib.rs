@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use {
     anchor_lang::{
         prelude::*,
@@ -20,12 +19,14 @@ use {
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
 
-declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
-// declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
+// declare_id!("6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N");
+declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
 pub mod neo_swap {
+    use anchor_lang::solana_program::system_program;
+
     use super::*;
 
     /// @notice Initialize Swap's PDA. /!\ Signer will be Initializer
@@ -50,15 +51,18 @@ pub mod neo_swap {
         );
         require!(sent_data.items.is_empty(), MYERROR::IncorrectLength);
         // require!(
-        //     sent_data.pre_seed.len() < 30 as usize,
-        //     MYERROR::PreSeedTooLong
+        //     !sent_data.accepted_payement,
+        //     MYERROR::NoAcceptedPaymentGiven
         // );
+
+        require!(sent_data.pre_seed.len() < 30_usize, MYERROR::PreSeedTooLong);
         // Write according Data into Swap's PDA
         ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
         ctx.accounts.swap_data_account.items = [].to_vec();
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
         ctx.accounts.swap_data_account.nb_items = sent_data.nb_items;
         ctx.accounts.swap_data_account.pre_seed = sent_data.pre_seed;
+        ctx.accounts.swap_data_account.accepted_payement = sent_data.accepted_payement;
         Ok(())
     }
 
@@ -100,16 +104,24 @@ pub mod neo_swap {
                         .owner
                         .eq(&item_to_add.owner)
                 {
-                    return Err(error!(MYERROR::UnexpectedData));
+                    return Err(error!(MYERROR::AlreadyExist));
                 }
             }
+            // Check the Payment asked for this item is compliant to the swap Data
+            msg!(
+                "mint of item_to_add: ${}, accepted payment : ${}",
+                item_to_add.mint,
+                swap_data_account.accepted_payement
+            );
+            require!(
+                item_to_add.mint.eq(&swap_data_account.accepted_payement),
+                MYERROR::MintIncorrect
+            );
             // Check that mint and destinary are dummy values
-            if item_to_add.destinary
-                != Pubkey::from_str("11111111111111111111111111111111").unwrap()
-                || item_to_add.mint != Pubkey::from_str("11111111111111111111111111111111").unwrap()
-            {
-                return Err(error!(MYERROR::UnexpectedData));
-            }
+            require!(
+                item_to_add.destinary.eq(&system_program::id()),
+                MYERROR::UnexpectedData
+            );
 
             if item_to_add.amount.is_positive() {
                 item_to_add.status = ItemStatus::SolPending.to_u8();
@@ -350,20 +362,68 @@ pub mod neo_swap {
             {
                 if ctx.accounts.swap_data_account.items[item_id].amount > 0 {
                     // Transfer lamports to Escrow
-                    let ix = anchor_lang::solana_program::system_instruction::transfer(
-                        &ctx.accounts.signer.key(),
-                        &ctx.accounts.swap_data_account.key(),
-                        ctx.accounts.swap_data_account.items[item_id]
-                            .amount
-                            .unsigned_abs(),
-                    );
-                    invoke(
-                        &ix,
-                        &[
-                            ctx.accounts.signer.to_account_info(),
-                            ctx.accounts.swap_data_account.to_account_info(),
-                        ],
-                    )?;
+
+                    if ctx.accounts.swap_data_account.items[item_id]
+                        .mint
+                        .eq(&system_program::id())
+                    {
+                        let ix = anchor_lang::solana_program::system_instruction::transfer(
+                            &ctx.accounts.signer.key(),
+                            &ctx.accounts.swap_data_account.key(),
+                            ctx.accounts.swap_data_account.items[item_id]
+                                .amount
+                                .unsigned_abs(),
+                        );
+                        invoke(
+                            &ix,
+                            &[
+                                ctx.accounts.signer.to_account_info(),
+                                ctx.accounts.swap_data_account.to_account_info(),
+                            ],
+                        )?;
+                    } else {
+                        // check signer ata
+                        // msg!("signer ata",ctx.accounts.signer_ata.key())
+                        require!(
+                            is_correct_ata(
+                                ctx.accounts.signer_ata.key(),
+                                ctx.accounts.signer_ata.owner.clone(),
+                                ctx.accounts.swap_data_account.items[item_id].mint.key()
+                            ),
+                            MYERROR::IncorrectOwner
+                        );
+
+                        // check swapDataAccount ata
+                        require!(
+                            is_correct_ata(
+                                ctx.accounts.swap_data_account_ata.key(),
+                                ctx.accounts.swap_data_account_ata.owner.clone(),
+                                ctx.accounts.swap_data_account.items[item_id].mint.key()
+                            ),
+                            MYERROR::IncorrectOwner
+                        );
+
+                        let ix_user = spl_token::instruction::transfer(
+                            &ctx.accounts.spl_token_program.to_account_info().key(),
+                            &ctx.accounts.signer_ata.key(),
+                            &ctx.accounts.swap_data_account_ata.key(),
+                            &ctx.accounts.signer.key(),
+                            &[&ctx.accounts.signer.key()],
+                            ctx.accounts.swap_data_account.items[item_id]
+                                .amount
+                                .unsigned_abs(),
+                        )?;
+
+                        invoke(
+                            &ix_user,
+                            &[
+                                ctx.accounts.swap_data_account_ata.to_account_info(),
+                                ctx.accounts.signer_ata.to_account_info(),
+                                ctx.accounts.signer.to_account_info(),
+                                ctx.accounts.spl_token_program.to_account_info(),
+                            ],
+                        )?;
+                    }
 
                     //update status to 2 (Claimed)
                     ctx.accounts.swap_data_account.items[item_id].status =
@@ -424,7 +484,7 @@ pub mod neo_swap {
     /// @accounts user: Pubkey => User that will receive lamports
     /// @accounts signer: Pubkey => Initializer
     /// @return Void
-    pub fn claim_sol(ctx: Context<ClaimSol>, _seed: Vec<u8>, _bump: u8) -> Result<()> {
+    pub fn claim_sol(ctx: Context<ClaimSol>, seed: Vec<u8>, bump: u8) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToClaim.to_u8(),
             MYERROR::NotReady
@@ -475,16 +535,63 @@ pub mod neo_swap {
                         ctx.accounts.swap_data_account.to_account_info().lamports();
 
                     if swap_data_lamports_initial >= amount_to_send {
-                        **ctx.accounts.user.lamports.borrow_mut() =
-                            ctx.accounts.user.lamports() + amount_to_send;
-                        **ctx
-                            .accounts
-                            .swap_data_account
-                            .to_account_info()
-                            .lamports
-                            .borrow_mut() =
-                            ctx.accounts.swap_data_account.to_account_info().lamports()
-                                - amount_to_send;
+                        if ctx.accounts.swap_data_account.items[item_id]
+                            .mint
+                            .eq(&system_program::id())
+                        {
+                            **ctx.accounts.user.lamports.borrow_mut() =
+                                ctx.accounts.user.lamports() + amount_to_send;
+                            **ctx
+                                .accounts
+                                .swap_data_account
+                                .to_account_info()
+                                .lamports
+                                .borrow_mut() =
+                                ctx.accounts.swap_data_account.to_account_info().lamports()
+                                    - amount_to_send;
+                        } else {
+                            // check user ata
+                            require!(
+                                is_correct_ata(
+                                    ctx.accounts.user_ata.key(),
+                                    *ctx.accounts.user_ata.owner,
+                                    ctx.accounts.swap_data_account.items[item_id].mint.key()
+                                ),
+                                MYERROR::IncorrectOwner
+                            );
+
+                            // check swapDataAccount ata
+                            require!(
+                                is_correct_ata(
+                                    ctx.accounts.swap_data_account_ata.key(),
+                                    *ctx.accounts.swap_data_account_ata.owner,
+                                    ctx.accounts.swap_data_account.items[item_id].mint.key()
+                                ),
+                                MYERROR::IncorrectOwner
+                            );
+
+                            let ix_user = spl_token::instruction::transfer(
+                                &ctx.accounts.spl_token_program.to_account_info().key(),
+                                &ctx.accounts.swap_data_account_ata.key(),
+                                &ctx.accounts.user_ata.key(),
+                                &ctx.accounts.swap_data_account.key(),
+                                &[&ctx.accounts.swap_data_account.key()],
+                                ctx.accounts.swap_data_account.items[item_id]
+                                    .amount
+                                    .unsigned_abs(),
+                            )?;
+
+                            invoke_signed(
+                                &ix_user,
+                                &[
+                                    ctx.accounts.swap_data_account_ata.to_account_info(),
+                                    ctx.accounts.user_ata.to_account_info(),
+                                    ctx.accounts.user.to_account_info(),
+                                    ctx.accounts.spl_token_program.to_account_info(),
+                                ],
+                                &[&[&seed[..], &[bump]]],
+                            )?;
+                        }
 
                         //update item status to SolClaimed
                         ctx.accounts.swap_data_account.items[item_id].status =
@@ -740,7 +847,7 @@ pub mod neo_swap {
     }
 
     /// @notice Cancels an item from escrow, retrieving funds if deposited previously. /!\ initializer function
-    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary if needed, change the item status to Cancelled and Swap's status to 90 (Cancelled) if not already. /!\ this function can only be triggered by initializer
+    /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and transfer lamports to destinary if needed, change the item status to canceled and Swap's status to 90 (canceled) if not already. /!\ this function can only be triggered by initializer
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts system_program: Pubkey = system_program_id
@@ -748,9 +855,9 @@ pub mod neo_swap {
     /// @accounts user: Pubkey => User that will receive lamports
     /// @accounts signer: Pubkey => Initializer
     /// @return Void
-    pub fn cancel_sol(ctx: Context<ClaimSol>, _seed: Vec<u8>, _bump: u8) -> Result<()> {
+    pub fn cancel_sol(ctx: Context<ClaimSol>, seed: Vec<u8>, bump: u8) -> Result<()> {
         if !(ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
-            || ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8())
+            || ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8())
         {
             return Err(error!(MYERROR::NotReady));
         }
@@ -800,20 +907,67 @@ pub mod neo_swap {
                             ctx.accounts.swap_data_account.to_account_info().lamports();
 
                         if swap_data_lamports_initial >= amount_to_send {
-                            **ctx.accounts.user.lamports.borrow_mut() =
-                                ctx.accounts.user.lamports() + amount_to_send;
-                            **ctx
-                                .accounts
-                                .swap_data_account
-                                .to_account_info()
-                                .lamports
-                                .borrow_mut() =
-                                ctx.accounts.swap_data_account.to_account_info().lamports()
-                                    - amount_to_send;
+                            if ctx.accounts.swap_data_account.items[item_id]
+                                .mint
+                                .eq(&system_program::id())
+                            {
+                                **ctx.accounts.user.lamports.borrow_mut() =
+                                    ctx.accounts.user.lamports() + amount_to_send;
+                                **ctx
+                                    .accounts
+                                    .swap_data_account
+                                    .to_account_info()
+                                    .lamports
+                                    .borrow_mut() =
+                                    ctx.accounts.swap_data_account.to_account_info().lamports()
+                                        - amount_to_send;
+                            } else {
+                                // check user ata
+                                require!(
+                                    is_correct_ata(
+                                        ctx.accounts.user_ata.key(),
+                                        *ctx.accounts.user_ata.owner,
+                                        ctx.accounts.swap_data_account.items[item_id].mint.key()
+                                    ),
+                                    MYERROR::IncorrectOwner
+                                );
+
+                                // check swapDataAccount ata
+                                require!(
+                                    is_correct_ata(
+                                        ctx.accounts.swap_data_account_ata.key(),
+                                        *ctx.accounts.swap_data_account_ata.owner,
+                                        ctx.accounts.swap_data_account.items[item_id].mint.key()
+                                    ),
+                                    MYERROR::IncorrectOwner
+                                );
+
+                                let ix_user = spl_token::instruction::transfer(
+                                    &ctx.accounts.spl_token_program.to_account_info().key(),
+                                    &ctx.accounts.swap_data_account_ata.key(),
+                                    &ctx.accounts.user_ata.key(),
+                                    &ctx.accounts.swap_data_account.key(),
+                                    &[&ctx.accounts.swap_data_account.key()],
+                                    ctx.accounts.swap_data_account.items[item_id]
+                                        .amount
+                                        .unsigned_abs(),
+                                )?;
+
+                                invoke_signed(
+                                    &ix_user,
+                                    &[
+                                        ctx.accounts.swap_data_account_ata.to_account_info(),
+                                        ctx.accounts.user_ata.to_account_info(),
+                                        ctx.accounts.user.to_account_info(),
+                                        ctx.accounts.spl_token_program.to_account_info(),
+                                    ],
+                                    &[&[&seed[..], &[bump]]],
+                                )?;
+                            }
 
                             ctx.accounts.swap_data_account.items[item_id].status =
-                                ItemStatus::SolcancelledRecovered.to_u8();
-                            msg!("SolcancelledRecovered");
+                                ItemStatus::SolcanceledRecovered.to_u8();
+                            msg!("SolcanceledRecovered");
                         } else {
                             return Err(error!(MYERROR::NotEnoughFunds));
                         }
@@ -835,10 +989,10 @@ pub mod neo_swap {
             return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
-        // if not already, Swap status changed to 90 (Cancelled)
-        if ctx.accounts.swap_data_account.status != TradeStatus::Cancelling.to_u8() {
-            ctx.accounts.swap_data_account.status = TradeStatus::Cancelling.to_u8();
-            msg!("General status changed to Cancelling");
+        // if not already, Swap status changed to 90 (canceled)
+        if ctx.accounts.swap_data_account.status != TradeStatus::Canceling.to_u8() {
+            ctx.accounts.swap_data_account.status = TradeStatus::Canceling.to_u8();
+            msg!("General status changed to canceling");
         }
         Ok(())
     }
@@ -884,7 +1038,7 @@ pub mod neo_swap {
 
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
-                || ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8(),
+                || ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8(),
             MYERROR::NotReady
         );
 
@@ -1023,8 +1177,8 @@ pub mod neo_swap {
 
                 // Update item status to 91 (CancelRecovered)
                 ctx.accounts.swap_data_account.items[item_id].status =
-                    ItemStatus::NFTcancelledRecovered.to_u8();
-                msg!("NFT item status changed to NFTcancelledRecovered");
+                    ItemStatus::NFTcanceledRecovered.to_u8();
+                msg!("NFT item status changed to NFTcanceledRecovered");
 
                 transfered = true;
             }
@@ -1038,10 +1192,10 @@ pub mod neo_swap {
             return Err(error!(MYERROR::UserNotPartOfTrade));
         }
 
-        // If not already, update Swap's status to 90 (Cancelled)
-        if ctx.accounts.swap_data_account.status != TradeStatus::Cancelling.to_u8() {
-            ctx.accounts.swap_data_account.status = TradeStatus::Cancelling.to_u8();
-            msg!("General status changed to Cancelling");
+        // If not already, update Swap's status to 90 (canceled)
+        if ctx.accounts.swap_data_account.status != TradeStatus::Canceling.to_u8() {
+            ctx.accounts.swap_data_account.status = TradeStatus::Canceling.to_u8();
+            msg!("General status changed to Canceling");
         }
 
         Ok(())
@@ -1061,7 +1215,7 @@ pub mod neo_swap {
         _seed: Vec<u8>,
         _bump: u8,
     ) -> Result<()> {
-        if !(ctx.accounts.swap_data_account.status == TradeStatus::Cancelling.to_u8()
+        if !(ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8()
             || ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8())
         {
             return Err(error!(MYERROR::NotReady));
@@ -1069,12 +1223,12 @@ pub mod neo_swap {
 
         let nbr_items = ctx.accounts.swap_data_account.items.len();
 
-        // Checks all items are Cancelled
+        // Checks all items are canceled
         for item_id in 0..nbr_items {
             if !(ctx.accounts.swap_data_account.items[item_id].status
-                == ItemStatus::SolcancelledRecovered.to_u8()
+                == ItemStatus::SolcanceledRecovered.to_u8()
                 || ctx.accounts.swap_data_account.items[item_id].status
-                    == ItemStatus::NFTcancelledRecovered.to_u8()
+                    == ItemStatus::NFTcanceledRecovered.to_u8()
                 || ctx.accounts.swap_data_account.items[item_id].status
                     == ItemStatus::SolPending.to_u8()
                 || ctx.accounts.swap_data_account.items[item_id].status
@@ -1086,7 +1240,7 @@ pub mod neo_swap {
             }
         }
 
-        // Changing Swap status to 91 (cancelledRecovered)
+        // Changing Swap status to 91 (canceledRecovered)
         ctx.accounts.swap_data_account.status = TradeStatus::Closed.to_u8();
         msg!("General status changed to Closed");
 
@@ -1205,10 +1359,21 @@ pub struct DepositPNft<'info> {
 pub struct DepositSol<'info> {
     #[account()]
     system_program: Program<'info, System>,
+    #[account()]
+    spl_token_program: Program<'info, Token>,
+    // /// CHECK: in constraints
+    // #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
+    // spl_ata_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
+    /// CHECK: inside the function Logic
+    #[account()]
+    swap_data_account_ata: AccountInfo<'info>,
     #[account(mut)]
     signer: Signer<'info>,
+    /// CHECK: inside the function Logic
+    #[account()]
+    signer_ata: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -1318,11 +1483,22 @@ pub struct ClaimNft<'info> {
 pub struct ClaimSol<'info> {
     #[account()]
     system_program: Program<'info, System>,
+    #[account()]
+    spl_token_program: Program<'info, Token>,
+    // /// CHECK: in constraints
+    // #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
+    // spl_ata_program: AccountInfo<'info>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
+    /// CHECK: inside the function Logic
+    #[account()]
+    swap_data_account_ata: AccountInfo<'info>,
     /// CHECK: user Account
     #[account(mut)]
     user: AccountInfo<'info>,
+    /// CHECK: inside the function Logic
+    #[account()]
+    user_ata: AccountInfo<'info>,
     #[account(mut)]
     signer: Signer<'info>,
 }
@@ -1330,11 +1506,12 @@ pub struct ClaimSol<'info> {
 #[account]
 #[derive(Default)]
 pub struct SwapData {
-    pub initializer: Pubkey, // Initializer is admin of the PDA
-    pub status: u8,          // Gives the status of the current swap with TradeStatus
-    pub nb_items: u32,       // Required to initialize the PDA account data size
-    pub pre_seed: String,        // String to initialize PDA's seed
-    pub items: Vec<NftSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
+    pub initializer: Pubkey,       // Initializer is admin of the PDA
+    pub status: u8,                // Gives the status of the current swap with TradeStatus
+    pub nb_items: u32,             // Required to initialize the PDA account data size
+    pub pre_seed: String,          // String to initialize PDA's seed
+    pub items: Vec<NftSwapItem>,   // List of items engaged in a swap (can be SOL or NFT)
+    pub accepted_payement: Pubkey, // List of tokens accepted for payment
 }
 
 impl SwapData {
@@ -1342,7 +1519,7 @@ impl SwapData {
         1 + //u8
         4 * 2 + //u32
         4 + 32 + // max 32 char
-        32; //Pubkey
+        32 *2; //Pubkey
 
     pub fn size(swap_data_account: SwapData) -> usize {
         SwapData::LEN
@@ -1376,8 +1553,8 @@ pub enum TradeStatus {
     WaitingToDeposit,
     WaitingToClaim,
     Closed,
-    Cancelling,
-    Cancelled,
+    Canceling,
+    Canceled,
 }
 
 impl TradeStatus {
@@ -1388,8 +1565,8 @@ impl TradeStatus {
             2 => TradeStatus::WaitingToClaim,
             3 => TradeStatus::Closed,
 
-            100 => TradeStatus::Cancelling,
-            101 => TradeStatus::Cancelled,
+            100 => TradeStatus::Canceling,
+            101 => TradeStatus::Canceled,
 
             _ => panic!("Invalid Proposal Status"),
         }
@@ -1402,8 +1579,8 @@ impl TradeStatus {
             TradeStatus::WaitingToClaim => 2,
             TradeStatus::Closed => 3,
 
-            TradeStatus::Cancelling => 100,
-            TradeStatus::Cancelled => 101,
+            TradeStatus::Canceling => 100,
+            TradeStatus::Canceled => 101,
         }
     }
 }
@@ -1412,14 +1589,14 @@ pub enum ItemStatus {
     NFTPending,
     NFTDeposited,
     NFTClaimed,
-    NFTcancelled,
-    NFTcancelledRecovered,
+    NFTcanceled,
+    NFTcanceledRecovered,
     SolPending,
     SolDeposited,
     SolToClaim,
     SolClaimed,
-    Solcancelled,
-    SolcancelledRecovered,
+    Solcanceled,
+    SolcanceledRecovered,
 }
 
 impl ItemStatus {
@@ -1435,11 +1612,11 @@ impl ItemStatus {
             30 => ItemStatus::NFTClaimed,
             31 => ItemStatus::SolClaimed,
 
-            100 => ItemStatus::NFTcancelled,
-            101 => ItemStatus::Solcancelled,
+            100 => ItemStatus::NFTcanceled,
+            101 => ItemStatus::Solcanceled,
 
-            110 => ItemStatus::NFTcancelledRecovered,
-            111 => ItemStatus::SolcancelledRecovered,
+            110 => ItemStatus::NFTcanceledRecovered,
+            111 => ItemStatus::SolcanceledRecovered,
 
             _ => panic!("Invalid Proposal Status"),
         }
@@ -1457,13 +1634,24 @@ impl ItemStatus {
             ItemStatus::NFTClaimed => 30,
             ItemStatus::SolClaimed => 31,
 
-            ItemStatus::NFTcancelled => 100,
-            ItemStatus::Solcancelled => 101,
+            ItemStatus::NFTcanceled => 100,
+            ItemStatus::Solcanceled => 101,
 
-            ItemStatus::NFTcancelledRecovered => 110,
-            ItemStatus::SolcancelledRecovered => 111,
+            ItemStatus::NFTcanceledRecovered => 110,
+            ItemStatus::SolcanceledRecovered => 111,
         }
     }
+}
+
+fn is_correct_ata(owner_ata: Pubkey, owner: Pubkey, mint: Pubkey) -> bool {
+    let (found_ata, _) = Pubkey::find_program_address(
+        &[owner.as_ref(), spl_token::ID.as_ref(), mint.as_ref()],
+        &spl_associated_token_account::ID,
+    );
+    msg!("found_ata: {:?}", found_ata);
+    msg!("owner_ata: {:?}", owner_ata);
+
+    found_ata.eq(&owner_ata)
 }
 
 #[error_code]
@@ -1522,4 +1710,8 @@ pub enum MYERROR {
     NotAuthorized,
     #[msg("PreSeed has too many character (max: 32)")]
     PreSeedTooLong,
+    #[msg("The list of token accepted for payment is empty")]
+    NoAcceptedPaymentGiven,
+    #[msg("The item you're trying to add already exists in the Swap")]
+    AlreadyExist,
 }
