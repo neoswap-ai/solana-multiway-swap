@@ -45,7 +45,7 @@ describe("FongibleTokens Test Unit", () => {
     let cluster = "devnet" as Cluster;
     // let cluster = "devnet";
     let swapDataAccount: PublicKey | undefined = new PublicKey(
-        "3JkYjgvkuRFmy3hKDbFwUW7Rp5Du5TnbZQAUemma3CaB"
+        "3pbjcFbajEWewAefMkmu7iNk3pxnM37CifdT2ES6BunS"
     ); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
     // let swapDataAccount2: PublicKey | undefined = new PublicKey(
     //     "E6hBkNhJNGtwBvYtadCp4UAqmjanmMVsDqG3R1sPNFzY"
@@ -86,7 +86,7 @@ describe("FongibleTokens Test Unit", () => {
         items: [],
         status: TradeStatus.Initializing,
         nbItems: 1,
-        preSeed: "0021",
+        preSeed: "0022",
         acceptedPayement: currency,
     };
 
