@@ -1,5 +1,6 @@
 [programs.devnet]
-neo_swap = "Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY"
+# neo_swap = "Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY"
+neo_swap = "6kHx1ZDMaECRE14bEJB7mgP8NbsZHiVpSzNba2JgPq9N"
 [programs.localnet]
 neo_swap = "Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY"
 

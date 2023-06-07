@@ -51,24 +51,24 @@ describe("swapCoontractTest", () => {
     const CONST_PROGRAM = "0007";
     const nbuser = 3;
 
-    // let pda: PublicKey | undefined = new PublicKey("DczDC54mLnVsC7igCHn5HsfnWbQVnnHPbdzGPSrXMDzw"); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
-    let pda: PublicKey | undefined = undefined;
+    let pda: PublicKey | undefined = new PublicKey("3s242RBq6aW9FSjHxysDucDGyiygjjr2wrNiXhjJRz9Q"); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
+    // let pda: PublicKey | undefined = undefined;
 
     let signer = Keypair.fromSecretKey(signerSk);
     let user1 = Keypair.fromSecretKey(user1Sk);
     // let user1MintToTransfer = new PublicKey("AjWL8bSJDoe11nxk7JdD8MS4gNjXgmYwE1zW7kpy39kX");
-    // let user1MintToTransfer = new PublicKey("Bz54u3Uzb3cxC68V1d2zxj8ZWnCwyXBb13ZiBbqWWmkm");
-    let user1MintToTransfer = undefined;
+    let user1MintToTransfer = new PublicKey("Bz54u3Uzb3cxC68V1d2zxj8ZWnCwyXBb13ZiBbqWWmkm");
+    // let user1MintToTransfer = undefined;
 
     let user2 = Keypair.fromSecretKey(user2Sk);
     // let user2MintToTransfer = new PublicKey("J1rY2JDHG7SJFn481HUcBEQkJfzu4GovPybtXESP7ZKv");
-    // let user2MintToTransfer = new PublicKey("9CDQeqmzSvYE2nRKwUJwv3ytDyWWwNy4gvxmfViGWCAn");
-    let user2MintToTransfer = undefined;
+    let user2MintToTransfer = new PublicKey("9CDQeqmzSvYE2nRKwUJwv3ytDyWWwNy4gvxmfViGWCAn");
+    // let user2MintToTransfer = undefined;
 
     let user3 = Keypair.fromSecretKey(user3Sk);
     // let user3MintToTransfer = new PublicKey("H4MuQ7xLYNXwjFBCxe3ZfJRAXvrVsXQBpQV8gqhu44fw");
-    // let user3MintToTransfer = new PublicKey("5odVzLS98jP7xCHykR6VfAzB8GYax7roeq5oowj2MVS6");
-    let user3MintToTransfer = undefined;
+    let user3MintToTransfer = new PublicKey("5odVzLS98jP7xCHykR6VfAzB8GYax7roeq5oowj2MVS6");
+    // let user3MintToTransfer = undefined;
 
     let user1N = Keypair.fromSecretKey(user1NSk);
     let user1NMintToTransfer = new PublicKey("CkyMvR8NtsByLVV44aLsTRzwgQZtkvCcZW1Amr9DiM3B");
@@ -102,7 +102,7 @@ describe("swapCoontractTest", () => {
     it("Initializing Program", async () => {
         program = getProgram(
             new anchor.AnchorProvider(
-                new Connection(clusterApiUrl("devnet")),
+                new Connection("https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/"),
                 new anchor.Wallet(signer),
                 {
                     commitment: "confirmed",
@@ -175,101 +175,101 @@ describe("swapCoontractTest", () => {
         // }
     });
 
-    // it("create SwapData", async () => {
-    //     swapData.items.push({
-    //         isNft: true,
-    //         amount: new BN(1),
-    //         mint: user3NMintToTransfer,
-    //         status: ItemStatus.NFTPending,
-    //         owner: user1.publicKey,
-    //         destinary: user2.publicKey,
-    //     } as NftSwapItem);
+    it("create SwapData", async () => {
+        swapData.items.push({
+            isNft: true,
+            amount: new BN(1),
+            mint: user3NMintToTransfer,
+            status: ItemStatus.NFTPending,
+            owner: user1.publicKey,
+            destinary: user2.publicKey,
+        } as NftSwapItem);
 
-    //     swapData.items.push({
-    //         isNft: true,
-    //         amount: new BN(1),
-    //         mint: user1MintToTransfer,
-    //         status: ItemStatus.NFTPending,
-    //         owner: user2.publicKey,
-    //         destinary: user3.publicKey,
-    //     } as NftSwapItem);
+        swapData.items.push({
+            isNft: true,
+            amount: new BN(1),
+            mint: user1MintToTransfer,
+            status: ItemStatus.NFTPending,
+            owner: user2.publicKey,
+            destinary: user3.publicKey,
+        } as NftSwapItem);
 
-    //     swapData.items.push({
-    //         isNft: true,
-    //         amount: new BN(1),
-    //         mint: user2MintToTransfer,
-    //         status: ItemStatus.NFTPending,
-    //         owner: user3.publicKey,
-    //         destinary: user1N.publicKey,
-    //     } as NftSwapItem);
+        swapData.items.push({
+            isNft: true,
+            amount: new BN(1),
+            mint: user2MintToTransfer,
+            status: ItemStatus.NFTPending,
+            owner: user3.publicKey,
+            destinary: user1N.publicKey,
+        } as NftSwapItem);
 
-    //     swapData.items.push({
-    //         isNft: true,
-    //         amount: new BN(1),
-    //         mint: user3MintToTransfer,
-    //         status: ItemStatus.NFTPending,
-    //         owner: user1N.publicKey,
-    //         destinary: user2N.publicKey,
-    //     } as NftSwapItem);
+        swapData.items.push({
+            isNft: true,
+            amount: new BN(1),
+            mint: user3MintToTransfer,
+            status: ItemStatus.NFTPending,
+            owner: user1N.publicKey,
+            destinary: user2N.publicKey,
+        } as NftSwapItem);
 
-    //     swapData.items.push({
-    //         isNft: true,
-    //         amount: new BN(1),
-    //         mint: user1NMintToTransfer,
-    //         status: ItemStatus.NFTPending,
-    //         owner: user2N.publicKey,
-    //         destinary: user3N.publicKey,
-    //     } as NftSwapItem);
+        swapData.items.push({
+            isNft: true,
+            amount: new BN(1),
+            mint: user1NMintToTransfer,
+            status: ItemStatus.NFTPending,
+            owner: user2N.publicKey,
+            destinary: user3N.publicKey,
+        } as NftSwapItem);
 
-    //     swapData.items.push({
-    //         isNft: true,
-    //         amount: new BN(1),
-    //         mint: user2NMintToTransfer,
-    //         status: ItemStatus.NFTPending,
-    //         owner: user3N.publicKey,
-    //         destinary: user1.publicKey,
-    //     } as NftSwapItem);
-    //     console.log(swapData.items);
-    // });
+        swapData.items.push({
+            isNft: true,
+            amount: new BN(1),
+            mint: user2NMintToTransfer,
+            status: ItemStatus.NFTPending,
+            owner: user3N.publicKey,
+            destinary: user1.publicKey,
+        } as NftSwapItem);
+        console.log(swapData.items);
+    });
 
-    // it("initialize", async () => {
-    //     // console.log(swapData.items.length);
+    it("initialize", async () => {
+        // console.log(swapData.items.length);
 
-    //     if (!pda) {
-    //         const allInitData = await NeoSwap.allInitialize({
-    //             provider: program.provider as anchor.AnchorProvider,
-    //             signer: signer.publicKey,
-    //             swapDataGiven: swapData,
-    //             CONST_PROGRAM,
-    //         });
-    //         swapData = allInitData.swapData;
-    //         pda = allInitData.pda;
-    //         const allInitSendAllArray = allInitData.allInitSendAllArray;
-    //         console.log("XXX-XXX pda", pda.toBase58());
+        if (!pda) {
+            const allInitData = await NeoSwap.allInitialize({
+                provider: program.provider as anchor.AnchorProvider,
+                signer: signer.publicKey,
+                swapDataGiven: swapData,
+                CONST_PROGRAM,
+            });
+            swapData = allInitData.swapData;
+            pda = allInitData.pda;
+            const allInitSendAllArray = allInitData.allInitSendAllArray;
+            console.log("XXX-XXX pda", pda.toBase58());
 
-    //         const recentBlockhash = (await program.provider.connection.getLatestBlockhash())
-    //             .blockhash;
+            const recentBlockhash = (await program.provider.connection.getLatestBlockhash())
+                .blockhash;
 
-    //         for await (const transactionDeposit of allInitSendAllArray) {
-    //             transactionDeposit.signers = [signer];
-    //             transactionDeposit.tx.feePayer = signer.publicKey;
-    //             transactionDeposit.tx.recentBlockhash = recentBlockhash;
-    //         }
+            for await (const transactionDeposit of allInitSendAllArray) {
+                transactionDeposit.signers = [signer];
+                transactionDeposit.tx.feePayer = signer.publicKey;
+                transactionDeposit.tx.recentBlockhash = recentBlockhash;
+            }
 
-    //         const txhashs = await program.provider.sendAll(allInitSendAllArray, {
-    //             skipPreflight: true,
-    //         });
+            const txhashs = await program.provider.sendAll(allInitSendAllArray, {
+                skipPreflight: true,
+            });
 
-    //         for await (const hash of txhashs) {
-    //             console.log(hash);
-    //             program.provider.connection.confirmTransaction(hash);
-    //         }
+            for await (const hash of txhashs) {
+                console.log(hash);
+                program.provider.connection.confirmTransaction(hash);
+            }
 
-    //         console.log("initialized");
-    //     } else {
-    //         console.log("initiaize skipped", pda.toBase58());
-    //     }
-    // });
+            console.log("initialized");
+        } else {
+            console.log("initiaize skipped", pda.toBase58());
+        }
+    });
     // it("deposit NFT", async () => {
     //     let transactionHashs: string[] = [];
 
@@ -363,34 +363,34 @@ describe("swapCoontractTest", () => {
     //     console.log("cancelAndCloseHash :", cancelAndCloseHash);
     // });
 
-    // it("finish cancel and close from signer", async () => {
-    //     const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
-    //         provider: program.provider as anchor.AnchorProvider,
-    //         signer: signer.publicKey,
-    //         swapDataAccount: pda,
-    //         CONST_PROGRAM,
-    //     });
+    it("finish cancel and close from signer", async () => {
+        const { allCancelSendAllArray } = await NeoSwap.cancelAndClose({
+            provider: program.provider as anchor.AnchorProvider,
+            signer: signer.publicKey,
+            swapDataAccount: pda,
+            CONST_PROGRAM,
+        });
 
-    //     const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
+        const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
 
-    //     allCancelSendAllArray.forEach((transactionDeposit) => {
-    //         transactionDeposit.signers = [signer];
-    //         transactionDeposit.tx.feePayer = signer.publicKey;
-    //         transactionDeposit.tx.recentBlockhash = recentBlockhash;
-    //     });
+        allCancelSendAllArray.forEach((transactionDeposit) => {
+            transactionDeposit.signers = [signer];
+            transactionDeposit.tx.feePayer = signer.publicKey;
+            transactionDeposit.tx.recentBlockhash = recentBlockhash;
+        });
 
-    //     const cancelAndCloseHash = await program.provider.sendAll(allCancelSendAllArray, {
-    //         skipPreflight: true,
-    //     });
+        const cancelAndCloseHash = await program.provider.sendAll(allCancelSendAllArray, {
+            skipPreflight: true,
+        });
 
-    //     for await (const hash of cancelAndCloseHash) {
-    // console.log(hash);
-    //         program.provider.connection.confirmTransaction(hash);
+        for await (const hash of cancelAndCloseHash) {
+    console.log(hash);
+            program.provider.connection.confirmTransaction(hash);
 
-    //     }
+        }
 
-    //     console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    // });
+        console.log("cancelAndCloseHash :", cancelAndCloseHash);
+    });
 
     //UTILS FOR INITIALIZING
     // it("Create keypair", async () => {
