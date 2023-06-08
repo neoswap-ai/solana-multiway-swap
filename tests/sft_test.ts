@@ -12,7 +12,14 @@ import neoSwapNpm, {
     TxWithSigner,
 } from "@biboux.neoswap/neo-swap-npm";
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
-import { Cluster, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
+import {
+    Cluster,
+    Keypair,
+    LAMPORTS_PER_SOL,
+    PublicKey,
+    SystemProgram,
+    Transaction,
+} from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
 // import {
@@ -105,6 +112,7 @@ describe("Failing SFT tests", () => {
         status: TradeStatus.Initializing,
         nbItems: 1,
         preSeed: "0020",
+        acceptedPayement: SystemProgram.programId,
     };
 
     it("Initializing Program", async () => {
@@ -304,10 +312,10 @@ describe("Failing SFT tests", () => {
     });
     it("deposit NFT from user that doesn't have", async () => {
         if (swapDataAccount) {
-            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey({
                 program,
-                swapDataAccount
-            );
+                swapDataAccount_publicKey: swapDataAccount,
+            });
 
             const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
                 swapData: swapDataRead,
@@ -341,10 +349,10 @@ describe("Failing SFT tests", () => {
     });
     it("deposit NFT to first swap", async () => {
         if (swapDataAccount) {
-            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey({
                 program,
-                swapDataAccount
-            );
+                swapDataAccount_publicKey: swapDataAccount,
+            });
             const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
                 swapData: swapDataRead,
             });
@@ -371,10 +379,10 @@ describe("Failing SFT tests", () => {
 
     it("Error deposit NFT to second swap", async () => {
         if (swapDataAccount2) {
-            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey({
                 program,
-                swapDataAccount2
-            );
+                swapDataAccount_publicKey: swapDataAccount2,
+            });
             const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
                 swapData: swapDataRead,
             });
@@ -457,10 +465,10 @@ describe("Failing SFT tests", () => {
 
     it("deposit NFT to second swap", async () => {
         if (swapDataAccount2) {
-            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey(
+            const swapDataRead = await neoSwapNpm.utils.getSwapDataAccountFromPublicKey({
                 program,
-                swapDataAccount2
-            );
+                swapDataAccount_publicKey: swapDataAccount2,
+            });
             const swapIdentity = neoSwapNpm.utils.getSwapIdentityFromData({
                 swapData: swapDataRead,
             });
@@ -473,15 +481,13 @@ describe("Failing SFT tests", () => {
             });
             // console.log("depositSwapData.mintAta", depositSwapData.mintAta);
             // try {
-                const { transactionHashes } = await neoSwapNpm.utils.sendBundledTransactions({
-                    cluster,
-                    signer: user1N,
-                    txsWithoutSigners: [
-                        { tx: new Transaction().add(...depositSwapData.instructions) },
-                    ],
-                    // skipPref
-                });
-                console.log("transactionhashes", transactionHashes);
+            const { transactionHashes } = await neoSwapNpm.utils.sendBundledTransactions({
+                cluster,
+                signer: user1N,
+                txsWithoutSigners: [{ tx: new Transaction().add(...depositSwapData.instructions) }],
+                // skipPref
+            });
+            console.log("transactionhashes", transactionHashes);
             // } catch (error) {
             //     // console.log(error, String(error).includes("6004"));
             //     assert(String(error).includes("6004"));

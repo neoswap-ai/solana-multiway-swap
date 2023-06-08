@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@biboux.neoswap/neo-swap-npm": "0.0.33",
+    "@biboux.neoswap/neo-swap-npm": "0.0.42",
     "@metaplex-foundation/js": "~0.19.4",
     "@metaplex-foundation/mpl-candy-machine": "^6.0.0-alpha.11",
     "@metaplex-foundation/mpl-token-auth-rules": "^1.2.0",

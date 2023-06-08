@@ -34,6 +34,8 @@ import user3Sk from "../deleteme/user3";
 import user1NSk from "../deleteme/user1Normal";
 import user2NSk from "../deleteme/user2Normal";
 import user3NSk from "../deleteme/user3Normal";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { SOLANA_SPL_ATA_PROGRAM_ID } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/const.neoSwap";
 // import { getProgram } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/getProgram.neoswap";
 // import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
 // import { ErrorFeedback } from "@biboux.neoswap/neo-swap-npm/lib/es5/utils/types";
@@ -45,7 +47,7 @@ describe("FongibleTokens Test Unit", () => {
     let cluster = "devnet" as Cluster;
     // let cluster = "devnet";
     let swapDataAccount: PublicKey | undefined = new PublicKey(
-        "3pbjcFbajEWewAefMkmu7iNk3pxnM37CifdT2ES6BunS"
+        "Copu8tB9fZwBMwr9K7hkWvDaxM5C2MekHSozCaVw6jyz"
     ); //new PublicKey("DjzPCDEVwwqgAo7SfdE1paugvSreQMsVv57co8WdHJgM"); //new PublicKey("GNg66w1XyQG3jMT1rMxrApU4ggJR3LokJLfqmVGg8myt"); // new PublicKey("8khwnKwc97MiSPPCtz42Q3NAwfyHa2WYnjYt4Dg3sphs"); //new PublicKey("A87ZnUTVPKVT9o9pANf9WLSkXkhQsM3qc3EL9RobYP8m"); //
     // let swapDataAccount2: PublicKey | undefined = new PublicKey(
     //     "E6hBkNhJNGtwBvYtadCp4UAqmjanmMVsDqG3R1sPNFzY"
@@ -86,7 +88,7 @@ describe("FongibleTokens Test Unit", () => {
         items: [],
         status: TradeStatus.Initializing,
         nbItems: 1,
-        preSeed: "0022",
+        preSeed: "0024",
         acceptedPayement: currency,
     };
 
@@ -243,6 +245,15 @@ describe("FongibleTokens Test Unit", () => {
 
     it("initialize swapDataAccount", async () => {
         // console.log(swapData.items.length);
+        // const [mintAta, mintAta_bump] = PublicKey.findProgramAddressSync(
+        //     [
+        //         new PublicKey("4F6C9njC53qVJGEh9UpMTi2dBrNvmcAUTKecvvHjSkXa").toBuffer(),
+        //         TOKEN_PROGRAM_ID.toBuffer(),
+        //         new PublicKey("9RruPYjoWoWcYQsoy981qMFdnervBpsbPohUP3NrPidn").toBuffer(),
+        //     ],
+        //     SOLANA_SPL_ATA_PROGRAM_ID
+        // );
+        // console.log(mintAta);
         try {
             if (!swapDataAccount) {
                 const allInitData = await neoSwapNpm.initializeSwap({
@@ -344,13 +355,17 @@ describe("FongibleTokens Test Unit", () => {
     // });
     it("deposit NFT to first swap", async () => {
         if (swapDataAccount) {
-            const depositSwapDatauser = await neoSwapNpm.depositSwap({
-                cluster,
-                signer: user1,
-                swapDataAccount,
-            });
-
-            console.log("transactionhashes", depositSwapDatauser);
+            let data: { user: PublicKey; hashs: string[] | ErrorFeedback }[] = [];
+            for await (const user of [user1, user2]) {
+                const depositSwapDatauser = await neoSwapNpm.depositSwap({
+                    cluster,
+                    signer: user,
+                    swapDataAccount,
+                });
+                // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
+                data.push({ user: user.publicKey, hashs: depositSwapDatauser });
+                console.log("transactionhashes", depositSwapDatauser);
+            }
         } else {
             console.log("swap not given");
         }
@@ -393,19 +408,23 @@ describe("FongibleTokens Test Unit", () => {
     //     }
     // });
 
-    // // it("claim and close", async () => {
-    // //     try {
-    // //         const claimAndCloseData = await neoSwapNpm.claimAndCloseSwap({
-    // //             cluster,
-    // //             signer,
-    // //             swapDataAccount,
-    // //         });
+    // it("claim and close", async () => {
+    //     if (swapDataAccount) {
+    //         try {
+    //             const claimAndCloseData = await neoSwapNpm.claimAndCloseSwap({
+    //                 cluster,
+    //                 signer,
+    //                 swapDataAccount,
+    //             });
 
-    // //         console.log("claimAndCloseHash :", claimAndCloseData);
-    // //     } catch (error) {
-    // //         console.log("claimAndCloseHash :", error);
-    // //     }
-    // // });
+    //             console.log("claimAndCloseHash :", claimAndCloseData);
+    //         } catch (error) {
+    //             console.log("claimAndCloseHash :", error);
+    //         }
+    //     } else {
+    //         console.log("swap not given");
+    //     }
+    // });
 
     // // it("partial cancel and close from in trade user", async () => {
     // //     let transactionHashs: {
@@ -429,18 +448,18 @@ describe("FongibleTokens Test Unit", () => {
     // //     }
     // //     transactionHashs.forEach((v) => console.log("res", v));
     // // });
-    // it("partial cancel from user", async () => {
-    //     if (swapDataAccount) {
-    //         const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-    //             cluster,
-    //             signer: user1N,
-    //             swapDataAccount: swapDataAccount,
-    //         });
-    //         console.log("transactionHashes", cancelAndCloseHash);
-    //     } else {
-    //         console.log("swap not given");
-    //     }
-    // });
+    it("partial cancel from user", async () => {
+        if (swapDataAccount) {
+            const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
+                cluster,
+                signer: user1,
+                swapDataAccount: swapDataAccount,
+            });
+            console.log("transactionHashes", cancelAndCloseHash);
+        } else {
+            console.log("swap not given");
+        }
+    });
 
     // it("deposit NFT to second swap", async () => {
     //     if (swapDataAccount2) {
@@ -479,19 +498,19 @@ describe("FongibleTokens Test Unit", () => {
     //     }
     // });
 
-    // it("finish cancel and close from signer", async () => {
-    //     if (swapDataAccount) {
-    //         const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-    //             signer,
-    //             cluster,
-    //             swapDataAccount: swapDataAccount,
-    //         });
+    it("finish cancel and close from signer", async () => {
+        if (swapDataAccount) {
+            const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
+                signer,
+                cluster,
+                swapDataAccount: swapDataAccount,
+            });
 
-    //         console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    //     } else {
-    //         console.log("swap not given");
-    //     }
-    // });
+            console.log("cancelAndCloseHash :", cancelAndCloseHash);
+        } else {
+            console.log("swap not given");
+        }
+    });
 
     // it("finish cancel2 and close from signer", async () => {
     //     if (swapDataAccount2) {

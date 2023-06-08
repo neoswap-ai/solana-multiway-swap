@@ -9,7 +9,14 @@ import neoSwapNpm, {
     TradeStatus,
 } from "@biboux.neoswap/neo-swap-npm";
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
-import { Cluster, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import {
+    Cluster,
+    Connection,
+    Keypair,
+    LAMPORTS_PER_SOL,
+    PublicKey,
+    SystemProgram,
+} from "@solana/web3.js";
 import { TokenStandard, Uses } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
 // import {
@@ -98,6 +105,7 @@ describe("swapCoontractTest", () => {
         status: TradeStatus.Initializing,
         nbItems: 1,
         preSeed: "0009",
+        acceptedPayement: SystemProgram.programId,
     };
 
     it("Initializing Program", async () => {
