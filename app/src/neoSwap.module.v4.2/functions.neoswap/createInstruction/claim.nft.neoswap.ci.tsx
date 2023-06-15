@@ -109,10 +109,10 @@ export async function claimNft(Data: {
                 .claimNft(
                     Data.swapDataAccount_seed,
                     Data.swapDataAccount_bump,
-                    nftMetadata_bump,
-                    nftMasterEdition_bump,
-                    ownerTokenRecord_bump,
-                    destinationTokenRecord_bump
+                    // nftMetadata_bump,
+                    // nftMasterEdition_bump,
+                    // ownerTokenRecord_bump,
+                    // destinationTokenRecord_bump
                 )
                 .accounts({
                     systemProgram: SystemProgram.programId,
@@ -123,8 +123,8 @@ export async function claimNft(Data: {
                     swapDataAccount: Data.swapDataAccount,
                     user: Data.user,
                     signer: Data.signer,
-                    itemFromDeposit: pdaMintAta,
-                    itemToDeposit: userMintAta,
+                    swapDataAccountAta: pdaMintAta,
+                    userAta: userMintAta,
                     mint: Data.mint,
                     nftMetadata,
                     nftMasterEdition,

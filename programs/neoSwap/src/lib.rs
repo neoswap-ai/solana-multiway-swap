@@ -145,10 +145,7 @@ pub mod neo_swap {
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => initializer
     /// @return Void
-    pub fn validate_initialize(
-        ctx: Context<Validate>,
-        _seed: Vec<u8>,
-    ) -> Result<()> {
+    pub fn validate_initialize(ctx: Context<Validate>, _seed: Vec<u8>) -> Result<()> {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
         require!(
@@ -219,7 +216,7 @@ pub mod neo_swap {
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             msg!("2");
             // msg!("{}",ctx.accounts.item_from_deposit.owner);
-            
+
             if ctx.accounts.swap_data_account.items[item_id].is_nft
                 && ctx.accounts.swap_data_account.items[item_id]
                     .mint
@@ -827,10 +824,7 @@ pub mod neo_swap {
     /// @accounts system_program: Pubkey = system_program_id
     /// @accounts associated_token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
-    pub fn validate_claimed(
-        ctx: Context<ValidateAndClose>,
-        _seed: Vec<u8>,
-    ) -> Result<()> {
+    pub fn validate_claimed(ctx: Context<ValidateAndClose>, _seed: Vec<u8>) -> Result<()> {
         require_eq!(
             ctx.accounts.swap_data_account.status,
             TradeStatus::WaitingToClaim.to_u8(),
@@ -1226,10 +1220,7 @@ pub mod neo_swap {
     /// @accounts system_program: Pubkey = system_program_id
     /// @accounts associated_token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
-    pub fn validate_cancel(
-        ctx: Context<ValidateAndClose>,
-        _seed: Vec<u8>,
-    ) -> Result<()> {
+    pub fn validate_cancel(ctx: Context<ValidateAndClose>, _seed: Vec<u8>) -> Result<()> {
         if !(ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8()
             || ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8())
         {
@@ -1682,7 +1673,7 @@ pub enum MYERROR {
     AmountIncorrect,
     #[msg("User shouldn't be sending funds")]
     ShouldntSend,
-    #[msg("Nothing was found in the program to be sent to you")]
+    #[msg("Nothing was found in the program to be sent to the swap or you")]
     NoSend,
     #[msg("Sum of trade isn't null")]
     SumNotNull,

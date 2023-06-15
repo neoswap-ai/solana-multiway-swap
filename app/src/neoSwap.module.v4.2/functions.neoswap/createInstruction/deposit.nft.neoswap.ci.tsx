@@ -42,6 +42,7 @@ export async function depositNft(Data: {
 }): Promise<{ instructions: TransactionInstruction[]; mintAta: PublicKey[] }> {
     let instructions = [];
     let mintAta = [];
+    console.log('swapId Pk', Data.swapIdentity);
 
     const { mintAta: userAta, instruction: userAtaIx } = await findOrCreateAta({
         connection: Data.program.provider.connection,
@@ -109,9 +110,9 @@ export async function depositNft(Data: {
         instructions.push(
             await Data.program.methods
                 .depositNft(
-                    Data.swapIdentity.swapDataAccount_seed,
-                    Data.swapIdentity.swapDataAccount_bump,
-                    nftMetadata_bump
+                    Data.swapIdentity.swapDataAccount_seed
+                    // Data.swapIdentity.swapDataAccount_bump,
+                    // nftMetadata_bump
                 )
                 .accounts({
                     systemProgram: SystemProgram.programId.toBase58(),
@@ -139,8 +140,8 @@ export async function depositNft(Data: {
             await Data.program.methods
                 .depositNft(
                     Data.swapIdentity.swapDataAccount_seed,
-                    Data.swapIdentity.swapDataAccount_bump,
-                    nftMetadata_bump
+                    // Data.swapIdentity.swapDataAccount_bump,
+                    // nftMetadata_bump
                 )
                 .accounts({
                     systemProgram: SystemProgram.programId.toBase58(),
