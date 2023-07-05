@@ -13,7 +13,7 @@ import {
 } from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
-import { neoSwapNpm, neoTypes } from "@biboux.neoswap/neo-swap-npm";
+import { neoSwapNpm, neoTypes } from "@neoswap/solana";
 import { ErrorFeedback, NftSwapItem, SwapData, TradeStatus } from "../deleteme/types";
 
 import signerSK from "../deleteme/signer";

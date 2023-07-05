@@ -10,7 +10,7 @@ import neoSwapNpm, {
     SwapData,
     TradeStatus,
     TxWithSigner,
-} from "@biboux.neoswap/neo-swap-npm";
+} from "@neoswap/solana";
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
 import {
     Cluster,
@@ -36,7 +36,7 @@ import user2NSk from "../deleteme/user2Normal";
 import user3NSk from "../deleteme/user3Normal";
 // import { getProgram } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/getProgram.neoswap";
 // import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
-// import { ErrorFeedback } from "@biboux.neoswap/neo-swap-npm/lib/es5/utils/types";
+// import { ErrorFeedback } from "@neoswap/solana/lib/es5/utils/types";
 
 describe("Failing SFT tests", () => {
     anchor.setProvider(anchor.AnchorProvider.env());

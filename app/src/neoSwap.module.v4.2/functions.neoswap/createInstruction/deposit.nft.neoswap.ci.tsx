@@ -17,7 +17,7 @@ import { findNftMetadataAccount } from '../../utils.neoSwap/findNftMetadataAccou
 import { findNftMasterEdition } from '../../utils.neoSwap/findNftMasterEdition';
 import { Metadata } from '@metaplex-foundation/js';
 import { findNftData } from '../../utils.neoSwap/findNftData';
-import { SwapIdentity } from '@biboux.neoswap/neo-swap-npm';
+import { SwapIdentity } from '@neoswap/solana';
 import { findNftDataAndMetadataAccount, findRuleSet } from '../../utils.neoSwap/getNftData';
 // import from '@metaplex-foundation/js';
 

@@ -13,7 +13,7 @@ import {
 } from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
-import { neoTypes, neoSwapNpm } from "@biboux.neoswap/neo-swap-npm";
+import { neoTypes, neoSwapNpm } from "@neoswap/solana";
 
 import signerSK from "../deleteme/signer";
 const signer = Keypair.fromSecretKey(signerSK);

@@ -48,13 +48,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@biboux.neoswap/neo-swap-npm@npm:0.0.104":
-  version: 0.0.104
-  resolution: "@biboux.neoswap/neo-swap-npm@npm:0.0.104"
-  checksum: c2441e93cc0d14577bb8e7768d3574949aba26b572f21304301d7528d6d8888c027cb30729c9d7bda630d601cdea441624ea4d6ffbb0db12ab3c7e789592d7fa
-  languageName: node
-  linkType: hard
-
 "@blocto/sdk@npm:^0.2.22":
   version: 0.2.22
   resolution: "@blocto/sdk@npm:0.2.22"
@@ -1258,6 +1251,13 @@ __metadata:
     "@metaplex-foundation/umi-public-keys": ^0.8.2
     "@metaplex-foundation/umi-serializers": ^0.8.2
   checksum: faeb6ce775a66aa34bcf532977b0f963c3577baca5d86faf42506bf4e758fa6bad19bcebabe46d7856b980b53bf8b769a0f54c53dca53bc3c9daea59123b12ea
+  languageName: node
+  linkType: hard
+
+"@neoswap/solana@npm:^0.0.3":
+  version: 0.0.3
+  resolution: "@neoswap/solana@npm:0.0.3"
+  checksum: 0fbb305656ce8d4752ce54534473a9b839eaae05db46e1724075379432e7cda9094b8e0e40e080851d4d351648af7e06a533778f1d3b19a20a3bdfc84a5fac29
   languageName: node
   linkType: hard
 
@@ -7365,12 +7365,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@biboux.neoswap/neo-swap-npm": 0.0.104
     "@metaplex-foundation/js": ~0.19.4
     "@metaplex-foundation/mpl-candy-machine": ^6.0.0-alpha.11
     "@metaplex-foundation/mpl-token-auth-rules": ^1.2.0
     "@metaplex-foundation/umi": ^0.8.2
     "@metaplex-foundation/umi-bundle-defaults": ^0.8.2
+    "@neoswap/solana": ^0.0.3
     "@project-serum/anchor": ^0.25.0
     "@solana/spl-token": ^0.3.5
     "@solana/wallet-adapter-base": ^0.9.17

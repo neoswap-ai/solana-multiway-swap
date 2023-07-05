@@ -13,7 +13,7 @@ import {
 } from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
-import { neoTypes, neoSwapNpm } from "@biboux.neoswap/neo-swap-npm";
+import { neoTypes, neoSwapNpm } from "@neoswap/solana";
 import { ErrorFeedback, NftSwapItem, SwapData, TradeStatus } from "../deleteme/types";
 
 import signerSK from "../deleteme/signer";
@@ -318,7 +318,7 @@ describe("FongibleTokens Test Unit", () => {
                     clusterOrUrl,
                     signer: signer,
                     swapData,
-                    skipSimulation: true,
+                    // simulation: true,
                 });
 
                 // if (neoSwapNpm.utils.isErrorInitializeSwap(allInitData)) throw allInitData.error;
@@ -338,7 +338,7 @@ describe("FongibleTokens Test Unit", () => {
                 clusterOrUrl,
                 signer: user1,
                 swapDataAccount,
-                skipSimulation: true,
+                // simulation: true,
             });
             // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
             // data.push({ user: user.publicKey, hashs: depositSwapDatauser });
@@ -357,7 +357,7 @@ describe("FongibleTokens Test Unit", () => {
                         clusterOrUrl,
                         signer: user,
                         swapDataAccount,
-                        skipSimulation: true,
+                        // skipSimulation: true,
                     });
                     // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
                     data.push({ user: user.publicKey, hashs: depositSwapDatauser });
@@ -393,7 +393,7 @@ describe("FongibleTokens Test Unit", () => {
                 signer,
                 clusterOrUrl,
                 swapDataAccount,
-                skipSimulation: true,
+                // skipSimulation: true,
             });
 
             console.log("claimAndCloseHash :", claimAndCloseHash);

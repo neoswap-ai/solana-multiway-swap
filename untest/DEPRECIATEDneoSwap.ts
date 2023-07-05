@@ -2,7 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { BN, Program } from "@project-serum/anchor";
 const { assert } = require("chai");
 // import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
-// import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
+// import neoTypes.NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/neoTypes.nftSwapItem.types.neoswap";
 import {
     createAssociatedTokenAccount,
     getAssociatedTokenAddress,
@@ -29,17 +29,11 @@ import {
 } from "@solana/web3.js";
 // import NeoSwap from "../app/src/neoSwap.module.v4.2";
 // import {
-//     ItemStatus,
-//     TradeStatus,
+//     neoTypes.ItemStatus,
+//     neoTypes.TradeStatus,
 // } from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/status.type.neoswap";
 import { swapDataAccountGiven } from "../app/src/solana.test";
-import neoSwapNpm, {
-    ErrorFeedback,
-    ItemStatus,
-    NftSwapItem,
-    SwapData,
-    TradeStatus,
-} from "@biboux.neoswap/neo-swap-npm";
+import {neoSwapNpm,neoConst,neoTypes} from "@neoswap/solana";
 
 describe("swapCoontractTest", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
@@ -54,7 +48,7 @@ describe("swapCoontractTest", () => {
     let signer = Keypair.generate();
     let unauthorizedKeypair: Keypair;
     let pda: PublicKey;
-    let swapData: SwapData = {
+    let swapData: neoTypes.SwapData = {
         initializer: signer.publicKey,
         items: [
             {
@@ -63,10 +57,10 @@ describe("swapCoontractTest", () => {
                 destinary: new PublicKey("11111111111111111111111111111111"),
                 mint: new PublicKey("11111111111111111111111111111111"),
                 owner: signer.publicKey,
-                status: ItemStatus.SolToClaim,
+                status: neoTypes.ItemStatus.SolToClaim,
             },
         ],
-        status: TradeStatus.Initializing,
+        status: neoTypes.TradeStatus.Initializing,
         nbItems: 1,
         preSeed: CONST_PROGRAM,
         acceptedPayement: SystemProgram.programId,
@@ -111,10 +105,10 @@ describe("swapCoontractTest", () => {
                 isNft: false,
                 amount: new BN(0.25 * 10 ** 9),
                 mint: new PublicKey("11111111111111111111111111111111"),
-                status: ItemStatus.SolPending,
+                status: neoTypes.ItemStatus.SolPending,
                 owner: userKeypair.publicKey,
                 destinary: new PublicKey("11111111111111111111111111111111"),
-            } as NftSwapItem);
+            } as neoTypes.NftSwapItem);
 
             for await (let mintNb of nftNb) {
                 let mintPubkey = await createMint(
@@ -148,10 +142,10 @@ describe("swapCoontractTest", () => {
                             isNft: true,
                             amount: new BN(1),
                             mint: mintPubkey,
-                            status: ItemStatus.NFTPending,
+                            status: neoTypes.ItemStatus.NFTPending,
                             owner: userKeypair.publicKey,
                             destinary: userKeypairs[index].publicKey,
-                        } as NftSwapItem);
+                        } as neoTypes.NftSwapItem);
                     }
                 }
                 const ataBalance = await program.provider.connection.getTokenAccountBalance(ata);
