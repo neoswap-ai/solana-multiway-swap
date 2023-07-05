@@ -13,7 +13,7 @@ import {
 } from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
-import { NeoTypes, neoSwapNpm } from "@biboux.neoswap/neo-swap-npm";
+import { neoTypes, neoSwapNpm } from "@biboux.neoswap/neo-swap-npm";
 
 import signerSK from "../deleteme/signer";
 const signer = Keypair.fromSecretKey(signerSK);
@@ -35,7 +35,7 @@ describe("FongibleTokens Test Unit", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     let program = anchor.workspace.NeoSwap as Program;
-    let cluster = "devnet" as Cluster;
+    let clusterOrUrl = "devnet" as Cluster;
     // let cluster = "devnet";
 
     //normal
@@ -72,14 +72,14 @@ describe("FongibleTokens Test Unit", () => {
     let swapData: SwapData = {
         initializer: signer.publicKey,
         items: [],
-        status: NeoTypes.TradeStatus.Initializing,
+        status: neoTypes.TradeStatus.Initializing,
         nbItems: 1,
         preSeed: "0032",
         acceptedPayement: currency,
     };
 
     it("Initializing Program", async () => {
-        program = neoSwapNpm.utils.getProgram("devnet", signer); //as unknown as Program;
+        program = neoSwapNpm.utils.getProgram({ clusterOrUrl: "devnet", signer }); //as unknown as Program;
         console.log("programId", program.programId.toBase58());
         console.log("signer", signer.publicKey.toBase58());
     });
@@ -169,7 +169,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: false,
             amount: new BN(200),
             mint: currency,
-            status: NeoTypes.ItemStatus.SolPending,
+            status: neoTypes.ItemStatus.SolPending,
             owner: user1.publicKey,
             destinary: SystemProgram.programId,
         } as NftSwapItem);
@@ -177,7 +177,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: false,
             amount: new BN(-200),
             mint: currency,
-            status: NeoTypes.ItemStatus.SolToClaim,
+            status: neoTypes.ItemStatus.SolToClaim,
             owner: user2.publicKey,
             destinary: SystemProgram.programId,
         } as NftSwapItem);
@@ -186,7 +186,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: true,
             amount: new BN(1),
             mint: user1MintToTransfer,
-            status: NeoTypes.ItemStatus.NFTPending,
+            status: neoTypes.ItemStatus.NFTPending,
             owner: user1.publicKey,
             destinary: user2.publicKey,
         } as NftSwapItem);
@@ -195,7 +195,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: true,
             amount: new BN(1),
             mint: user2MintToTransfer,
-            status: NeoTypes.ItemStatus.NFTPending,
+            status: neoTypes.ItemStatus.NFTPending,
             owner: user2.publicKey,
             destinary: user3.publicKey,
         } as NftSwapItem);
@@ -204,7 +204,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: true,
             amount: new BN(1),
             mint: user3MintToTransfer,
-            status: NeoTypes.ItemStatus.NFTPending,
+            status: neoTypes.ItemStatus.NFTPending,
             owner: user3.publicKey,
             destinary: user4.publicKey,
         } as NftSwapItem);
@@ -213,7 +213,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: true,
             amount: new BN(6),
             mint: user4MintToTransfer,
-            status: NeoTypes.ItemStatus.NFTPending,
+            status: neoTypes.ItemStatus.NFTPending,
             owner: user4.publicKey,
             destinary: user5.publicKey,
         } as NftSwapItem);
@@ -222,7 +222,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: true,
             amount: new BN(6),
             mint: user5MintToTransfer,
-            status: NeoTypes.ItemStatus.NFTPending,
+            status: neoTypes.ItemStatus.NFTPending,
             owner: user5.publicKey,
             destinary: user6.publicKey,
         } as NftSwapItem);
@@ -231,7 +231,7 @@ describe("FongibleTokens Test Unit", () => {
             isNft: true,
             amount: new BN(1),
             mint: user6MintToTransfer,
-            status: NeoTypes.ItemStatus.NFTPending,
+            status: neoTypes.ItemStatus.NFTPending,
             owner: user6.publicKey,
             destinary: user1.publicKey,
         } as NftSwapItem);
@@ -245,7 +245,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: false,
     //         amount: new BN(-200),
     //         mint: currency,
-    //         status: NeoTypes.ItemStatus.SolPending,
+    //         status: neoTypes.ItemStatus.SolPending,
     //         owner: user1.publicKey,
     //         destinary: SystemProgram.programId,
     //     } as NftSwapItem);
@@ -253,7 +253,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: false,
     //         amount: new BN(200),
     //         mint: currency,
-    //         status: NeoTypes.ItemStatus.SolToClaim,
+    //         status: neoTypes.ItemStatus.SolToClaim,
     //         owner: user2.publicKey,
     //         destinary: SystemProgram.programId,
     //     } as NftSwapItem);
@@ -262,7 +262,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: true,
     //         amount: new BN(1),
     //         mint: user1MintToTransfer,
-    //         status: NeoTypes.ItemStatus.NFTPending,
+    //         status: neoTypes.ItemStatus.NFTPending,
     //         destinary: user1.publicKey,
     //         owner: user2.publicKey,
     //     } as NftSwapItem);
@@ -271,7 +271,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: true,
     //         amount: new BN(1),
     //         mint: user2MintToTransfer,
-    //         status: NeoTypes.ItemStatus.NFTPending,
+    //         status: neoTypes.ItemStatus.NFTPending,
     //         destinary: user2.publicKey,
     //         owner: user3.publicKey,
     //     } as NftSwapItem);
@@ -280,7 +280,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: true,
     //         amount: new BN(1),
     //         mint: user3MintToTransfer,
-    //         status: NeoTypes.ItemStatus.NFTPending,
+    //         status: neoTypes.ItemStatus.NFTPending,
     //         destinary: user3.publicKey,
     //         owner: user4.publicKey,
     //     } as NftSwapItem);
@@ -289,7 +289,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: true,
     //         amount: new BN(6),
     //         mint: user4MintToTransfer,
-    //         status: NeoTypes.ItemStatus.NFTPending,
+    //         status: neoTypes.ItemStatus.NFTPending,
     //         destinary: user4.publicKey,
     //         owner: user5.publicKey,
     //     } as NftSwapItem);
@@ -298,7 +298,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: true,
     //         amount: new BN(6),
     //         mint: user5MintToTransfer,
-    //         status: NeoTypes.ItemStatus.NFTPending,
+    //         status: neoTypes.ItemStatus.NFTPending,
     //         destinary: user5.publicKey,
     //         owner: user6.publicKey,
     //     } as NftSwapItem);
@@ -307,7 +307,7 @@ describe("FongibleTokens Test Unit", () => {
     //         isNft: true,
     //         amount: new BN(1),
     //         mint: user6MintToTransfer,
-    //         status: NeoTypes.ItemStatus.NFTPending,
+    //         status: neoTypes.ItemStatus.NFTPending,
     //         destinary: user6.publicKey,
     //         owner: user1.publicKey,
     //     } as NftSwapItem);
@@ -320,7 +320,7 @@ describe("FongibleTokens Test Unit", () => {
         try {
             if (!swapDataAccount) {
                 const allInitData = await neoSwapNpm.initializeSwap({
-                    cluster,
+                    clusterOrUrl,
                     signer: signer,
                     swapData,
                 });
@@ -342,7 +342,7 @@ describe("FongibleTokens Test Unit", () => {
         if (!swapDataAccount2) {
             swapData.preSeed = swapData.preSeed + "0";
             const allInitData = await neoSwapNpm.initializeSwap({
-                cluster,
+                clusterOrUrl,
                 signer: signer,
                 swapData,
             });
@@ -358,7 +358,7 @@ describe("FongibleTokens Test Unit", () => {
         // wrongSwapData.items[0].amount = new BN(7);
         try {
             const allInitData = await neoSwapNpm.initializeSwap({
-                cluster,
+                clusterOrUrl,
                 signer: signer,
                 swapData,
             });
@@ -384,7 +384,7 @@ describe("FongibleTokens Test Unit", () => {
         wrongSwapData.preSeed += "0";
         try {
             const allInitData = await neoSwapNpm.initializeSwap({
-                cluster,
+                clusterOrUrl,
                 signer: signer,
                 swapData,
             });
@@ -430,8 +430,8 @@ describe("FongibleTokens Test Unit", () => {
             });
             console.log("depositSwapData.mintAta", depositSwapData.mintAta);
             try {
-                const { transactionHashs } = await neoSwapNpm.utils.sendBundledTransactions({
-                    cluster,
+                const transactionHashs = await neoSwapNpm.utils.sendBundledTransactions({
+                    clusterOrUrl,
                     signer: user6,
                     txsWithoutSigners: [
                         { tx: new Transaction().add(...depositSwapData.instructions) },
@@ -455,7 +455,7 @@ describe("FongibleTokens Test Unit", () => {
             for await (const user of [user1, user2, user3, user4, user5, user6]) {
                 try {
                     const depositSwapDatauser = await neoSwapNpm.depositSwap({
-                        cluster,
+                        clusterOrUrl,
                         signer: user,
                         swapDataAccount,
                     });
@@ -496,7 +496,7 @@ describe("FongibleTokens Test Unit", () => {
     //         console.log("depositSwapData.mintAta", depositSwapData.mintAta);
     //         try {
     //             const { transactionHashes } = await neoSwapNpm.utils.sendBundledTransactions({
-    //                 cluster,
+    //                 clusterOrUrl,
     //                 signer: user1,
     //                 txsWithoutSigners: [
     //                     { tx: new Transaction().add(...depositSwapData.instructions) },
@@ -537,8 +537,8 @@ describe("FongibleTokens Test Unit", () => {
             });
             console.log("depositSwapData.mintAta", depositSwapData.mintAta);
             try {
-                const { transactionHashs } = await neoSwapNpm.utils.sendBundledTransactions({
-                    cluster,
+                const transactionHashs = await neoSwapNpm.utils.sendBundledTransactions({
+                    clusterOrUrl,
                     signer: user1,
                     txsWithoutSigners: [
                         { tx: new Transaction().add(...depositSwapData.instructions) },
@@ -559,7 +559,7 @@ describe("FongibleTokens Test Unit", () => {
     //     if (swapDataAccount) {
     //         try {
     //             const claimAndCloseData = await neoSwapNpm.claimAndCloseSwap({
-    //                 cluster,
+    //                 clusterOrUrl,
     //                 signer,
     //                 swapDataAccount,
     //             });
@@ -583,7 +583,7 @@ describe("FongibleTokens Test Unit", () => {
     //     for await (const user of [user4, user5, user6, user1, user2, user3]) {
     //         try {
     //             const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-    //                 cluster,
+    //                 clusterOrUrl,
     //                 signer: user,
     //                 swapDataAccount: swapDataAccount,
     //             });
@@ -599,7 +599,7 @@ describe("FongibleTokens Test Unit", () => {
     it("partial cancel from user", async () => {
         if (swapDataAccount) {
             const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-                cluster,
+                clusterOrUrl,
                 signer: user1,
                 swapDataAccount: swapDataAccount,
             });
@@ -612,7 +612,7 @@ describe("FongibleTokens Test Unit", () => {
     it("cancel from signer", async () => {
         if (swapDataAccount) {
             const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
-                cluster,
+                clusterOrUrl,
                 signer: signer,
                 swapDataAccount: swapDataAccount,
             });
@@ -628,7 +628,7 @@ describe("FongibleTokens Test Unit", () => {
             for await (const user of [user1, user2, user3, user4, user5, user6]) {
                 try {
                     const depositSwapDatauser = await neoSwapNpm.depositSwap({
-                        cluster,
+                        clusterOrUrl,
                         signer: user,
                         swapDataAccount: swapDataAccount2,
                     });
@@ -649,7 +649,7 @@ describe("FongibleTokens Test Unit", () => {
     //     if (swapDataAccount) {
     //         const cancelAndCloseHash = await neoSwapNpm.cancelAndCloseSwap({
     //             signer,
-    //             cluster,
+    //             clusterOrUrl,
     //             swapDataAccount: swapDataAccount,
     //         });
 
@@ -663,7 +663,7 @@ describe("FongibleTokens Test Unit", () => {
         if (swapDataAccount2) {
             const cancelAndCloseHash = await neoSwapNpm.claimAndCloseSwap({
                 signer,
-                cluster,
+                clusterOrUrl,
                 swapDataAccount: swapDataAccount2,
             });
 

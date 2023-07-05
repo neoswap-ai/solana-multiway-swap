@@ -30,11 +30,11 @@ describe("FongibleTokens Test Unit", () => {
     // let signer = Keypair.fromSecretKey(signerSk);
 
     // // UTILS FOR INITIALIZING
-    it("Create keypair", async () => {
-        console.log(Keypair.generate().secretKey);
-        //     // console.log(Keypair.generate().secretKey.toString());
-        //     // console.log(Keypair.generate().secretKey.toString());
-    });
+    // it("Create keypair", async () => {
+    //     console.log(Keypair.generate().secretKey);
+    //     //     // console.log(Keypair.generate().secretKey.toString());
+    //     //     // console.log(Keypair.generate().secretKey.toString());
+    // });
     it("show PK", async () => {
         console.log("signer", signer.publicKey.toBase58());
         console.log("user1", user1.publicKey.toBase58());

@@ -107,11 +107,11 @@ pub mod neo_swap {
                 }
             }
             // Check the Payment asked for this item is compliant to the swap Data
-            msg!(
-                "mint of item_to_add: ${}, accepted payment : ${}",
-                item_to_add.mint,
-                swap_data_account.accepted_payement
-            );
+            // msg!(
+            //     "mint of item_to_add: ${}, accepted payment : ${}",
+            //     item_to_add.mint,
+            //     swap_data_account.accepted_payement
+            // );
             require!(
                 item_to_add.mint.eq(&swap_data_account.accepted_payement),
                 MYERROR::MintIncorrect
@@ -127,7 +127,7 @@ pub mod neo_swap {
                 msg!("SOL item added with status SolPending");
             } else if item_to_add.amount == 0 {
                 return Err(error!(MYERROR::UnexpectedData));
-            } else {
+            } else {    
                 item_to_add.status = ItemStatus::SolToClaim.to_u8();
                 msg!("SOL item added with status SolToClaim");
             }

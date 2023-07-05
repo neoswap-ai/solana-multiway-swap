@@ -48,10 +48,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@biboux.neoswap/neo-swap-npm@npm:0.0.83":
-  version: 0.0.83
-  resolution: "@biboux.neoswap/neo-swap-npm@npm:0.0.83"
-  checksum: 5354bfd591242e0d0f7d92b2ea7e5c1e528b17082896c2710b1ee337f17530702c39d1046bd04f96fae8ddff91ad4dff15aa8a71e11970ddf1fe6e7f450b97a5
+"@biboux.neoswap/neo-swap-npm@npm:0.0.104":
+  version: 0.0.104
+  resolution: "@biboux.neoswap/neo-swap-npm@npm:0.0.104"
+  checksum: c2441e93cc0d14577bb8e7768d3574949aba26b572f21304301d7528d6d8888c027cb30729c9d7bda630d601cdea441624ea4d6ffbb0db12ab3c7e789592d7fa
   languageName: node
   linkType: hard
 
@@ -7365,7 +7365,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@biboux.neoswap/neo-swap-npm": 0.0.83
+    "@biboux.neoswap/neo-swap-npm": 0.0.104
     "@metaplex-foundation/js": ~0.19.4
     "@metaplex-foundation/mpl-candy-machine": ^6.0.0-alpha.11
     "@metaplex-foundation/mpl-token-auth-rules": ^1.2.0
