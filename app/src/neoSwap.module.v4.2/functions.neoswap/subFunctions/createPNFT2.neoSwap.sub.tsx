@@ -68,9 +68,9 @@ export const createPnft2 = async (Data: { signer: Keypair; program: Program; sta
                 address: 'https://localhost:8899',
                 // address: 'https://devnet.bundlr.network',
                 providerUrl:
-                    // 'https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/',
+                    'https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/',
                     // 'http://127.0.0.1:8899',
-                    'https://localhost:8899',
+                    // 'https://localhost:8899',
                 timeout: 60000,
             })
         );

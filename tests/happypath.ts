@@ -39,29 +39,29 @@ describe("FongibleTokens Test Unit", () => {
     // let clusterOrUrl = "devnet";
 
     //normal
-    let swapDataAccount: PublicKey = new PublicKey("62YacMZ9SjWAR9joCRAPextHxw8rKxBT7HcLhkAZrmfw");
+    let swapDataAccount: PublicKey = new PublicKey("FQCpVK2QfZ2hEHnNHCbKhHAedZQBk8A3BYTia6HCCTGv");
     // let swapDataAccount: PublicKey | undefined = undefined;
     //reverse
     // let swapDataAccount: PublicKey = new PublicKey("9o3ZJiwwqtUDjo4EuhnVmxAyGiSr3erjfZXZxQf5cEwa");
 
     let currency = new PublicKey("CV3V3qmvXuWfzdSMk5rWcamNEgCGgqcv7t1FJkkM5dkV");
 
-    let user1MintToTransfer = new PublicKey("HxTSyfj37Vq2e1jdHcXa9b6rTFrRh3R9BTngnwhUciMp");
+    let user1MintToTransfer = new PublicKey("oHQLsX83ZJ1B4n8FLN7nUXLeCVKbY2SeJfAyRntdFp3");
     // let user1MintToTransfer = undefined;
 
-    let user2MintToTransfer = new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE");
+    let user2MintToTransfer = new PublicKey("EUfX3BURFeyMMLXe7DMGD55RyFQtks7rmib7UFBEa9XR");
     // let user2MintToTransfer = undefined;
 
-    let user3MintToTransfer = new PublicKey("A37ALYcjH4xzez8dnaqztN3Bmejr5E11VfR8GSC4D21j");
+    let user3MintToTransfer = new PublicKey("C68KMesiaDGmqP1LRehahvvfYsKuq4DYERTXfNNTg3Lq");
     // let user3MintToTransfer = undefined;
 
-    let user4MintToTransfer = new PublicKey("612uMGVcfMY7nXUJc6kyaSne1dKhPhXKzAyUfrMwVoyW");
+    let user4MintToTransfer = new PublicKey("5fnTxDpaqJ1sL9YWoMZaDdfX3KWkbU4rQMpxTVPEgDhm");
     // let user4MintToTransfer = undefined;
 
-    let user5MintToTransfer = new PublicKey("F7qhgjV2cbAcPEgsiDdRw1joSaP4LToekkpGQkYhjYDX");
+    let user5MintToTransfer = new PublicKey("22Da2WFKVVdmA7nPtnh7UC7LzQKkjVyAVd6n3gUp5nSn");
     // let user5MintToTransfer = undefined;
 
-    let user6MintToTransfer = new PublicKey("AGnofFQzPEk9uSbEyPHnMRSEZ6x51kbicAbupDynensR");
+    let user6MintToTransfer = new PublicKey("GBHrbaZV9fN5Z1Sv5vA1c2XjidWmvjd5wAJLEHhw6QQP");
     // let user6MintToTransfer = undefined;
 
     let swapData: SwapData = {
@@ -164,7 +164,7 @@ describe("FongibleTokens Test Unit", () => {
         swapData.items.push({
             isNft: false,
             amount: new BN(200),
-            mint: SystemProgram.programId,            
+            mint: SystemProgram.programId,
             // mint: currency,
             status: neoTypes.ItemStatus.SolPending,
             owner: user1.publicKey,
@@ -173,7 +173,7 @@ describe("FongibleTokens Test Unit", () => {
         swapData.items.push({
             isNft: false,
             amount: new BN(-200),
-            mint: SystemProgram.programId,            
+            mint: SystemProgram.programId,
             // mint: currency,
             status: neoTypes.ItemStatus.SolToClaim,
             owner: user2.publicKey,
@@ -209,7 +209,7 @@ describe("FongibleTokens Test Unit", () => {
 
         swapData.items.push({
             isNft: true,
-            amount: new BN(6),
+            amount: new BN(1),
             mint: user4MintToTransfer,
             status: neoTypes.ItemStatus.NFTPending,
             owner: user4.publicKey,
@@ -218,7 +218,7 @@ describe("FongibleTokens Test Unit", () => {
 
         swapData.items.push({
             isNft: true,
-            amount: new BN(6),
+            amount: new BN(1),
             mint: user5MintToTransfer,
             status: neoTypes.ItemStatus.NFTPending,
             owner: user5.publicKey,
@@ -354,21 +354,25 @@ describe("FongibleTokens Test Unit", () => {
     it("deposit all NFT to  swap", async () => {
         if (swapDataAccount) {
             let data: { user: PublicKey; hashs: string[] | ErrorFeedback }[] = [];
-            for await (const user of [user1, user2, user3, user4, user5, user6]) {
-                try {
-                    const depositSwapDatauser = await neoSwapNpm.depositSwap({
-                        clusterOrUrl,
-                        signer: user,
-                        swapDataAccount,
-                        // skipSimulation: true,
-                    });
-                    // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
-                    data.push({ user: user.publicKey, hashs: depositSwapDatauser });
-                    console.log("transactionhashes", depositSwapDatauser);
-                } catch (error) {
-                    data.push({ user: user.publicKey, hashs: error });
-                }
-            }
+            await Promise.all(
+                [user1, user2, user3, user4, user5, user6].map(async (user) => {
+                    try {
+                        const depositSwapDatauser = await neoSwapNpm.depositSwap({
+                            clusterOrUrl,
+                            signer: user,
+                            swapDataAccount,
+                            // skipSimulation: true,
+                        });
+                        // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
+                        data.push({ user: user.publicKey, hashs: depositSwapDatauser });
+                        console.log("transactionhashes", depositSwapDatauser);
+                    } catch (error) {
+                        data.push({ user: user.publicKey, hashs: error });
+                    }
+                })
+            );
+            // for await (const user of [user1, user2, user3, user4, user5, user6]) {
+            // }
             // console.log("deposit datas :", data);
             data.forEach((v) => console.log("deposit datas :", v.hashs));
         } else {
@@ -390,18 +394,18 @@ describe("FongibleTokens Test Unit", () => {
     //     }
     // });
 
-    it("claim 2 and close from signer", async () => {
-        if (swapDataAccount) {
-            const claimAndCloseHash = await neoSwapNpm.claimAndCloseSwap({
-                signer,
-                clusterOrUrl,
-                swapDataAccount,
-                // skipSimulation: true,
-            });
+    // it("claim 2 and close from signer", async () => {
+    //     if (swapDataAccount) {
+    //         const claimAndCloseHash = await neoSwapNpm.claimAndCloseSwap({
+    //             signer,
+    //             clusterOrUrl,
+    //             swapDataAccount,
+    //             // skipSimulation: true,
+    //         });
 
-            console.log("claimAndCloseHash :", claimAndCloseHash);
-        } else {
-            console.log("swap not given");
-        }
-    });
+    //         console.log("claimAndCloseHash :", claimAndCloseHash);
+    //     } else {
+    //         console.log("swap not given");
+    //     }
+    // });
 });
