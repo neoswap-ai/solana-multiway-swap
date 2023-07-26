@@ -3,15 +3,22 @@ import { Program } from '@project-serum/anchor';
 import { PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import {
+    METAPLEX_AUTH_RULES_PROGRAM,
+    SOLANA_SPL_ATA_PROGRAM_ID,
     TOKEN_METADATA_PROGRAM,
     authRules,
     authRulesProgram,
     splAssociatedTokenAccountProgramId,
 } from '../../utils.neoSwap/const.neoSwap';
+import { TokenStandard, Uses } from '@metaplex-foundation/mpl-token-metadata';
+
 import { findUserTokenRecord } from '../../utils.neoSwap/findUserTokenRecord';
 import { findNftMetadataAccount } from '../../utils.neoSwap/findNftMetadataAccount';
 import { findNftMasterEdition } from '../../utils.neoSwap/findNftMasterEdition';
 import { Metadata } from '@metaplex-foundation/js';
+import { findNftData } from '../../utils.neoSwap/findNftData';
+import { SwapIdentity } from '@neoswap/solana';
+import { findNftDataAndMetadataAccount, findRuleSet } from '../../utils.neoSwap/getNftData';
 // import from '@metaplex-foundation/js';
 
 /**
@@ -30,130 +37,134 @@ export async function depositNft(Data: {
     program: Program;
     signer: PublicKey;
     mint: PublicKey;
-    swapDataAccount: PublicKey;
-    swapDataAccount_seed: Buffer;
-    swapDataAccount_bump: number;
-    ataList: Array<PublicKey>;
-}): Promise<{ instruction: TransactionInstruction[]; mintAta: PublicKey[] }> {
-    let instruction: TransactionInstruction[] = [];
-    let mintAta: PublicKey[] = [...Data.ataList];
+    swapIdentity: SwapIdentity;
+    ataList: PublicKey[];
+}): Promise<{ instructions: TransactionInstruction[]; mintAta: PublicKey[] }> {
+    let instructions = [];
+    let mintAta = [];
+    console.log('swapId Pk', Data.swapIdentity);
 
-    const { mintAta: userMintAta, instruction: ixCreateUserMintAta } = await findOrCreateAta({
+    const { mintAta: userAta, instruction: userAtaIx } = await findOrCreateAta({
         connection: Data.program.provider.connection,
         owner: Data.signer,
         mint: Data.mint,
         signer: Data.signer,
+        // isFrontEndFunction: false,
     });
-
-    let addUserTx = true;
-    mintAta.forEach((ata) => {
-        if (ata.equals(userMintAta)) {
-            addUserTx = false;
-        }
-    });
-
-    if (ixCreateUserMintAta && addUserTx) {
-        console.log('CreateUserAta Deposit Tx added');
-        ixCreateUserMintAta.forEach((ixCreateUserMintAtaItem) => {
-            instruction.push(ixCreateUserMintAtaItem);
-        });
-        mintAta.push(userMintAta);
+    if (userAtaIx && !Data.ataList.includes(userAta)) {
+        instructions.push(...userAtaIx);
+        mintAta.push(userAta);
+        console.log('createUserAta CancelNft Tx Added', userAtaIx);
+    } else {
+        console.log('user Ata skipped', userAta.toBase58());
     }
 
-    const { mintAta: pdaMintAta, instruction: ixCreatePdaMintAta } = await findOrCreateAta({
+    const { mintAta: pdaAta, instruction: pdaAtaIx } = await findOrCreateAta({
         connection: Data.program.provider.connection,
-        owner: Data.swapDataAccount,
+        owner: Data.swapIdentity.swapDataAccount_publicKey,
         mint: Data.mint,
         signer: Data.signer,
+        // isFrontEndFunction: false,
     });
-
-    let addPdaTx = true;
-    mintAta.forEach((ata) => {
-        if (ata.equals(pdaMintAta)) {
-            addPdaTx = false;
-        }
-    });
-    if (ixCreatePdaMintAta && addPdaTx) {
-        console.log('CreatePdaAta Deposit Tx added');
-        ixCreatePdaMintAta.forEach((ixCreatePdaMintAtaItem) => {
-            instruction.push(ixCreatePdaMintAtaItem);
-        });
-        mintAta.push(pdaMintAta);
+    // console.log("pdaAtaIx", pdaAta.toBase58());
+    if (pdaAtaIx && !Data.ataList.includes(pdaAta)) {
+        instructions.push(...pdaAtaIx);
+        mintAta.push(pdaAta);
+        console.log('createPdaAta DepositNft Tx Added', pdaAta.toBase58());
+    } else {
+        console.log('pda Ata skipped', pdaAta.toBase58());
     }
 
-    const { adddress: nftMetadata, bump: nftMetadata_bump } = findNftMetadataAccount({ mint: Data.mint });
-    console.log('nftMetadata', nftMetadata.toBase58());
-    // console.log(((await Data.program.provider.connection.getAccountInfo(nftMetadata))?));
+    const {
+        tokenStandard,
+        metadataAddress: nftMetadata,
+        metadataBump: nftMetadata_bump,
+    } = await findNftDataAndMetadataAccount({
+        connection: Data.program.provider.connection,
+        mint: Data.mint,
+    });
 
-    // const tokenMetadata = programs.metadata.Metadata.findByOwnerV2(connection, walletPublicKey);
-    // let res = await Metadata.daata().Metadata.fromAccountAddress(Data.program.provider.connection, nftMetadata);
-    if (true) {
+    if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
         ///if New metaplex standard
-        const { adddress: nftMasterEdition, bump: nftMasterEdition_bump } = findNftMasterEdition({ mint: Data.mint });
-        // console.log('nftMasterEdition', nftMasterEdition.toBase58());
-        const { adddress: ownerTokenRecord, bump: ownerTokenRecord_bump } = findUserTokenRecord({
+        const { adddress: nftMasterEdition } = findNftMasterEdition({
             mint: Data.mint,
-            userMintAta,
         });
-        console.log('ownerTokenRecord', ownerTokenRecord.toBase58());
-        const { adddress: destinationTokenRecord, bump: destinationTokenRecord_bump } = findUserTokenRecord({
+        // console.log('nftMasterEdition', nftMasterEdition.toBase58());
+
+        const { adddress: ownerTokenRecord } = findUserTokenRecord({
             mint: Data.mint,
-            userMintAta: pdaMintAta,
+            userMintAta: userAta,
+        });
+        // console.log("ownerTokenRecord", ownerTokenRecord.toBase58());
+
+        const { adddress: destinationTokenRecord } = findUserTokenRecord({
+            mint: Data.mint,
+            userMintAta: pdaAta,
         });
         // console.log('destinationTokenRecord', destinationTokenRecord.toBase58());
 
-        instruction.push(
+        const authRules = await findRuleSet({
+            connection: Data.program.provider.connection,
+            mint: Data.mint,
+        });
+        instructions.push(
             await Data.program.methods
                 .depositNft(
-                    Data.swapDataAccount_seed,
-                    Data.swapDataAccount_bump,
-                    // nftMetadata_seed,
-                    nftMetadata_bump,
-                    nftMasterEdition_bump,
-                    ownerTokenRecord_bump,
-                    destinationTokenRecord_bump
+                    Data.swapIdentity.swapDataAccount_seed
+                    // Data.swapIdentity.swapDataAccount_bump,
+                    // nftMetadata_bump
                 )
                 .accounts({
-                    systemProgram: SystemProgram.programId,
+                    systemProgram: SystemProgram.programId.toBase58(),
                     metadataProgram: TOKEN_METADATA_PROGRAM,
-                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-                    splTokenProgram: TOKEN_PROGRAM_ID,
-                    splAtaProgram: splAssociatedTokenAccountProgramId,
-                    swapDataAccount: Data.swapDataAccount,
-                    signer: Data.signer,
-                    itemFromDeposit: userMintAta,
-                    mint: Data.mint,
-                    nftMetadata,
-                    itemToDeposit: pdaMintAta,
-                    nftMasterEdition,
-                    ownerTokenRecord,
-                    destinationTokenRecord,
-                    authRulesProgram,
+                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY.toBase58(),
+                    splTokenProgram: TOKEN_PROGRAM_ID.toBase58(),
+                    splAtaProgram: SOLANA_SPL_ATA_PROGRAM_ID,
+                    swapDataAccount: Data.swapIdentity.swapDataAccount_publicKey.toBase58(),
+                    signer: Data.signer.toBase58(),
+                    itemFromDeposit: userAta.toBase58(),
+                    mint: Data.mint.toBase58(),
+                    nftMetadata: nftMetadata.toBase58(),
+                    itemToDeposit: pdaAta.toBase58(),
+                    nftMasterEdition: nftMasterEdition.toBase58(),
+                    ownerTokenRecord: ownerTokenRecord.toBase58(),
+                    destinationTokenRecord: destinationTokenRecord.toBase58(),
+                    authRulesProgram: METAPLEX_AUTH_RULES_PROGRAM,
                     authRules,
                 })
                 .instruction()
         );
+        // console.log("depositNftTx - seed", Data.swapIdentity.swapDataAccount_seed.toString());
     } else {
-        instruction.push(
+        instructions.push(
             await Data.program.methods
-                .depositNft()
+                .depositNft(
+                    Data.swapIdentity.swapDataAccount_seed,
+                    // Data.swapIdentity.swapDataAccount_bump,
+                    // nftMetadata_bump
+                )
                 .accounts({
-                    systemProgram: SystemProgram.programId,
+                    systemProgram: SystemProgram.programId.toBase58(),
                     metadataProgram: TOKEN_METADATA_PROGRAM,
-                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-                    splTokenProgram: TOKEN_PROGRAM_ID,
-                    splAtaProgram: splAssociatedTokenAccountProgramId,
-                    signer: Data.signer,
-                    itemFromDeposit: userMintAta,
-                    mint: Data.mint,
-                    nftMetadata,
-                    itemToDeposit: pdaMintAta,
-                    ownerTo: Data.swapDataAccount,
+                    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY.toBase58(),
+                    splTokenProgram: TOKEN_PROGRAM_ID.toBase58(),
+                    splAtaProgram: SOLANA_SPL_ATA_PROGRAM_ID,
+                    swapDataAccount: Data.swapIdentity.swapDataAccount_publicKey.toBase58(),
+                    signer: Data.signer.toBase58(),
+                    itemFromDeposit: userAta.toBase58(),
+                    mint: Data.mint.toBase58(),
+                    nftMetadata: nftMetadata.toBase58(),
+                    itemToDeposit: pdaAta.toBase58(),
+                    nftMasterEdition: Data.signer.toBase58(),
+                    ownerTokenRecord: Data.signer.toBase58(),
+                    destinationTokenRecord: Data.signer.toBase58(),
+                    authRulesProgram: METAPLEX_AUTH_RULES_PROGRAM,
+                    authRules: Data.signer.toBase58(),
                 })
                 .instruction()
         );
     }
-    console.log('from: ', userMintAta.toBase58(), '\nto: ', pdaMintAta.toBase58(), '\nmint: ', Data.mint.toBase58());
-    return { instruction, mintAta };
+    console.log('from: ', userAta.toBase58(), '\nto: ', pdaAta.toBase58(), '\nmint: ', Data.mint.toBase58());
+    return { instructions, mintAta };
 }
 export default depositNft;

@@ -19,8 +19,9 @@ default = []
 anchor-lang = "0.26.0"
 anchor-spl= "0.26.0"
 spl-associated-token-account = "~1.1.1"
-mpl-token-metadata = "1.10.0"
-open_creator_protocol = { version = "0.3.0", features = ["cpi"] }
+# mpl-token-metadata = "1.10.0"
+mpl-token-metadata = { version = "1.10.0", features = ["no-entrypoint"] }
+# open_creator_protocol = { version = "0.3.0", features = ["cpi"] }
 # spl-token = { version = "3.2.0", features = ["no-entrypoint"] }
 
 [dev-dependencies]

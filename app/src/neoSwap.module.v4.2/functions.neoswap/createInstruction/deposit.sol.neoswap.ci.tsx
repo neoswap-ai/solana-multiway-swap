@@ -15,12 +15,12 @@ export async function depositSol(Data: {
   from: PublicKey;
   to: PublicKey;
   swapDataAccount_seed: Buffer;
-  swapDataAccount_bump: number;
+  // swapDataAccount_bump: number;
 }): Promise<{ instruction: TransactionInstruction }> {
   // console.log('deposit Sol Tx added');
   return {
     instruction: await Data.program.methods
-      .depositSol(Data.swapDataAccount_seed, Data.swapDataAccount_bump)
+      .depositSol(Data.swapDataAccount_seed)
       .accounts({
         systemProgram: web3.SystemProgram.programId,
         swapDataAccount: Data.to,
