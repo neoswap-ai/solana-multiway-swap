@@ -13,7 +13,7 @@ import {
 } from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
-import { neoTypes, neoSwapNpm } from "@neoswap/solana";
+import { neoTypes, neoSwap } from "@neoswap/solana";
 import { ErrorFeedback, NftSwapItem, SwapData, TradeStatus } from "../deleteme/types";
 
 import signerSK from "../deleteme/signer";
@@ -39,7 +39,7 @@ describe("FongibleTokens Test Unit", () => {
     // let clusterOrUrl = "devnet";
 
     //normal
-    let swapDataAccount: PublicKey = new PublicKey("FQCpVK2QfZ2hEHnNHCbKhHAedZQBk8A3BYTia6HCCTGv");
+    let swapDataAccount: PublicKey = new PublicKey("FTc3e4jcv9TFH9rhZV4NXANzkT84rp5Xi97En24o9xXB");
     // let swapDataAccount: PublicKey | undefined = undefined;
     //reverse
     // let swapDataAccount: PublicKey = new PublicKey("9o3ZJiwwqtUDjo4EuhnVmxAyGiSr3erjfZXZxQf5cEwa");
@@ -75,182 +75,109 @@ describe("FongibleTokens Test Unit", () => {
     };
 
     it("Initializing Program", async () => {
-        program = neoSwapNpm.utils.getProgram({ clusterOrUrl: "devnet", signer }); //as unknown as Program;
+        program = neoSwap.UTILS.getProgram({
+            clusterOrUrl: "devnet",
+            signer,
+        }) as unknown as Program;
         console.log("programId", program.programId.toBase58());
         console.log("signer", signer.publicKey.toBase58());
     });
 
-    it("Mint NFTs ", async () => {
-        // console.log(program);
-        if (!user1MintToTransfer) {
-            // console.log(
-            //     await program.provider.connection.requestAirdrop(user1.publicKey, LAMPORTS_PER_SOL)
-            // );
-            let { mintAddress } = await NeoSwap.createPnft2({
-                program,
-                signer: user1,
-                standard: TokenStandard.ProgrammableNonFungible,
-                // destination: new PublicKey("5mG4wFjsnuuQWExTGqLN9ca2e5D1DBVZGDQKjGHJvJPQ"),
-            });
-            console.log("user1 mintAddress", mintAddress.toBase58());
-        } else {
-            console.log("user1 minting skipped");
-        }
-        if (!user2MintToTransfer) {
-            let { mintAddress } = await NeoSwap.createPnft2({
-                program,
-                signer: user2,
-                standard: TokenStandard.ProgrammableNonFungible,
-            });
-            console.log("user2 mintAddress", mintAddress.toBase58());
-        } else {
-            console.log("user2 minting skipped");
-        }
-        if (!user3MintToTransfer) {
-            let { mintAddress } = await NeoSwap.createPnft2({
-                program,
-                signer: user3,
-                standard: TokenStandard.ProgrammableNonFungible,
-            });
-            console.log("user3 mintAddress", mintAddress.toBase58());
-        } else {
-            console.log("user3 minting skipped");
-            // metaplex find mint
-        }
+    // it("Mint NFTs ", async () => {
+    //     // console.log(program);
+    //     if (!user1MintToTransfer) {
+    //         // console.log(
+    //         //     await program.provider.connection.requestAirdrop(user1.publicKey, LAMPORTS_PER_SOL)
+    //         // );
+    //         let { mintAddress } = await NeoSwap.createPnft2({
+    //             program,
+    //             signer: user1,
+    //             standard: TokenStandard.ProgrammableNonFungible,
+    //             // destination: new PublicKey("5mG4wFjsnuuQWExTGqLN9ca2e5D1DBVZGDQKjGHJvJPQ"),
+    //         });
+    //         console.log("user1 mintAddress", mintAddress.toBase58());
+    //     } else {
+    //         console.log("user1 minting skipped");
+    //     }
+    //     if (!user2MintToTransfer) {
+    //         let { mintAddress } = await NeoSwap.createPnft2({
+    //             program,
+    //             signer: user2,
+    //             standard: TokenStandard.ProgrammableNonFungible,
+    //         });
+    //         console.log("user2 mintAddress", mintAddress.toBase58());
+    //     } else {
+    //         console.log("user2 minting skipped");
+    //     }
+    //     if (!user3MintToTransfer) {
+    //         let { mintAddress } = await NeoSwap.createPnft2({
+    //             program,
+    //             signer: user3,
+    //             standard: TokenStandard.ProgrammableNonFungible,
+    //         });
+    //         console.log("user3 mintAddress", mintAddress.toBase58());
+    //     } else {
+    //         console.log("user3 minting skipped");
+    //         // metaplex find mint
+    //     }
 
-        if (!user4MintToTransfer) {
-            let { mintAddress } = await NeoSwap.createPnft2({
-                program,
-                signer: user4,
-                standard: TokenStandard.FungibleAsset,
-            });
-            console.log("user4 mintAddress", mintAddress.toBase58());
-        } else {
-            console.log("user4 minting skipped");
-        }
-        if (!user5MintToTransfer) {
-            let { mintAddress } = await NeoSwap.createPnft2({
-                program,
-                signer: user5,
-                standard: TokenStandard.FungibleAsset,
-            });
-            console.log("user5 mintAddress", mintAddress.toBase58());
-        } else {
-            console.log("user5 minting skipped");
-        }
-        if (!user6MintToTransfer) {
-            let { mintAddress } = await NeoSwap.createPnft2({
-                program,
-                signer: user6,
-                standard: TokenStandard.NonFungible,
-            });
-            console.log("user6 mintAddress", mintAddress.toBase58());
-        } else {
-            console.log("user6 minting skipped");
-        }
-        if (!currency) {
-            let { mintAddress } = await NeoSwap.createPnft2({
-                program,
-                signer: user1,
-                standard: TokenStandard.Fungible,
-            });
-            console.log("currency", mintAddress.toBase58());
-        } else {
-            console.log("user1 minting currency skipped");
-        }
-    });
+    //     if (!user4MintToTransfer) {
+    //         let { mintAddress } = await NeoSwap.createPnft2({
+    //             program,
+    //             signer: user4,
+    //             standard: TokenStandard.FungibleAsset,
+    //         });
+    //         console.log("user4 mintAddress", mintAddress.toBase58());
+    //     } else {
+    //         console.log("user4 minting skipped");
+    //     }
+    //     if (!user5MintToTransfer) {
+    //         let { mintAddress } = await NeoSwap.createPnft2({
+    //             program,
+    //             signer: user5,
+    //             standard: TokenStandard.FungibleAsset,
+    //         });
+    //         console.log("user5 mintAddress", mintAddress.toBase58());
+    //     } else {
+    //         console.log("user5 minting skipped");
+    //     }
+    //     if (!user6MintToTransfer) {
+    //         let { mintAddress } = await NeoSwap.createPnft2({
+    //             program,
+    //             signer: user6,
+    //             standard: TokenStandard.NonFungible,
+    //         });
+    //         console.log("user6 mintAddress", mintAddress.toBase58());
+    //     } else {
+    //         console.log("user6 minting skipped");
+    //     }
+    //     if (!currency) {
+    //         let { mintAddress } = await NeoSwap.createPnft2({
+    //             program,
+    //             signer: user1,
+    //             standard: TokenStandard.Fungible,
+    //         });
+    //         console.log("currency", mintAddress.toBase58());
+    //     } else {
+    //         console.log("user1 minting currency skipped");
+    //     }
+    // });
 
-    it("create SwapData", async () => {
-        swapData.items.push({
-            isNft: false,
-            amount: new BN(200),
-            mint: SystemProgram.programId,
-            // mint: currency,
-            status: neoTypes.ItemStatus.SolPending,
-            owner: user1.publicKey,
-            destinary: SystemProgram.programId,
-        } as NftSwapItem);
-        swapData.items.push({
-            isNft: false,
-            amount: new BN(-200),
-            mint: SystemProgram.programId,
-            // mint: currency,
-            status: neoTypes.ItemStatus.SolToClaim,
-            owner: user2.publicKey,
-            destinary: SystemProgram.programId,
-        } as NftSwapItem);
-
-        swapData.items.push({
-            isNft: true,
-            amount: new BN(1),
-            mint: user1MintToTransfer,
-            status: neoTypes.ItemStatus.NFTPending,
-            owner: user1.publicKey,
-            destinary: user2.publicKey,
-        } as NftSwapItem);
-
-        swapData.items.push({
-            isNft: true,
-            amount: new BN(1),
-            mint: user2MintToTransfer,
-            status: neoTypes.ItemStatus.NFTPending,
-            owner: user2.publicKey,
-            destinary: user3.publicKey,
-        } as NftSwapItem);
-
-        swapData.items.push({
-            isNft: true,
-            amount: new BN(1),
-            mint: user3MintToTransfer,
-            status: neoTypes.ItemStatus.NFTPending,
-            owner: user3.publicKey,
-            destinary: user4.publicKey,
-        } as NftSwapItem);
-
-        swapData.items.push({
-            isNft: true,
-            amount: new BN(1),
-            mint: user4MintToTransfer,
-            status: neoTypes.ItemStatus.NFTPending,
-            owner: user4.publicKey,
-            destinary: user5.publicKey,
-        } as NftSwapItem);
-
-        swapData.items.push({
-            isNft: true,
-            amount: new BN(1),
-            mint: user5MintToTransfer,
-            status: neoTypes.ItemStatus.NFTPending,
-            owner: user5.publicKey,
-            destinary: user6.publicKey,
-        } as NftSwapItem);
-
-        swapData.items.push({
-            isNft: true,
-            amount: new BN(1),
-            mint: user6MintToTransfer,
-            status: neoTypes.ItemStatus.NFTPending,
-            owner: user6.publicKey,
-            destinary: user1.publicKey,
-        } as NftSwapItem);
-
-        console.log("nb items :", swapData.items.length);
-        swapData.nbItems = swapData.items.length;
-    });
-
-    // it("create reverse SwapData", async () => {
+    // it("create SwapData", async () => {
     //     swapData.items.push({
     //         isNft: false,
-    //         amount: new BN(-200),
-    //         mint: currency,
+    //         amount: new BN(200),
+    //         mint: SystemProgram.programId,
+    //         // mint: currency,
     //         status: neoTypes.ItemStatus.SolPending,
     //         owner: user1.publicKey,
     //         destinary: SystemProgram.programId,
     //     } as NftSwapItem);
     //     swapData.items.push({
     //         isNft: false,
-    //         amount: new BN(200),
-    //         mint: currency,
+    //         amount: new BN(-200),
+    //         mint: SystemProgram.programId,
+    //         // mint: currency,
     //         status: neoTypes.ItemStatus.SolToClaim,
     //         owner: user2.publicKey,
     //         destinary: SystemProgram.programId,
@@ -261,8 +188,8 @@ describe("FongibleTokens Test Unit", () => {
     //         amount: new BN(1),
     //         mint: user1MintToTransfer,
     //         status: neoTypes.ItemStatus.NFTPending,
-    //         destinary: user1.publicKey,
-    //         owner: user2.publicKey,
+    //         owner: user1.publicKey,
+    //         destinary: user2.publicKey,
     //     } as NftSwapItem);
 
     //     swapData.items.push({
@@ -270,8 +197,8 @@ describe("FongibleTokens Test Unit", () => {
     //         amount: new BN(1),
     //         mint: user2MintToTransfer,
     //         status: neoTypes.ItemStatus.NFTPending,
-    //         destinary: user2.publicKey,
-    //         owner: user3.publicKey,
+    //         owner: user2.publicKey,
+    //         destinary: user3.publicKey,
     //     } as NftSwapItem);
 
     //     swapData.items.push({
@@ -279,26 +206,26 @@ describe("FongibleTokens Test Unit", () => {
     //         amount: new BN(1),
     //         mint: user3MintToTransfer,
     //         status: neoTypes.ItemStatus.NFTPending,
-    //         destinary: user3.publicKey,
-    //         owner: user4.publicKey,
+    //         owner: user3.publicKey,
+    //         destinary: user4.publicKey,
     //     } as NftSwapItem);
 
     //     swapData.items.push({
     //         isNft: true,
-    //         amount: new BN(6),
+    //         amount: new BN(1),
     //         mint: user4MintToTransfer,
     //         status: neoTypes.ItemStatus.NFTPending,
-    //         destinary: user4.publicKey,
-    //         owner: user5.publicKey,
+    //         owner: user4.publicKey,
+    //         destinary: user5.publicKey,
     //     } as NftSwapItem);
 
     //     swapData.items.push({
     //         isNft: true,
-    //         amount: new BN(6),
+    //         amount: new BN(1),
     //         mint: user5MintToTransfer,
     //         status: neoTypes.ItemStatus.NFTPending,
-    //         destinary: user5.publicKey,
-    //         owner: user6.publicKey,
+    //         owner: user5.publicKey,
+    //         destinary: user6.publicKey,
     //     } as NftSwapItem);
 
     //     swapData.items.push({
@@ -306,38 +233,114 @@ describe("FongibleTokens Test Unit", () => {
     //         amount: new BN(1),
     //         mint: user6MintToTransfer,
     //         status: neoTypes.ItemStatus.NFTPending,
-    //         destinary: user6.publicKey,
-    //         owner: user1.publicKey,
+    //         owner: user6.publicKey,
+    //         destinary: user1.publicKey,
     //     } as NftSwapItem);
 
     //     console.log("nb items :", swapData.items.length);
     //     swapData.nbItems = swapData.items.length;
     // });
 
-    it("initialize swapDataAccount", async () => {
-        try {
-            if (!swapDataAccount) {
-                const allInitData = await neoSwapNpm.initializeSwap({
-                    clusterOrUrl,
-                    signer: signer,
-                    swapData,
-                    // simulation: true,
-                });
+    // // it("create reverse SwapData", async () => {
+    // //     swapData.items.push({
+    // //         isNft: false,
+    // //         amount: new BN(-200),
+    // //         mint: currency,
+    // //         status: neoTypes.ItemStatus.SolPending,
+    // //         owner: user1.publicKey,
+    // //         destinary: SystemProgram.programId,
+    // //     } as NftSwapItem);
+    // //     swapData.items.push({
+    // //         isNft: false,
+    // //         amount: new BN(200),
+    // //         mint: currency,
+    // //         status: neoTypes.ItemStatus.SolToClaim,
+    // //         owner: user2.publicKey,
+    // //         destinary: SystemProgram.programId,
+    // //     } as NftSwapItem);
 
-                // if (neoSwapNpm.utils.isErrorInitializeSwap(allInitData)) throw allInitData.error;
-                console.log("initialized", allInitData);
-            } else {
-                console.log("initiaize skipped", swapDataAccount.toBase58());
-            }
-        } catch (error) {
-            console.log(error);
-            throw error;
-        }
-    });
+    // //     swapData.items.push({
+    // //         isNft: true,
+    // //         amount: new BN(1),
+    // //         mint: user1MintToTransfer,
+    // //         status: neoTypes.ItemStatus.NFTPending,
+    // //         destinary: user1.publicKey,
+    // //         owner: user2.publicKey,
+    // //     } as NftSwapItem);
+
+    // //     swapData.items.push({
+    // //         isNft: true,
+    // //         amount: new BN(1),
+    // //         mint: user2MintToTransfer,
+    // //         status: neoTypes.ItemStatus.NFTPending,
+    // //         destinary: user2.publicKey,
+    // //         owner: user3.publicKey,
+    // //     } as NftSwapItem);
+
+    // //     swapData.items.push({
+    // //         isNft: true,
+    // //         amount: new BN(1),
+    // //         mint: user3MintToTransfer,
+    // //         status: neoTypes.ItemStatus.NFTPending,
+    // //         destinary: user3.publicKey,
+    // //         owner: user4.publicKey,
+    // //     } as NftSwapItem);
+
+    // //     swapData.items.push({
+    // //         isNft: true,
+    // //         amount: new BN(6),
+    // //         mint: user4MintToTransfer,
+    // //         status: neoTypes.ItemStatus.NFTPending,
+    // //         destinary: user4.publicKey,
+    // //         owner: user5.publicKey,
+    // //     } as NftSwapItem);
+
+    // //     swapData.items.push({
+    // //         isNft: true,
+    // //         amount: new BN(6),
+    // //         mint: user5MintToTransfer,
+    // //         status: neoTypes.ItemStatus.NFTPending,
+    // //         destinary: user5.publicKey,
+    // //         owner: user6.publicKey,
+    // //     } as NftSwapItem);
+
+    // //     swapData.items.push({
+    // //         isNft: true,
+    // //         amount: new BN(1),
+    // //         mint: user6MintToTransfer,
+    // //         status: neoTypes.ItemStatus.NFTPending,
+    // //         destinary: user6.publicKey,
+    // //         owner: user1.publicKey,
+    // //     } as NftSwapItem);
+
+    // //     console.log("nb items :", swapData.items.length);
+    // //     swapData.nbItems = swapData.items.length;
+    // // });
+
+    // it("initialize swapDataAccount", async () => {
+    //     try {
+    //         if (!swapDataAccount) {
+    //             const allInitData = await neoSwap.initializeSwap({
+    //                 clusterOrUrl,
+    //                 signer: signer,
+    //                 swapData,
+    //                 // simulation: true,
+    //             });
+
+    //             // if (neoSwapNpm.utils.isErrorInitializeSwap(allInitData)) throw allInitData.error;
+    //             console.log("initialized", allInitData);
+    //         } else {
+    //             console.log("initiaize skipped", swapDataAccount.toBase58());
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //         throw error;
+    //     }
+    // });
 
     it("deposit NFT to first swap", async () => {
         if (swapDataAccount) {
-            const depositSwapDatauser = await neoSwapNpm.depositSwap({
+            const depositSwapDatauser = await neoSwap.depositSwap({
                 clusterOrUrl,
                 signer: user1,
                 swapDataAccount,
@@ -357,7 +360,7 @@ describe("FongibleTokens Test Unit", () => {
             await Promise.all(
                 [user1, user2, user3, user4, user5, user6].map(async (user) => {
                     try {
-                        const depositSwapDatauser = await neoSwapNpm.depositSwap({
+                        const depositSwapDatauser = await neoSwap.depositSwap({
                             clusterOrUrl,
                             signer: user,
                             swapDataAccount,
@@ -396,8 +399,8 @@ describe("FongibleTokens Test Unit", () => {
 
     // it("claim 2 and close from signer", async () => {
     //     if (swapDataAccount) {
-    //         const claimAndCloseHash = await neoSwapNpm.claimAndCloseSwap({
-    //             signer,
+    //         const claimAndCloseHash = await neoSwap.claimAndCloseSwap({
+    //             signer: user6,
     //             clusterOrUrl,
     //             swapDataAccount,
     //             // skipSimulation: true,

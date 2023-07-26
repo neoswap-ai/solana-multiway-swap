@@ -456,7 +456,7 @@ pub mod neo_swap {
     /// @accounts signer: Pubkey => initializer
     /// @return Void
     pub fn validate_deposit(
-        ctx: Context<Validate>,
+        ctx: Context<ValidateDeposited>,
         _seed: Vec<u8>,
         // _bump: u8
     ) -> Result<()> {
@@ -1395,6 +1395,20 @@ pub struct Validate<'info> {
     #[account(mut)]
     signer: Signer<'info>,
 }
+
+
+#[derive(Accounts)]
+#[instruction(seed: Vec<u8>)]
+pub struct ValidateDeposited<'info> {
+    #[account(
+        mut,
+        seeds = [&seed[..]], bump,
+    )]
+    swap_data_account: Box<Account<'info, SwapData>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+}
+
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
 pub struct ValidateAndClose<'info> {
