@@ -2,6 +2,8 @@
 neo_swap = "CtZHiWNnLu5rQuTN3jo7CmYDR8Wns6qXHn7taPvmnACp"
 [programs.localnet]
 neo_swap = "CtZHiWNnLu5rQuTN3jo7CmYDR8Wns6qXHn7taPvmnACp"
+[programs.mainnet]
+neo_swap = ""
 
 [registry]
 url = "https://anchor.projectserum.com"
