@@ -22,10 +22,7 @@ pub mod neo_swap {
     ) -> Result<()> {
         // remaining_accounts are the accounts that make up the required proof
         let remaining_accounts_len = ctx.remaining_accounts.len();
-        let mut accounts = Vec::with_capacity(
-            8 // space for the 8 AccountMetas that are always included  (below)
-        + remaining_accounts_len,
-        );
+        let mut accounts = Vec::with_capacity(8 + remaining_accounts_len);
         accounts.extend(vec![
             AccountMeta::new_readonly(ctx.accounts.tree_authority.key(), false),
             AccountMeta::new_readonly(ctx.accounts.leaf_owner.key(), true),
@@ -54,10 +51,7 @@ pub mod neo_swap {
         data.extend(nonce.to_le_bytes());
         data.extend(index.to_le_bytes());
 
-        let mut account_infos = Vec::with_capacity(
-            8 // space for the 8 AccountInfos that are always included (below)
-        + remaining_accounts_len,
-        );
+        let mut account_infos = Vec::with_capacity(8 + remaining_accounts_len);
         account_infos.extend(vec![
             ctx.accounts.tree_authority.to_account_info(),
             ctx.accounts.leaf_owner.to_account_info(),
