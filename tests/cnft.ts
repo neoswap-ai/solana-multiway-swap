@@ -5,6 +5,7 @@ const { assert } = require("chai");
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
 import {
     Cluster,
+    Connection,
     Keypair,
     LAMPORTS_PER_SOL,
     PublicKey,
@@ -15,6 +16,8 @@ import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
 import { neoTypes, neoSwap } from "@neoswap/solana";
 import { ErrorFeedback, NftSwapItem, SwapData, TradeStatus } from "../deleteme/types";
+
+import idl from "../target/idl/neo_swap";
 
 import signerSK from "../deleteme/signer";
 const signer = Keypair.fromSecretKey(signerSK);
@@ -29,9 +32,11 @@ const user4 = Keypair.fromSecretKey(user4Sk);
 import user5Sk from "../deleteme/user5";
 const user5 = Keypair.fromSecretKey(user5Sk);
 import user6Sk from "../deleteme/user6";
+import { transferCnft } from "../app/src/neoSwap.module.v4.2/functions.neoswap/createInstruction/transferCnft";
 const user6 = Keypair.fromSecretKey(user6Sk);
+const tokenId = "3Mh7ReRQXRig1Lv8qNKdR1bvU9ehfto1JCnhMC6yUB2v";
 
-describe("FongibleTokens Test Unit", () => {
+describe("compressed NFT Test Unit", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     let program = anchor.workspace.NeoSwap as Program;
@@ -75,10 +80,22 @@ describe("FongibleTokens Test Unit", () => {
     };
 
     it("Initializing Program", async () => {
-        program = neoSwap.UTILS.getProgram({
-            clusterOrUrl: "devnet",
-            signer,
-        }) as unknown as Program;
+        // program = neoSwap.UTILS.getProgram({
+        //     clusterOrUrl: "devnet",
+        //     signer,
+        //     programId: new PublicKey("5wW12LWQuwGW2mNHpDMqQSp5ijY41JgLGd1maGcywWA4"),
+        // }) as unknown as Program;
+        program = new Program(
+            idl as anchor.Idl,
+            new PublicKey("5wW12LWQuwGW2mNHpDMqQSp5ijY41JgLGd1maGcywWA4"),
+            new anchor.AnchorProvider(
+                new Connection(
+                    "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/"
+                ),
+                new anchor.Wallet(user1),
+                { commitment: "confirmed" }
+            )
+        );
         console.log("programId", program.programId.toBase58());
         console.log("signer", signer.publicKey.toBase58());
     });
@@ -339,49 +356,50 @@ describe("FongibleTokens Test Unit", () => {
     // });
 
     it("deposit NFT to first swap", async () => {
-        if (swapDataAccount) {
-            const depositSwapDatauser = await neoSwap.depositSwap({
-                clusterOrUrl,
-                signer: user1,
-                swapDataAccount,
-                // simulation: true,
-            });
-            // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
-            // data.push({ user: user.publicKey, hashs: depositSwapDatauser });
-            console.log("transactionhashes", depositSwapDatauser);
-        } else {
-            console.log("swap not given");
-        }
+        const ix = await transferCnft({
+            program,
+            tokenId: new PublicKey("EiFdvXt9cMMGrEtWP4GF5Fw2sWweHZEAp38QXcZDQELo"),
+            destinary: new PublicKey("CpB3k2pkmDK5uQVXH6YBKe8uQQsjBBaNwwnoauKkR6i4"),
+            signer: user1.publicKey,
+        });
+
+        console.log("ix", ix);
+
+        const hash = await program.provider.sendAll(
+            [{ tx: new Transaction().add(...ix.instructions), signers: [user1] }],
+            { skipPreflight: true }
+        );
+        console.log("hash", hash);
     });
 
-    it("deposit all NFT to  swap", async () => {
-        if (swapDataAccount) {
-            let data: { user: PublicKey; hashs: string[] | ErrorFeedback }[] = [];
-            await Promise.all(
-                [user1, user2, user3, user4, user5, user6].map(async (user) => {
-                    try {
-                        const depositSwapDatauser = await neoSwap.depositSwap({
-                            clusterOrUrl,
-                            signer: user,
-                            swapDataAccount,
-                            // skipSimulation: true,
-                        });
-                        // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
-                        data.push({ user: user.publicKey, hashs: depositSwapDatauser });
-                        console.log("transactionhashes", depositSwapDatauser);
-                    } catch (error) {
-                        data.push({ user: user.publicKey, hashs: error });
-                    }
-                })
-            );
-            // for await (const user of [user1, user2, user3, user4, user5, user6]) {
-            // }
-            // console.log("deposit datas :", data);
-            data.forEach((v) => console.log("deposit datas :", v.hashs));
-        } else {
-            console.log("swap not given");
-        }
-    });
+    // it("deposit all NFT to  swap", async () => {
+    //     if (swapDataAccount) {
+    //         let data: { user: PublicKey; hashs: string[] | ErrorFeedback }[] = [];
+    //         await Promise.all(
+    //             [user1, user2, user3, user4, user5, user6].map(async (user) => {
+    //                 try {
+    //                     const depositSwapDatauser = await neoSwap.depositSwap({
+    //                         clusterOrUrl,
+    //                         signer: user,
+    //                         swapDataAccount,
+    //                         // skipSimulation: true,
+    //                     });
+    //                     // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
+    //                     data.push({ user: user.publicKey, hashs: depositSwapDatauser });
+    //                     console.log("transactionhashes", depositSwapDatauser);
+    //                 } catch (error) {
+    //                     data.push({ user: user.publicKey, hashs: error });
+    //                 }
+    //             })
+    //         );
+    //         // for await (const user of [user1, user2, user3, user4, user5, user6]) {
+    //         // }
+    //         // console.log("deposit datas :", data);
+    //         data.forEach((v) => console.log("deposit datas :", v.hashs));
+    //     } else {
+    //         console.log("swap not given");
+    //     }
+    // });
 
     // it("finish cancel and close from signer", async () => {
     //     if (swapDataAccount) {

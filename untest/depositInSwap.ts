@@ -13,7 +13,7 @@ import {
 } from "@solana/web3.js";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 import NeoSwap from "../app/src/neoSwap.module.v4.2";
-import { neoSwapNpm, neoTypes } from "@neoswap/solana";
+import { neoSwap, neoTypes } from "@neoswap/solana";
 import { ErrorFeedback, NftSwapItem, SwapData, TradeStatus } from "../deleteme/types";
 
 import signerSK from "../deleteme/signer";
@@ -42,7 +42,7 @@ describe("FongibleTokens Test Unit", () => {
     // let swapDataAccount: PublicKey = new PublicKey("3ZEg8U1ADpX4bx5z56UBabckt56MSf4gaeBgEd9RgSrB");
 
     it("Initializing Program", async () => {
-        program = neoSwapNpm.utils.getProgram({ clusterOrUrl: "devnet", signer }); //as unknown as Program;
+        program = neoSwap.utils.getProgram({ clusterOrUrl: "devnet", signer }); //as unknown as Program;
         console.log("programId", program.programId.toBase58());
         console.log("signer", signer.publicKey.toBase58());
     });
@@ -54,7 +54,7 @@ describe("FongibleTokens Test Unit", () => {
                 [user1, user2, user3, user4, user5, user6].map(async (user) => {
                     try {
                         const depositSwapDatauser =
-                            await neoSwapNpm.createInstructions.prepareDepositSwapInstructions({
+                            await neoSwap.createInstructions.prepareDepositSwapInstructions({
                                 clusterOrUrl,
                                 user: user.publicKey,
                                 swapDataAccount,
@@ -63,11 +63,11 @@ describe("FongibleTokens Test Unit", () => {
                         console.log("user", user.publicKey.toBase58());
                         console.log("depositSwapDatauser", depositSwapDatauser);
 
-                        let transac = await neoSwapNpm.createInstructions.apiProcessorTranscript({
+                        let transac = await neoSwap.createInstructions.apiProcessorTranscript({
                             config: depositSwapDatauser.config,
                         });
 
-                        let txh = await neoSwapNpm.utils.sendBundledTransactions({
+                        let txh = await neoSwap.utils.sendBundledTransactions({
                             clusterOrUrl: "devnet",
                             signer: user,
                             txsWithoutSigners: transac,

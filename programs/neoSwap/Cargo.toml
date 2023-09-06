@@ -16,11 +16,27 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.26.0"
-anchor-spl= "0.26.0"
-spl-associated-token-account = "~1.1.1"
+anchor-lang = "0.28.0"
+anchor-spl = "0.28.0"
+mpl-bubblegum = { version = "0.11.0", features = ["no-entrypoint"] }
+mpl-token-metadata = { version = "2.0.0-beta.1", features = ["no-entrypoint"] }
+spl-account-compression = "0.2.0"
+spl-associated-token-account = "2.1.0"
+spl-noop = "0.2.0"
+
+
+# anchor-lang = "0.28.0"
+# anchor-spl= "0.28.0"
+# spl-associated-token-account = "~1.1.1"
+# spl-account-compression = "0.2.0"
+# spl-noop = "0.2.0"
+# mpl-token-metadata = "2.0.0-beta.1"
+# mpl-bubblegum = "0.11.0"
+
+
 # mpl-token-metadata = "1.10.0"
-mpl-token-metadata = { version = "1.10.0", features = ["no-entrypoint"] }
+# mpl-token-metadata = { version = "1.10.0", features = ["no-entrypoint"] }
+# mpl-bubblegum = "0.11.0"
 # open_creator_protocol = { version = "0.3.0", features = ["cpi"] }
 # spl-token = { version = "3.2.0", features = ["no-entrypoint"] }
 
