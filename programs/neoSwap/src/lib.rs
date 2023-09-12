@@ -950,12 +950,13 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            if ctx.accounts.swap_data_account.items[item_id].is_compressed {
-                if ctx.accounts.swap_data_account.items[item_id].is_nft
-                    && ctx.accounts.swap_data_account.items[item_id].status
-                        == ItemStatus::NFTDeposited.to_u8()
+            if ctx.accounts.swap_data_account.items[item_id].is_compressed
+                && ctx.accounts.swap_data_account.items[item_id].is_nft
+            {
+                if ctx.accounts.swap_data_account.items[item_id].status
+                    == ItemStatus::NFTDeposited.to_u8()
                     && ctx.accounts.swap_data_account.items[item_id]
-                        .mint
+                        .merkle_tree
                         .eq(&ctx.accounts.merkle_tree.key())
                     && ctx.accounts.swap_data_account.items[item_id]
                         .destinary
@@ -1463,15 +1464,16 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            if ctx.accounts.swap_data_account.items[item_id].is_compressed {
-                if ctx.accounts.swap_data_account.items[item_id].is_nft
-                    && ctx.accounts.swap_data_account.items[item_id].status
-                        == ItemStatus::NFTDeposited.to_u8()
+            if ctx.accounts.swap_data_account.items[item_id].is_compressed
+                && ctx.accounts.swap_data_account.items[item_id].is_nft
+            {
+                if ctx.accounts.swap_data_account.items[item_id].status
+                    == ItemStatus::NFTDeposited.to_u8()
                     && ctx.accounts.swap_data_account.items[item_id]
-                        .mint
+                        .merkle_tree
                         .eq(&ctx.accounts.merkle_tree.key())
                     && ctx.accounts.swap_data_account.items[item_id]
-                        .owner
+                        .destinary
                         .eq(ctx.accounts.user.key)
                     && !transfered
                 {
