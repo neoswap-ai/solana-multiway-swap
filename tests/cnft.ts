@@ -171,6 +171,19 @@ describe("compressed NFT Test Unit", () => {
                             swapDataAccount,
                             simulation: false,
                         });
+
+                        // const depositSwapDatauserprep =
+                        //     await neoSwap.CREATE_INSTRUCTIONS.prepareDepositSwapInstructions({
+                        //         clusterOrUrl,
+                        //         swapDataAccount,
+                        //         user: user.publicKey,
+                        //     });
+
+                        // const depositSwapDatauser = await neoSwap.apiProcessor({
+                        //     apiProcessorData: depositSwapDatauserprep[0],
+                        //     clusterOrUrl,
+                        //     signer: user,
+                        // });
                         // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
                         data.push({ user: user.publicKey, hashs: depositSwapDatauser });
                         console.log("transactionhashes", depositSwapDatauser);
@@ -182,7 +195,7 @@ describe("compressed NFT Test Unit", () => {
             // for await (const user of [user1, user2, user3, user4, user5, user6]) {
             // }
             // console.log("deposit datas :", data);
-            data.forEach((v) => console.log(v.user, "deposit datas :", v.hashs));
+            data.forEach((v) => console.log(v.user.toBase58(), "\ndeposit datas :", v.hashs));
         } else {
             console.log("swap not given");
         }
