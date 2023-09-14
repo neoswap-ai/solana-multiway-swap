@@ -921,8 +921,8 @@ pub mod neo_swap {
         Ok(())
     }
 
-    pub fn claim_c_nft<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, ClaimCNft<'info>>,
+    pub fn claim_c_nft<'info>(
+        ctx: Context<'_, '_, '_, 'info, ClaimCNft<'info>>,
         seed: Vec<u8>,
         bump: u8,
         root: [u8; 32],
@@ -974,58 +974,51 @@ pub mod neo_swap {
                     // }
                     // Transfer the NFT to user
 
-                    // remaining_accounts are the accounts that make up the required proof
-                    let remaining_accounts_len = ctx.remaining_accounts.len();
-                    let mut accounts = Vec::with_capacity(8 + remaining_accounts_len);
-                    accounts.extend(vec![
+                    const TRANSFER_DISCRIMINATOR: &[u8; 8] = &[163, 52, 200, 231, 140, 3, 69, 186];
+
+                    let mut accounts: Vec<solana_program::instruction::AccountMeta> = vec![
                         AccountMeta::new_readonly(ctx.accounts.tree_authority.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.swap_data_account.key(), true),
-                        AccountMeta::new_readonly(ctx.accounts.leaf_delegate.key(), false),
+                        AccountMeta::new_readonly(ctx.accounts.swap_data_account.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.user.key(), false),
                         AccountMeta::new(ctx.accounts.merkle_tree.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.log_wrapper.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.compression_program.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
-                    ]);
+                    ];
 
-                    let transfer_discriminator: [u8; 8] = [163, 52, 200, 231, 140, 3, 69, 186];
-
-                    let mut data = Vec::with_capacity(
-                        8 + root.len() + data_hash.len() + creator_hash.len() + 8 + 8,
-                    );
-                    data.extend(transfer_discriminator);
+                    let mut data: Vec<u8> = vec![];
+                    data.extend(TRANSFER_DISCRIMINATOR);
                     data.extend(root);
                     data.extend(data_hash);
                     data.extend(creator_hash);
                     data.extend(nonce.to_le_bytes());
                     data.extend(index.to_le_bytes());
 
-                    let mut account_infos = Vec::with_capacity(8 + remaining_accounts_len);
-                    account_infos.extend(vec![
+                    let mut account_infos: Vec<AccountInfo> = vec![
                         ctx.accounts.tree_authority.to_account_info(),
                         ctx.accounts.swap_data_account.to_account_info(),
-                        ctx.accounts.leaf_delegate.to_account_info(),
+                        ctx.accounts.swap_data_account.to_account_info(),
                         ctx.accounts.user.to_account_info(),
                         ctx.accounts.merkle_tree.to_account_info(),
                         ctx.accounts.log_wrapper.to_account_info(),
                         ctx.accounts.compression_program.to_account_info(),
                         ctx.accounts.system_program.to_account_info(),
-                    ]);
+                    ];
 
-                    // Add "accounts" (hashes) that make up the merkle proof from the remaining accounts.
+                    // add "accounts" (hashes) that make up the merkle proof
                     for acc in ctx.remaining_accounts.iter() {
                         accounts.push(AccountMeta::new_readonly(acc.key(), false));
                         account_infos.push(acc.to_account_info());
                     }
 
-                    let instruction = solana_program::instruction::Instruction {
-                        program_id: ctx.accounts.bubblegum_program.key(),
-                        accounts,
-                        data,
-                    };
-
+                    // msg!("manual cpi call");
                     solana_program::program::invoke_signed(
-                        &instruction,
+                        &solana_program::instruction::Instruction {
+                            program_id: ctx.accounts.bubblegum_program.key(),
+                            accounts,
+                            data,
+                        },
                         &account_infos[..],
                         &[&[&seed[..], &[bump]]],
                     )?;
@@ -1433,8 +1426,8 @@ pub mod neo_swap {
         Ok(())
     }
 
-    pub fn cancel_c_nft<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, ClaimCNft<'info>>,
+    pub fn cancel_c_nft<'info>(
+        ctx: Context<'_, '_, '_, 'info, ClaimCNft<'info>>,
         seed: Vec<u8>,
         bump: u8,
         root: [u8; 32],
@@ -1479,59 +1472,51 @@ pub mod neo_swap {
                 {
                     // Transfer deposited NFT back to user
 
-                    // remaining_accounts are the accounts that make up the required proof
-                    let remaining_accounts_len = ctx.remaining_accounts.len();
-                    let mut accounts = Vec::with_capacity(8 + remaining_accounts_len);
+                    const TRANSFER_DISCRIMINATOR: &[u8; 8] = &[163, 52, 200, 231, 140, 3, 69, 186];
 
-                    accounts.extend(vec![
+                    let mut accounts: Vec<solana_program::instruction::AccountMeta> = vec![
                         AccountMeta::new_readonly(ctx.accounts.tree_authority.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.swap_data_account.key(), true),
-                        AccountMeta::new_readonly(ctx.accounts.leaf_delegate.key(), false),
+                        AccountMeta::new_readonly(ctx.accounts.swap_data_account.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.user.key(), false),
                         AccountMeta::new(ctx.accounts.merkle_tree.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.log_wrapper.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.compression_program.key(), false),
                         AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
-                    ]);
+                    ];
 
-                    let transfer_discriminator: [u8; 8] = [163, 52, 200, 231, 140, 3, 69, 186];
-
-                    let mut data = Vec::with_capacity(
-                        8 + root.len() + data_hash.len() + creator_hash.len() + 8 + 8,
-                    );
-                    data.extend(transfer_discriminator);
+                    let mut data: Vec<u8> = vec![];
+                    data.extend(TRANSFER_DISCRIMINATOR);
                     data.extend(root);
                     data.extend(data_hash);
                     data.extend(creator_hash);
                     data.extend(nonce.to_le_bytes());
                     data.extend(index.to_le_bytes());
 
-                    let mut account_infos = Vec::with_capacity(8 + remaining_accounts_len);
-                    account_infos.extend(vec![
+                    let mut account_infos: Vec<AccountInfo> = vec![
                         ctx.accounts.tree_authority.to_account_info(),
                         ctx.accounts.swap_data_account.to_account_info(),
-                        ctx.accounts.leaf_delegate.to_account_info(),
+                        ctx.accounts.swap_data_account.to_account_info(),
                         ctx.accounts.user.to_account_info(),
                         ctx.accounts.merkle_tree.to_account_info(),
                         ctx.accounts.log_wrapper.to_account_info(),
                         ctx.accounts.compression_program.to_account_info(),
                         ctx.accounts.system_program.to_account_info(),
-                    ]);
+                    ];
 
-                    // Add "accounts" (hashes) that make up the merkle proof from the remaining accounts.
+                    // add "accounts" (hashes) that make up the merkle proof
                     for acc in ctx.remaining_accounts.iter() {
                         accounts.push(AccountMeta::new_readonly(acc.key(), false));
                         account_infos.push(acc.to_account_info());
                     }
 
-                    let instruction = solana_program::instruction::Instruction {
-                        program_id: ctx.accounts.bubblegum_program.key(),
-                        accounts,
-                        data,
-                    };
-
+                    // msg!("manual cpi call");
                     solana_program::program::invoke_signed(
-                        &instruction,
+                        &solana_program::instruction::Instruction {
+                            program_id: ctx.accounts.bubblegum_program.key(),
+                            accounts,
+                            data,
+                        },
                         &account_infos[..],
                         &[&[&seed[..], &[bump]]],
                     )?;
@@ -1895,7 +1880,7 @@ pub struct ClaimNft<'info> {
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
 pub struct ClaimCNft<'info> {
-    #[account()]
+    // #[account()]
     system_program: Program<'info, System>,
     /// CHECK: in constraint
     #[account(constraint = metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
@@ -1903,7 +1888,7 @@ pub struct ClaimCNft<'info> {
     /// CHECK: in constraint
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
-    #[account()]
+    // #[account()]
     spl_token_program: Program<'info, Token>,
     /// CHECK: in constraints
     #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
@@ -1915,18 +1900,19 @@ pub struct ClaimCNft<'info> {
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     /// CHECK: user Account
-    #[account(mut,
-        // constraint = user_ata.owner == user.key() @ MYERROR::IncorrectOwner
-        )]
+    // #[account(mut,
+    //     // constraint = user_ata.owner == user.key() @ MYERROR::IncorrectOwner
+    //     )]
     user: AccountInfo<'info>,
     #[account(mut)]
     signer: Signer<'info>,
-    #[account(mut)]
-    leaf_delegate: Signer<'info>,
+    /// CHECK: user Account
+    // #[account(mut)]
+    leaf_delegate: UncheckedAccount<'info>,
 
     /// CHECK: in cpi
     #[account(
-       mut,
+    //    mut,
        seeds = [merkle_tree.key().as_ref()],
        bump,
        seeds::program = bubblegum_program.key()

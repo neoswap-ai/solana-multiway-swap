@@ -46,7 +46,8 @@ describe("compressed NFT Test Unit", () => {
     // let clusterOrUrl = "devnet";
 
     //normal
-    let swapDataAccount: PublicKey = new PublicKey("4rGpm3yRoA1MBQqu1kveieyfiUEJM8rCwn76xaxEhxWu");
+    // let swapDataAccount: PublicKey = new PublicKey("4rGpm3yRoA1MBQqu1kveieyfiUEJM8rCwn76xaxEhxWu");
+    let swapDataAccount: PublicKey = new PublicKey("4XuXYFnDdDzqPTi8aQJ3BDt7TwH7MPxMikHFe2Roz3Mp");
     // let swapDataAccount: PublicKey | undefined = undefined;
 
     let swapInfo: neoTypes.SwapInfo = {
@@ -54,7 +55,7 @@ describe("compressed NFT Test Unit", () => {
         preSeed: "0033",
         users: [
             {
-                address: user2.publicKey.toBase58(),
+                address: user1.publicKey.toBase58(),
                 items: {
                     give: [
                         {
@@ -74,7 +75,7 @@ describe("compressed NFT Test Unit", () => {
                 },
             },
             {
-                address: user1.publicKey.toBase58(),
+                address: user2.publicKey.toBase58(),
                 items: {
                     give: [
                         {
@@ -158,34 +159,34 @@ describe("compressed NFT Test Unit", () => {
     //     console.log("hash", hash);
     // });
 
-    // it("deposit all NFT to  swap", async () => {
-    //     if (swapDataAccount) {
-    //         let data: { user: PublicKey; hashs: string[] }[] = [];
-    //         await Promise.all(
-    //             [user2, user1].map(async (user) => {
-    //                 try {
-    //                     const depositSwapDatauser = await neoSwap.depositSwap({
-    //                         clusterOrUrl,
-    //                         signer: user,
-    //                         swapDataAccount,
-    //                         simulation: false,
-    //                     });
-    //                     // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
-    //                     data.push({ user: user.publicKey, hashs: depositSwapDatauser });
-    //                     console.log("transactionhashes", depositSwapDatauser);
-    //                 } catch (error) {
-    //                     data.push({ user: user.publicKey, hashs: error });
-    //                 }
-    //             })
-    //         );
-    //         // for await (const user of [user1, user2, user3, user4, user5, user6]) {
-    //         // }
-    //         // console.log("deposit datas :", data);
-    //         data.forEach((v) => console.log(v.user, "deposit datas :", v.hashs));
-    //     } else {
-    //         console.log("swap not given");
-    //     }
-    // });
+    it("deposit all NFT to  swap", async () => {
+        if (swapDataAccount) {
+            let data: { user: PublicKey; hashs: string[] }[] = [];
+            await Promise.all(
+                [user2, user1].map(async (user) => {
+                    try {
+                        const depositSwapDatauser = await neoSwap.depositSwap({
+                            clusterOrUrl,
+                            signer: user,
+                            swapDataAccount,
+                            simulation: false,
+                        });
+                        // if (neoSwapNpm.utils.isErrorDeposit(depositSwapDatauser))throw depositSwapDatauser
+                        data.push({ user: user.publicKey, hashs: depositSwapDatauser });
+                        console.log("transactionhashes", depositSwapDatauser);
+                    } catch (error) {
+                        data.push({ user: user.publicKey, hashs: error });
+                    }
+                })
+            );
+            // for await (const user of [user1, user2, user3, user4, user5, user6]) {
+            // }
+            // console.log("deposit datas :", data);
+            data.forEach((v) => console.log(v.user, "deposit datas :", v.hashs));
+        } else {
+            console.log("swap not given");
+        }
+    });
 
     // it("finish cancel and close from signer", async () => {
     //     const swapData = await neoSwap.UTILS.getSwapDataAccountFromPublicKey({
@@ -195,33 +196,49 @@ describe("compressed NFT Test Unit", () => {
 
     //     console.log("swapData :", swapData);
     // });
-    // it("finish cancel and close from signer", async () => {
-    //     if (swapDataAccount) {
-    //         const cancelAndCloseHash = await neoSwap.cancelAndCloseSwap({
-    //             signer,
-    //             clusterOrUrl,
-    //             swapDataAccount,
-    //         });
-
-    //         console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    //     } else {
-    //         console.log("swap not given");
-    //     }
-    // });
-
-    it("claim 2 and close from signer", async () => {
+    it("finish cancel and close from signer", async () => {
         if (swapDataAccount) {
-            const claimAndCloseHash = await neoSwap.claimAndCloseSwap({
-                signer: signer,
+            const cancelAndCloseHash = await neoSwap.cancelAndCloseSwap({
+                signer,
                 clusterOrUrl,
                 swapDataAccount,
-                simulation: false,
-                // skipConfirmation: true,
             });
 
-            console.log("claimAndCloseHash :", claimAndCloseHash);
+            console.log("cancelAndCloseHash :", cancelAndCloseHash);
         } else {
             console.log("swap not given");
         }
     });
+
+    // it("claim 2 and close from signer", async () => {
+    //     if (swapDataAccount) {
+    //         // const claimAndCloseHash = await neoSwap.CREATE_INSTRUCTIONS.createClaimSwapInstructions(
+    //             const claimAndCloseHash = await neoSwap.claimAndCloseSwap(
+    //             {
+    //                 signer: signer,
+    //                 clusterOrUrl,
+    //                 swapDataAccount,
+
+    //                 //     simulation: false,
+    //                 // skipConfirmation: true,
+    //             }
+    //         );
+    //         // claimAndCloseHash[0].tx;
+    //         // claimAndCloseHash[0].tx.feePayer = signer.publicKey;
+    //         // claimAndCloseHash[0].tx.recentBlockhash = (
+    //         //     await program.provider.connection.getLatestBlockhash()
+    //         // ).blockhash;
+    //         // claimAndCloseHash[0].tx.sign(signer);
+    //         // const signature = await program.provider.connection.sendRawTransaction(
+    //         //     claimAndCloseHash[0].tx.serialize(),
+    //         //     {
+    //         //         skipPreflight: true,
+    //         //     }
+    //         // );
+    //         // console.log(signature);
+    //         console.log("claimAndCloseHash :", claimAndCloseHash);
+    //     } else {
+    //         console.log("swap not given");
+    //     }
+    // });
 });
