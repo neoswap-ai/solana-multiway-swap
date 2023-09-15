@@ -46,8 +46,8 @@ describe("compressed NFT Test Unit", () => {
     // let clusterOrUrl = "devnet";
 
     //normal
-    // let swapDataAccount: PublicKey = new PublicKey("6CDpDkB1j91469brgBiV3j1mZWwHNA5gifE3SWcRiXRg");
-    let swapDataAccount: PublicKey = new PublicKey("J2g2rtfjS549Cs2uxUP6VnssQZ1THhpfnLqjeEfgYxtD");
+    let swapDataAccount: PublicKey = new PublicKey("6CDpDkB1j91469brgBiV3j1mZWwHNA5gifE3SWcRiXRg");
+    // let swapDataAccount: PublicKey = new PublicKey("J2g2rtfjS549Cs2uxUP6VnssQZ1THhpfnLqjeEfgYxtD");
     // let swapDataAccount: PublicKey | undefined = undefined;
 
     let swapInfo: neoTypes.SwapInfo = {
@@ -55,70 +55,70 @@ describe("compressed NFT Test Unit", () => {
         preSeed: "0035",
         users: [
             {
-                address: user2.publicKey.toBase58(),
+                address: user1.publicKey.toBase58(),
                 items: {
                     give: [
                         {
                             address: "2Tc5ysNhnboDtyysQgrLEN6AEb37Q7DZDqCoixgLLWHd",
                             amount: 1,
-                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "98n9RpNnzwPRbKSVmizegAJ4rz5dhwHfunPQJJnkEhFX",
                             amount: 1,
-                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     get: [
                         {
                             address: "GdzJNpcJVQQX2rPAWMS83cFF2qMyf9DtH7kyuAeXbF7i",
                             amount: 1,
-                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "28S928mvfUAMwSXcRVmvEy4nLfvJWRHpb56icNyXaCam",
                             amount: 1,
-                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "2XMTk7bhL57FE8rR55MjWjw4hoRm7mWnfTjQd8ULTA6H",
                             amount: 1,
-                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     token: { amount: 50000 },
                 },
             },
             {
-                address: user1.publicKey.toBase58(),
+                address: user2.publicKey.toBase58(),
                 items: {
                     give: [
                         {
                             address: "GdzJNpcJVQQX2rPAWMS83cFF2qMyf9DtH7kyuAeXbF7i",
                             amount: 1,
-                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "2XMTk7bhL57FE8rR55MjWjw4hoRm7mWnfTjQd8ULTA6H",
                             amount: 1,
-                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "28S928mvfUAMwSXcRVmvEy4nLfvJWRHpb56icNyXaCam",
                             amount: 1,
-                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     get: [
                         {
                             address: "2Tc5ysNhnboDtyysQgrLEN6AEb37Q7DZDqCoixgLLWHd",
                             amount: 1,
-                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "98n9RpNnzwPRbKSVmizegAJ4rz5dhwHfunPQJJnkEhFX",
                             amount: 1,
-                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     token: { amount: -50000 },
@@ -231,7 +231,7 @@ describe("compressed NFT Test Unit", () => {
                             apiProcessorData: depositSwapDatauserprep[0],
                             clusterOrUrl,
                             signer: user,
-                            simulation:false
+                            simulation: false,
                         });
                         data.push({ user: user.publicKey, hashs: depositSwapDatauser });
                         // data.push({ user: user.publicKey, hashs });
