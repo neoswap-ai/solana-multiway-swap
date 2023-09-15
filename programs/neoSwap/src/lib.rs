@@ -341,8 +341,8 @@ pub mod neo_swap {
 
     /// @notice Deposit NFT to escrow.
     /// @dev Function that iterates through Swap's Data from PDA to find the relevant information linked with accounts shared and deposit the NFT into the escrow.
-    pub fn deposit_c_nft<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, DepositCNft<'info>>,
+    pub fn deposit_c_nft<'info>(
+        ctx: Context<'_, '_, '_, 'info, DepositCNft<'info>>,
         _seed: Vec<u8>,
         root: [u8; 32],
         data_hash: [u8; 32],
@@ -363,17 +363,23 @@ pub mod neo_swap {
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
             msg!("2");
             // msg!("{:#?}", ctx.accounts.merkle_tree.data);
-            msg!(
-                "item {:#?}",
-                ctx.accounts.swap_data_account.items[item_id].merkle_tree
-            );
-            msg!("mwrkle {:#?}", ctx.accounts.merkle_tree.key());
+            // msg!(
+            //     "item {:#?}",
+            //     ctx.accounts.swap_data_account.items[item_id].merkle_tree
+            // );
+            // msg!("mwrkle {:#?}", ctx.accounts.merkle_tree.key());
+            // msg!(
+            //     "index {:#?} VS {:#?}",
+            //     index,
+            //     ctx.accounts.swap_data_account.items[item_id].index
+            // );
             if ctx.accounts.swap_data_account.items[item_id].is_compressed
                 && ctx.accounts.swap_data_account.items[item_id].is_nft
             {
                 if ctx.accounts.swap_data_account.items[item_id]
                     .merkle_tree
                     .eq(&ctx.accounts.merkle_tree.key())
+                    && index == ctx.accounts.swap_data_account.items[item_id].index
                     && ctx.accounts.swap_data_account.items[item_id]
                         .owner
                         .eq(&ctx.accounts.user.key())
@@ -958,6 +964,7 @@ pub mod neo_swap {
                     && ctx.accounts.swap_data_account.items[item_id]
                         .merkle_tree
                         .eq(&ctx.accounts.merkle_tree.key())
+                    && index == ctx.accounts.swap_data_account.items[item_id].index
                     && ctx.accounts.swap_data_account.items[item_id]
                         .destinary
                         .eq(&ctx.accounts.user.key())
@@ -1270,13 +1277,17 @@ pub mod neo_swap {
         );
 
         if ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
-            && (!ctx
+            && !(ctx
                 .accounts
                 .signer
                 .key()
                 .eq(&ctx.accounts.swap_data_account.initializer)
-                || !ctx.accounts.user.key().eq(&ctx.accounts.signer.key()))
+                || ctx.accounts.user.key().eq(&ctx.accounts.signer.key()))
         {
+            msg!("status ${}", ctx.accounts.swap_data_account.status);
+            msg!("signer ${}", ctx.accounts.signer.key());
+            msg!("init ${}", ctx.accounts.swap_data_account.initializer);
+            msg!("user ${}", ctx.accounts.user.key());
             return Err(error!(MYERROR::NotAuthorized));
         }
 
@@ -1443,12 +1454,12 @@ pub mod neo_swap {
         );
 
         if ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
-            && (!ctx
+            && !(ctx
                 .accounts
                 .signer
                 .key()
                 .eq(&ctx.accounts.swap_data_account.initializer)
-                || !ctx.accounts.user.key().eq(&ctx.accounts.signer.key()))
+                || ctx.accounts.user.key().eq(&ctx.accounts.signer.key()))
         {
             return Err(error!(MYERROR::NotAuthorized));
         }
@@ -1457,6 +1468,17 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            //    msg!("{:#?}", ctx.accounts.merkle_tree.data);
+            // msg!(
+            //     "item {:#?}",
+            //     ctx.accounts.swap_data_account.items[item_id].merkle_tree
+            // );
+            // msg!("mwrkle {:#?}", ctx.accounts.merkle_tree.key());
+            // msg!(
+            //     "index {:#?} VS {:#?}",
+            //     index,
+            //     ctx.accounts.swap_data_account.items[item_id].index
+            // );
             if ctx.accounts.swap_data_account.items[item_id].is_compressed
                 && ctx.accounts.swap_data_account.items[item_id].is_nft
             {
@@ -1465,8 +1487,9 @@ pub mod neo_swap {
                     && ctx.accounts.swap_data_account.items[item_id]
                         .merkle_tree
                         .eq(&ctx.accounts.merkle_tree.key())
+                    && index == ctx.accounts.swap_data_account.items[item_id].index
                     && ctx.accounts.swap_data_account.items[item_id]
-                        .destinary
+                        .owner
                         .eq(ctx.accounts.user.key)
                     && !transfered
                 {
@@ -2019,6 +2042,7 @@ pub struct NftSwapItem {
     is_compressed: bool, // if NFT is compressed
     mint: Pubkey, // Mint of the NFT. if item not NFT expected PublicKey should be system_program
     merkle_tree: Pubkey, // Merkle Tree of the NFT. if item not CNFT = mint
+    index: u32,   // Index of the NFT in the Merkle Tree. if item not CNFT = 0
     amount: i64,  // amount of tokens or lamports to transfer
     owner: Pubkey, // owner of the NFT or SOL item
     destinary: Pubkey, // destinary of the item
@@ -2028,7 +2052,7 @@ pub struct NftSwapItem {
 impl NftSwapItem {
     const LEN: usize = 32 * 4 + //pubkey
         2 + //bool / u8
-        8; //i64
+        8*2; //i64
 }
 
 pub enum TradeStatus {
