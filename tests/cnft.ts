@@ -32,15 +32,12 @@ const user4 = Keypair.fromSecretKey(user4Sk);
 import user5Sk from "../deleteme/user5";
 const user5 = Keypair.fromSecretKey(user5Sk);
 import user6Sk from "../deleteme/user6";
-// import { SwapInfo } from "@neoswap/solana/dist/lib/es5/utils/types";
-// import { transferCnft } from "../app/src/neoSwap.module.v4.2/functions.neoswap/createInstruction/transferCnft";
 const user6 = Keypair.fromSecretKey(user6Sk);
-const tokenId = "3Mh7ReRQXRig1Lv8qNKdR1bvU9ehfto1JCnhMC6yUB2v";
 
 describe("compressed NFT Test Unit", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
-    let program = anchor.workspace.NeoSwap as Program;
+    // let program = anchor.workspace.NeoSwap as Program;
     let clusterOrUrl =
         "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/";
     // let clusterOrUrl = "devnet";
@@ -129,18 +126,18 @@ describe("compressed NFT Test Unit", () => {
     };
 
     it("Initializing Program", async () => {
-        program = new Program(
-            idl as anchor.Idl,
-            new PublicKey("EU5zoiRSvPE5k1Fy49UJZvPMBKxzatdBGFJ11XPFD42Z"),
-            new anchor.AnchorProvider(
-                new Connection(
-                    "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/"
-                ),
-                new anchor.Wallet(signer),
-                { commitment: "confirmed" }
-            )
-        );
-        console.log("programId", program.programId.toBase58());
+        // program = new Program(
+        //     idl as anchor.Idl,
+        //     new PublicKey("EU5zoiRSvPE5k1Fy49UJZvPMBKxzatdBGFJ11XPFD42Z"),
+        //     new anchor.AnchorProvider(
+        //         new Connection(
+        //             "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/"
+        //         ),
+        //         new anchor.Wallet(signer),
+        //         { commitment: "confirmed" }
+        //     )
+        // );
+        // console.log("programId", program.programId.toBase58());
         console.log("signer", signer.publicKey.toBase58());
         console.log("user1", user1.publicKey.toBase58());
         console.log("user2", user2.publicKey.toBase58());
