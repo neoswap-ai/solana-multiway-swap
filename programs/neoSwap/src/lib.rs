@@ -1275,26 +1275,29 @@ pub mod neo_swap {
                 || ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8(),
             MYERROR::NotReady
         );
+        let mut authorized = false;
 
-        if ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
-            && !(ctx
-                .accounts
-                .signer
-                .key()
-                .eq(&ctx.accounts.swap_data_account.initializer)
-                || ctx.accounts.user.key().eq(&ctx.accounts.signer.key()))
+        if ctx
+            .accounts
+            .signer
+            .key()
+            .eq(&ctx.accounts.swap_data_account.initializer)
+            || ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8()
         {
-            msg!("status ${}", ctx.accounts.swap_data_account.status);
-            msg!("signer ${}", ctx.accounts.signer.key());
-            msg!("init ${}", ctx.accounts.swap_data_account.initializer);
-            msg!("user ${}", ctx.accounts.user.key());
-            return Err(error!(MYERROR::NotAuthorized));
+            authorized = true;
         }
 
         let mut transfered: bool = false;
-
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
+            if ctx.accounts.swap_data_account.items[item_id]
+                .owner
+                .eq(&ctx.accounts.signer.key())
+                && !authorized
+            {
+                authorized = true;
+            };
+            
             if !ctx.accounts.swap_data_account.items[item_id].is_compressed {
                 if ctx.accounts.swap_data_account.items[item_id].is_nft
                     && ctx.accounts.swap_data_account.items[item_id].status
@@ -1426,6 +1429,9 @@ pub mod neo_swap {
 
         if !transfered {
             return Err(error!(MYERROR::NoSend));
+        }
+        if !authorized {
+            return Err(error!(MYERROR::NotAuthorized));
         }
 
         // If not already, update Swap's status to 90 (canceled)
