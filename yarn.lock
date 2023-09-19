@@ -1411,9 +1411,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@neoswap/solana@npm:^0.3.0-beta81":
-  version: 0.3.0-beta81
-  resolution: "@neoswap/solana@npm:0.3.0-beta81"
+"@neoswap/solana@npm:^0.3.0-beta86":
+  version: 0.3.0-beta86
+  resolution: "@neoswap/solana@npm:0.3.0-beta86"
   dependencies:
     "@metaplex-foundation/beet": ^0.7.1
     "@metaplex-foundation/js": ^0.19.4
@@ -1428,7 +1428,7 @@ __metadata:
     bs58: ^5.0.0
     parcel: ^2.5.0
     typescript: ^4.6.3
-  checksum: b98dd61506df5fbadfe5e5ee63a634286beb57472943be89ebe8599d72fbbbffa9c399f193d809d5a5dda20979c1ad8bf9ecaf45c661bfb7866042cf21095299
+  checksum: 242526a5116f758ee8d3cad92a1701adac6688f122247e5947ae6edf3eea165a676db57b1f67fcae1c81fba258da4284a9d05030f038bcf5d677841966e8f5c8
   languageName: node
   linkType: hard
 
@@ -9187,7 +9187,7 @@ __metadata:
     "@metaplex-foundation/mpl-token-auth-rules": ^1.2.0
     "@metaplex-foundation/umi": ^0.8.2
     "@metaplex-foundation/umi-bundle-defaults": ^0.8.2
-    "@neoswap/solana": ^0.3.0-beta81
+    "@neoswap/solana": ^0.3.0-beta86
     "@project-serum/anchor": ^0.25.0
     "@solana/spl-token": ^0.3.5
     "@solana/wallet-adapter-base": ^0.9.17

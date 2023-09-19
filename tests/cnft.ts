@@ -43,8 +43,8 @@ describe("compressed NFT Test Unit", () => {
     // let clusterOrUrl = "devnet";
 
     //normal
-    let swapDataAccount: PublicKey = new PublicKey("6CDpDkB1j91469brgBiV3j1mZWwHNA5gifE3SWcRiXRg");
-    // let swapDataAccount: PublicKey = new PublicKey("J2g2rtfjS549Cs2uxUP6VnssQZ1THhpfnLqjeEfgYxtD");
+    // let swapDataAccount: PublicKey = new PublicKey("6CDpDkB1j91469brgBiV3j1mZWwHNA5gifE3SWcRiXRg");
+    let swapDataAccount: PublicKey = new PublicKey("J2g2rtfjS549Cs2uxUP6VnssQZ1THhpfnLqjeEfgYxtD");
     // let swapDataAccount: PublicKey | undefined = undefined;
 
     let swapInfo: neoTypes.SwapInfo = {
@@ -52,70 +52,70 @@ describe("compressed NFT Test Unit", () => {
         preSeed: "0035",
         users: [
             {
-                address: user1.publicKey.toBase58(),
+                address: user2.publicKey.toBase58(),
                 items: {
                     give: [
                         {
                             address: "2Tc5ysNhnboDtyysQgrLEN6AEb37Q7DZDqCoixgLLWHd",
                             amount: 1,
-                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "98n9RpNnzwPRbKSVmizegAJ4rz5dhwHfunPQJJnkEhFX",
                             amount: 1,
-                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     get: [
                         {
                             address: "GdzJNpcJVQQX2rPAWMS83cFF2qMyf9DtH7kyuAeXbF7i",
                             amount: 1,
-                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "28S928mvfUAMwSXcRVmvEy4nLfvJWRHpb56icNyXaCam",
                             amount: 1,
-                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "2XMTk7bhL57FE8rR55MjWjw4hoRm7mWnfTjQd8ULTA6H",
                             amount: 1,
-                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     token: { amount: 50000 },
                 },
             },
             {
-                address: user2.publicKey.toBase58(),
+                address: user1.publicKey.toBase58(),
                 items: {
                     give: [
                         {
                             address: "GdzJNpcJVQQX2rPAWMS83cFF2qMyf9DtH7kyuAeXbF7i",
                             amount: 1,
-                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "2XMTk7bhL57FE8rR55MjWjw4hoRm7mWnfTjQd8ULTA6H",
                             amount: 1,
-                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "28S928mvfUAMwSXcRVmvEy4nLfvJWRHpb56icNyXaCam",
                             amount: 1,
-                            getters: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     get: [
                         {
                             address: "2Tc5ysNhnboDtyysQgrLEN6AEb37Q7DZDqCoixgLLWHd",
                             amount: 1,
-                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                         {
                             address: "98n9RpNnzwPRbKSVmizegAJ4rz5dhwHfunPQJJnkEhFX",
                             amount: 1,
-                            givers: [{ address: user1.publicKey.toBase58(), amount: 1 }],
+                            givers: [{ address: user2.publicKey.toBase58(), amount: 1 }],
                         },
                     ],
                     token: { amount: -50000 },
@@ -255,47 +255,47 @@ describe("compressed NFT Test Unit", () => {
 
     //     console.log("swapData :", swapData);
     // });
-    // it("finish cancel and close from signer", async () => {
-    //     if (swapDataAccount) {
-    //         const cancelAndCloseHash = await neoSwap.cancelAndCloseSwap({
-    //             signer,
-    //             clusterOrUrl,
-    //             swapDataAccount,
-    //         });
-
-    //         console.log("cancelAndCloseHash :", cancelAndCloseHash);
-    //     } else {
-    //         console.log("swap not given");
-    //     }
-    // });
-
-    it("claim 2 and close from signer", async () => {
+    it("finish cancel and close from signer", async () => {
         if (swapDataAccount) {
-            // const claimAndCloseHash = await neoSwap.CREATE_INSTRUCTIONS.createClaimSwapInstructions(
-            const claimAndCloseHash = await neoSwap.claimAndCloseSwap({
-                signer: signer,
+            const cancelAndCloseHash = await neoSwap.cancelAndCloseSwap({
+                signer,
                 clusterOrUrl,
                 swapDataAccount,
-
-                //     simulation: false,
-                // skipConfirmation: true,
             });
-            // claimAndCloseHash[0].tx;
-            // claimAndCloseHash[0].tx.feePayer = signer.publicKey;
-            // claimAndCloseHash[0].tx.recentBlockhash = (
-            //     await program.provider.connection.getLatestBlockhash()
-            // ).blockhash;
-            // claimAndCloseHash[0].tx.sign(signer);
-            // const signature = await program.provider.connection.sendRawTransaction(
-            //     claimAndCloseHash[0].tx.serialize(),
-            //     {
-            //         skipPreflight: true,
-            //     }
-            // );
-            // console.log(signature);
-            console.log("claimAndCloseHash :", claimAndCloseHash);
+
+            console.log("cancelAndCloseHash :", cancelAndCloseHash);
         } else {
             console.log("swap not given");
         }
     });
+
+    // it("claim 2 and close from signer", async () => {
+    //     if (swapDataAccount) {
+    //         // const claimAndCloseHash = await neoSwap.CREATE_INSTRUCTIONS.createClaimSwapInstructions(
+    //         const claimAndCloseHash = await neoSwap.claimAndCloseSwap({
+    //             signer: signer,
+    //             clusterOrUrl,
+    //             swapDataAccount,
+
+    //             //     simulation: false,
+    //             // skipConfirmation: true,
+    //         });
+    //         // claimAndCloseHash[0].tx;
+    //         // claimAndCloseHash[0].tx.feePayer = signer.publicKey;
+    //         // claimAndCloseHash[0].tx.recentBlockhash = (
+    //         //     await program.provider.connection.getLatestBlockhash()
+    //         // ).blockhash;
+    //         // claimAndCloseHash[0].tx.sign(signer);
+    //         // const signature = await program.provider.connection.sendRawTransaction(
+    //         //     claimAndCloseHash[0].tx.serialize(),
+    //         //     {
+    //         //         skipPreflight: true,
+    //         //     }
+    //         // );
+    //         // console.log(signature);
+    //         console.log("claimAndCloseHash :", claimAndCloseHash);
+    //     } else {
+    //         console.log("swap not given");
+    //     }
+    // });
 });
