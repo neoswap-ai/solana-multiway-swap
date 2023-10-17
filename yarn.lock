@@ -980,9 +980,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metaplex-foundation/js@npm:^0.19.4, @metaplex-foundation/js@npm:~0.19.4":
-  version: 0.19.4
-  resolution: "@metaplex-foundation/js@npm:0.19.4"
+"@metaplex-foundation/js@npm:^0.19.5, @metaplex-foundation/js@npm:~0.19.4":
+  version: 0.19.5
+  resolution: "@metaplex-foundation/js@npm:0.19.5"
   dependencies:
     "@bundlr-network/client": ^0.8.8
     "@metaplex-foundation/beet": 0.7.1
@@ -1008,7 +1008,7 @@ __metadata:
     merkletreejs: ^0.2.32
     mime: ^3.0.0
     node-fetch: ^2.6.7
-  checksum: 79b1ae8445b47ab21eb88f6a906ff68185e7a6f7aa8d3679c9d5ff95d0227c3079e8fcde3b1dae53be16278ff70d934b80245c3e32cc2dffc105c9dd4d8e7c2f
+  checksum: 6b8dfcca3b30c6c4bd2666ed95aa5b30b919251eeca34fcc7afdf975e28a251b9116da66a88351e0495235a0d1fef3b4841702735a7aebb9dadef8dac3c1fa51
   languageName: node
   linkType: hard
 
@@ -1043,17 +1043,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metaplex-foundation/mpl-bubblegum@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@metaplex-foundation/mpl-bubblegum@npm:1.0.1"
+"@metaplex-foundation/mpl-bubblegum@npm:^0.8.0":
+  version: 0.8.0
+  resolution: "@metaplex-foundation/mpl-bubblegum@npm:0.8.0"
   dependencies:
-    "@metaplex-foundation/mpl-token-metadata": 3.0.0-alpha.27
-    "@metaplex-foundation/mpl-toolbox": ^0.9.0
-    "@noble/hashes": ^1.3.1
-    merkletreejs: ^0.3.9
-  peerDependencies:
-    "@metaplex-foundation/umi": ^0.8.2
-  checksum: b659925406395e93ece3322c86ec5437db090227f4177c655dd0223ee0a37965c2e9e36d95230d89bb72fb610e5f871887a2ba56a6cefddb0207dd60556daf08
+    "@metaplex-foundation/beet": 0.7.1
+    "@metaplex-foundation/beet-solana": 0.4.0
+    "@metaplex-foundation/cusper": ^0.0.2
+    "@metaplex-foundation/mpl-token-metadata": ^2.5.2
+    "@solana/spl-account-compression": ^0.1.4
+    "@solana/spl-token": ^0.1.8
+    "@solana/web3.js": ^1.50.1
+    js-sha3: ^0.8.0
+  checksum: dba5645140289c8eb41a275135a56a380349b303a318a84a48a35a961d828d607b34ffdc956fff67e56546cccc8d6c3378553be1c89f4a000aa870c640adac00
   languageName: node
   linkType: hard
 
@@ -1134,17 +1136,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metaplex-foundation/mpl-token-metadata@npm:3.0.0-alpha.27":
-  version: 3.0.0-alpha.27
-  resolution: "@metaplex-foundation/mpl-token-metadata@npm:3.0.0-alpha.27"
-  dependencies:
-    "@metaplex-foundation/mpl-toolbox": ^0.9.0
-  peerDependencies:
-    "@metaplex-foundation/umi": ^0.8.2
-  checksum: ec79071615b418a4efcfac50616dc6a873f6a827589a5c83990e68e8aa3617813893f8574268cdd53d0cb0330997a979913494ee2e1a722b7716f5536dd579a4
-  languageName: node
-  linkType: hard
-
 "@metaplex-foundation/mpl-token-metadata@npm:^2.11.0, @metaplex-foundation/mpl-token-metadata@npm:^2.11.1, @metaplex-foundation/mpl-token-metadata@npm:^2.5.2":
   version: 2.12.0
   resolution: "@metaplex-foundation/mpl-token-metadata@npm:2.12.0"
@@ -1169,7 +1160,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metaplex-foundation/mpl-toolbox@npm:^0.9.0":
+"@metaplex-foundation/mpl-toolbox@npm:^0.9.1":
   version: 0.9.1
   resolution: "@metaplex-foundation/mpl-toolbox@npm:0.9.1"
   peerDependencies:
@@ -1411,14 +1402,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@neoswap/solana@npm:^0.3.0-beta86":
-  version: 0.3.0-beta86
-  resolution: "@neoswap/solana@npm:0.3.0-beta86"
+"@neoswap/solana@npm:^0.3.0-beta91":
+  version: 0.3.0-beta91
+  resolution: "@neoswap/solana@npm:0.3.0-beta91"
   dependencies:
     "@metaplex-foundation/beet": ^0.7.1
-    "@metaplex-foundation/js": ^0.19.4
-    "@metaplex-foundation/mpl-bubblegum": ^1.0.1
+    "@metaplex-foundation/js": ^0.19.5
+    "@metaplex-foundation/mpl-bubblegum": ^0.8.0
     "@metaplex-foundation/mpl-token-metadata": ^2.11.1
+    "@metaplex-foundation/mpl-toolbox": ^0.9.1
     "@project-serum/anchor": ^0.26.0
     "@solana/spl-token": ^0.3.7
     "@solana/web3.js": ^1.66.2
@@ -1428,7 +1420,7 @@ __metadata:
     bs58: ^5.0.0
     parcel: ^2.5.0
     typescript: ^4.6.3
-  checksum: 242526a5116f758ee8d3cad92a1701adac6688f122247e5947ae6edf3eea165a676db57b1f67fcae1c81fba258da4284a9d05030f038bcf5d677841966e8f5c8
+  checksum: 8587796c872d198ce6bf93ea8edd4baae0ebf2c821753e6d493f9b87784eecf402bb472ddb709e088520f14396314240d47d09fed45774313293b700e52a12de
   languageName: node
   linkType: hard
 
@@ -1479,7 +1471,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/hashes@npm:1.3.1, @noble/hashes@npm:^1.1.3, @noble/hashes@npm:^1.2.0, @noble/hashes@npm:^1.3.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:~1.3.0":
+"@noble/hashes@npm:1.3.1, @noble/hashes@npm:^1.1.3, @noble/hashes@npm:^1.2.0, @noble/hashes@npm:^1.3.0, @noble/hashes@npm:~1.3.0":
   version: 1.3.1
   resolution: "@noble/hashes@npm:1.3.1"
   checksum: 7fdefc0f7a0c1ec27acc6ff88841793e3f93ec4ce6b8a6a12bfc0dd70ae6b7c4c82fe305fdfeda1735d5ad4a9eebe761e6693b3d355689c559e91242f4bc95b1
@@ -9187,7 +9179,7 @@ __metadata:
     "@metaplex-foundation/mpl-token-auth-rules": ^1.2.0
     "@metaplex-foundation/umi": ^0.8.2
     "@metaplex-foundation/umi-bundle-defaults": ^0.8.2
-    "@neoswap/solana": ^0.3.0-beta86
+    "@neoswap/solana": ^0.3.0-beta91
     "@project-serum/anchor": ^0.25.0
     "@solana/spl-token": ^0.3.5
     "@solana/wallet-adapter-base": ^0.9.17

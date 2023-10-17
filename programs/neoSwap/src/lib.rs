@@ -26,6 +26,7 @@ use anchor_spl::token::Mint;
 // declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
 declare_id!("HCg7NKnvWwWZdLXqDwZdjn9RDz9eLDYuSAcUHqeC1vmH");
 // declare_id!("EU5zoiRSvPE5k1Fy49UJZvPMBKxzatdBGFJ11XPFD42Z");
+// declare_id!("CtZHiWNnLu5rQuTN3jo7CmYDR8Wns6qXHn7taPvmnACp");
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -126,7 +127,7 @@ pub mod neo_swap {
             );
             // Check that mint and destinary are dummy values
             require!(
-                item_to_add.destinary.eq(&system_program::id()),
+                item_to_add.destinary.eq(&swap_data_account.accepted_payement),
                 MYERROR::UnexpectedData
             );
 
