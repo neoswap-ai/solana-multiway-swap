@@ -670,77 +670,77 @@ pub mod neo_swap {
                         .amount
                         .unsigned_abs();
 
-                    let swap_data_lamports_initial =
-                        ctx.accounts.swap_data_account.to_account_info().lamports();
+                    // let swap_data_lamports_initial =
+                    //     ctx.accounts.swap_data_account.to_account_info().lamports();
 
-                    if swap_data_lamports_initial >= amount_to_send {
-                        if ctx.accounts.swap_data_account.items[item_id]
-                            .mint
-                            .eq(&system_program::id())
-                        {
-                            **ctx.accounts.user.lamports.borrow_mut() =
-                                ctx.accounts.user.lamports() + amount_to_send;
-                            **ctx
-                                .accounts
-                                .swap_data_account
-                                .to_account_info()
-                                .lamports
-                                .borrow_mut() =
-                                ctx.accounts.swap_data_account.to_account_info().lamports()
-                                    - amount_to_send;
-                        } else {
-                            // check swapDataAccount ata
-                            require!(
-                                is_correct_ata(
-                                    ctx.accounts.swap_data_account_ata.key(),
-                                    ctx.accounts.swap_data_account.key(),
-                                    ctx.accounts.swap_data_account.items[item_id].mint.key()
-                                ),
-                                MYERROR::IncorrectOwner
-                            );
-                            // check user ata
-                            require!(
-                                is_correct_ata(
-                                    ctx.accounts.user_ata.key(),
-                                    ctx.accounts.user.key(),
-                                    ctx.accounts.swap_data_account.items[item_id].mint.key()
-                                ),
-                                MYERROR::IncorrectOwner
-                            );
-
-                            let ix_user = spl_token::instruction::transfer(
-                                &ctx.accounts.spl_token_program.to_account_info().key(),
-                                &ctx.accounts.swap_data_account_ata.key(),
-                                &ctx.accounts.user_ata.key(),
-                                &ctx.accounts.swap_data_account.key(),
-                                &[&ctx.accounts.swap_data_account.key()],
-                                ctx.accounts.swap_data_account.items[item_id]
-                                    .amount
-                                    .unsigned_abs(),
-                            )?;
-
-                            invoke_signed(
-                                &ix_user,
-                                &[
-                                    ctx.accounts.swap_data_account.to_account_info(),
-                                    ctx.accounts.swap_data_account_ata.to_account_info(),
-                                    ctx.accounts.user_ata.to_account_info(),
-                                    ctx.accounts.user.to_account_info(),
-                                    ctx.accounts.spl_token_program.to_account_info(),
-                                ],
-                                &[&[&seed[..], &[bump]]],
-                            )?;
-                        }
-
-                        //update item status to SolClaimed
-                        ctx.accounts.swap_data_account.items[item_id].status =
-                            ItemStatus::SolClaimed.to_u8();
-                        transfered = true;
-                        msg!("SOL item Claimed");
-                        break;
+                    // if swap_data_lamports_initial >= amount_to_send {
+                    // } else {
+                    //     return Err(error!(MYERROR::NotEnoughFunds));
+                    // }
+                    if ctx.accounts.swap_data_account.items[item_id]
+                        .mint
+                        .eq(&system_program::id())
+                    {
+                        **ctx.accounts.user.lamports.borrow_mut() =
+                            ctx.accounts.user.lamports() + amount_to_send;
+                        **ctx
+                            .accounts
+                            .swap_data_account
+                            .to_account_info()
+                            .lamports
+                            .borrow_mut() =
+                            ctx.accounts.swap_data_account.to_account_info().lamports()
+                                - amount_to_send;
                     } else {
-                        return Err(error!(MYERROR::NotEnoughFunds));
+                        // check swapDataAccount ata
+                        require!(
+                            is_correct_ata(
+                                ctx.accounts.swap_data_account_ata.key(),
+                                ctx.accounts.swap_data_account.key(),
+                                ctx.accounts.swap_data_account.items[item_id].mint.key()
+                            ),
+                            MYERROR::IncorrectOwner
+                        );
+                        // check user ata
+                        require!(
+                            is_correct_ata(
+                                ctx.accounts.user_ata.key(),
+                                ctx.accounts.user.key(),
+                                ctx.accounts.swap_data_account.items[item_id].mint.key()
+                            ),
+                            MYERROR::IncorrectOwner
+                        );
+
+                        let ix_user = spl_token::instruction::transfer(
+                            &ctx.accounts.spl_token_program.to_account_info().key(),
+                            &ctx.accounts.swap_data_account_ata.key(),
+                            &ctx.accounts.user_ata.key(),
+                            &ctx.accounts.swap_data_account.key(),
+                            &[&ctx.accounts.swap_data_account.key()],
+                            ctx.accounts.swap_data_account.items[item_id]
+                                .amount
+                                .unsigned_abs(),
+                        )?;
+
+                        invoke_signed(
+                            &ix_user,
+                            &[
+                                ctx.accounts.swap_data_account.to_account_info(),
+                                ctx.accounts.swap_data_account_ata.to_account_info(),
+                                ctx.accounts.user_ata.to_account_info(),
+                                ctx.accounts.user.to_account_info(),
+                                ctx.accounts.spl_token_program.to_account_info(),
+                            ],
+                            &[&[&seed[..], &[bump]]],
+                        )?;
                     }
+
+                    //update item status to SolClaimed
+                    ctx.accounts.swap_data_account.items[item_id].status =
+                        ItemStatus::SolClaimed.to_u8();
+                    transfered = true;
+                    msg!("SOL item Claimed");
+                    break;
                 } else {
                     return Err(error!(MYERROR::NoSend));
                 }
@@ -1148,75 +1148,75 @@ pub mod neo_swap {
                         let amount_to_send = ctx.accounts.swap_data_account.items[item_id]
                             .amount
                             .unsigned_abs();
-                        let swap_data_lamports_initial =
-                            ctx.accounts.swap_data_account.to_account_info().lamports();
+                        // let swap_data_lamports_initial =
+                        //     ctx.accounts.swap_data_account.to_account_info().lamports();
 
-                        if swap_data_lamports_initial >= amount_to_send {
-                            if ctx.accounts.swap_data_account.items[item_id]
-                                .mint
-                                .eq(&system_program::id())
-                            {
-                                **ctx.accounts.user.lamports.borrow_mut() =
-                                    ctx.accounts.user.lamports() + amount_to_send;
-                                **ctx
-                                    .accounts
-                                    .swap_data_account
-                                    .to_account_info()
-                                    .lamports
-                                    .borrow_mut() =
-                                    ctx.accounts.swap_data_account.to_account_info().lamports()
-                                        - amount_to_send;
-                            } else {
-                                // check user ata
-                                require!(
-                                    is_correct_ata(
-                                        ctx.accounts.user_ata.key(),
-                                        ctx.accounts.user.key(),
-                                        ctx.accounts.swap_data_account.items[item_id].mint.key()
-                                    ),
-                                    MYERROR::IncorrectOwner
-                                );
-
-                                // check swapDataAccount ata
-                                require!(
-                                    is_correct_ata(
-                                        ctx.accounts.swap_data_account_ata.key(),
-                                        ctx.accounts.swap_data_account.key(),
-                                        ctx.accounts.swap_data_account.items[item_id].mint.key()
-                                    ),
-                                    MYERROR::IncorrectOwner
-                                );
-
-                                let ix_user = spl_token::instruction::transfer(
-                                    &ctx.accounts.spl_token_program.to_account_info().key(),
-                                    &ctx.accounts.swap_data_account_ata.key(),
-                                    &ctx.accounts.user_ata.key(),
-                                    &ctx.accounts.swap_data_account.key(),
-                                    &[&ctx.accounts.swap_data_account.key()],
-                                    ctx.accounts.swap_data_account.items[item_id]
-                                        .amount
-                                        .unsigned_abs(),
-                                )?;
-
-                                invoke_signed(
-                                    &ix_user,
-                                    &[
-                                        ctx.accounts.swap_data_account.to_account_info(),
-                                        ctx.accounts.swap_data_account_ata.to_account_info(),
-                                        ctx.accounts.user_ata.to_account_info(),
-                                        ctx.accounts.user.to_account_info(),
-                                        ctx.accounts.spl_token_program.to_account_info(),
-                                    ],
-                                    &[&[&seed[..], &[bump]]],
-                                )?;
-                            }
-
-                            ctx.accounts.swap_data_account.items[item_id].status =
-                                ItemStatus::SolcanceledRecovered.to_u8();
-                            msg!("SolcanceledRecovered");
+                        // if swap_data_lamports_initial >= amount_to_send {
+                        // } else {
+                        //     return Err(error!(MYERROR::NotEnoughFunds));
+                        // }
+                        if ctx.accounts.swap_data_account.items[item_id]
+                            .mint
+                            .eq(&system_program::id())
+                        {
+                            **ctx.accounts.user.lamports.borrow_mut() =
+                                ctx.accounts.user.lamports() + amount_to_send;
+                            **ctx
+                                .accounts
+                                .swap_data_account
+                                .to_account_info()
+                                .lamports
+                                .borrow_mut() =
+                                ctx.accounts.swap_data_account.to_account_info().lamports()
+                                    - amount_to_send;
                         } else {
-                            return Err(error!(MYERROR::NotEnoughFunds));
+                            // check user ata
+                            require!(
+                                is_correct_ata(
+                                    ctx.accounts.user_ata.key(),
+                                    ctx.accounts.user.key(),
+                                    ctx.accounts.swap_data_account.items[item_id].mint.key()
+                                ),
+                                MYERROR::IncorrectOwner
+                            );
+
+                            // check swapDataAccount ata
+                            require!(
+                                is_correct_ata(
+                                    ctx.accounts.swap_data_account_ata.key(),
+                                    ctx.accounts.swap_data_account.key(),
+                                    ctx.accounts.swap_data_account.items[item_id].mint.key()
+                                ),
+                                MYERROR::IncorrectOwner
+                            );
+
+                            let ix_user = spl_token::instruction::transfer(
+                                &ctx.accounts.spl_token_program.to_account_info().key(),
+                                &ctx.accounts.swap_data_account_ata.key(),
+                                &ctx.accounts.user_ata.key(),
+                                &ctx.accounts.swap_data_account.key(),
+                                &[&ctx.accounts.swap_data_account.key()],
+                                ctx.accounts.swap_data_account.items[item_id]
+                                    .amount
+                                    .unsigned_abs(),
+                            )?;
+
+                            invoke_signed(
+                                &ix_user,
+                                &[
+                                    ctx.accounts.swap_data_account.to_account_info(),
+                                    ctx.accounts.swap_data_account_ata.to_account_info(),
+                                    ctx.accounts.user_ata.to_account_info(),
+                                    ctx.accounts.user.to_account_info(),
+                                    ctx.accounts.spl_token_program.to_account_info(),
+                                ],
+                                &[&[&seed[..], &[bump]]],
+                            )?;
                         }
+
+                        ctx.accounts.swap_data_account.items[item_id].status =
+                            ItemStatus::SolcanceledRecovered.to_u8();
+                        msg!("SolcanceledRecovered");
                     }
                 } else {
                     return Err(error!(MYERROR::NotReady));
