@@ -1224,7 +1224,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "mpl-token-metadata 2.0.0-beta.1",
+ "mpl-token-metadata",
  "num-traits",
  "solana-program",
  "spl-account-compression",
@@ -1272,19 +1272,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mpl-token-metadata"
-version = "3.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "177204bbe7486b22ac35af2c91a82630f830a6ddd3392651aefde1ef346aba3d"
-dependencies = [
- "borsh 0.10.3",
- "num-derive 0.3.3",
- "num-traits",
- "solana-program",
- "thiserror",
-]
-
-[[package]]
 name = "mpl-token-metadata-context-derive"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1322,7 +1309,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "mpl-bubblegum",
- "mpl-token-metadata 3.1.0",
+ "mpl-token-metadata",
  "spl-account-compression",
  "spl-associated-token-account 2.2.0",
  "spl-noop",
