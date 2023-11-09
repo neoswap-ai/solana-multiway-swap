@@ -45,7 +45,7 @@ pub mod neo_swap {
         sent_data: SwapData
     ) -> Result<()> {
         require!(sent_data.status == TradeStatus::Initializing.to_u8(), MYERROR::UnexpectedState);
-        require!(sent_data.items.is_empty(), MYERROR::IncorrectLength);
+        require!(sent_data.nb_items != 0, MYERROR::IncorrectLength);
         // require!(
         //     !sent_data.accepted_payement,
         //     MYERROR::NoAcceptedPaymentGiven
@@ -223,7 +223,6 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            msg!("2");
             // msg!("{}",ctx.accounts.item_from_deposit.owner);
             if !ctx.accounts.swap_data_account.items[item_id].is_compressed {
                 if
@@ -258,8 +257,6 @@ pub mod neo_swap {
                             .spl_token_program(ctx.accounts.spl_token_program.key())
                             .spl_ata_program(ctx.accounts.spl_ata_program.key());
 
-                        msg!("4");
-
                         // creating vase transfer info
                         let mut transfer_infos = vec![
                             ctx.accounts.item_from_deposit.to_account_info(),
@@ -280,8 +277,6 @@ pub mod neo_swap {
                         let metadata: Metadata = Metadata::from_account_info(
                             &ctx.accounts.nft_metadata.to_account_info()
                         )?;
-
-                        msg!("5");
 
                         if
                             matches!(
@@ -307,9 +302,6 @@ pub mod neo_swap {
                             );
                             transfer_infos.push(ctx.accounts.auth_rules_program.to_account_info());
                             transfer_infos.push(ctx.accounts.auth_rules.to_account_info());
-                            msg!("6.1");
-                        } else {
-                            msg!("6.2");
                         }
 
                         let transfer_ix = transfer_builder
@@ -321,18 +313,21 @@ pub mod neo_swap {
                             })
                             .map_err(|_| MYERROR::InstructionBuilderFailed)?
                             .instruction();
-                        msg!("7");
 
                         if
                             ctx.accounts.swap_data_account.items[item_id].status ==
                             ItemStatus::NFTPendingPresign.to_u8()
                         {
                             invoke_signed(&transfer_ix, &transfer_infos, &[&[&seed[..], &[bump]]])?;
+                            transfered = true;
                         } else if
                             ctx.accounts.swap_data_account.items[item_id].status ==
                             ItemStatus::NFTPending.to_u8()
                         {
                             invoke(&transfer_ix, &transfer_infos)?;
+                            transfered = true;
+                        } else {
+                            return Err(error!(MYERROR::NoSend));
                         }
                     }
                 }
@@ -369,18 +364,6 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            msg!("2");
-            // msg!("{:#?}", ctx.accounts.merkle_tree.data);
-            // msg!(
-            //     "item {:#?}",
-            //     ctx.accounts.swap_data_account.items[item_id].merkle_tree
-            // );
-            // msg!("mwrkle {:#?}", ctx.accounts.merkle_tree.key());
-            // msg!(
-            //     "index {:#?} VS {:#?}",
-            //     index,
-            //     ctx.accounts.swap_data_account.items[item_id].index
-            // );
             if
                 ctx.accounts.swap_data_account.items[item_id].is_compressed &&
                 ctx.accounts.swap_data_account.items[item_id].is_nft
@@ -398,7 +381,6 @@ pub mod neo_swap {
                         ctx.accounts.swap_data_account.items[item_id].status ==
                             ItemStatus::NFTPendingPresign.to_u8())
                 {
-                    msg!("3");
                     // creating base transfer builder
 
                     // remaining_accounts are the accounts that make up the required proof
@@ -524,7 +506,6 @@ pub mod neo_swap {
                         )?;
                     } else {
                         // check signer ata
-                        // msg!("signer ata",ctx.accounts.signer_ata.key())
                         require!(
                             is_correct_ata(
                                 ctx.accounts.signer_ata.key(),
@@ -819,8 +800,6 @@ pub mod neo_swap {
                         .spl_token_program(ctx.accounts.spl_token_program.key())
                         .spl_ata_program(ctx.accounts.spl_ata_program.key());
 
-                    msg!("4");
-
                     // creating vase transfer info
                     let mut transfer_infos = vec![
                         ctx.accounts.swap_data_account_ata.to_account_info(),
@@ -842,8 +821,6 @@ pub mod neo_swap {
                         &ctx.accounts.nft_metadata.to_account_info()
                     )?;
 
-                    msg!("5");
-
                     if
                         matches!(
                             metadata.token_standard,
@@ -864,9 +841,6 @@ pub mod neo_swap {
                         );
                         transfer_infos.push(ctx.accounts.auth_rules_program.to_account_info());
                         transfer_infos.push(ctx.accounts.auth_rules.to_account_info());
-                        msg!("6.1");
-                    } else {
-                        msg!("6.2");
                     }
 
                     let transfer_ix = transfer_builder
@@ -878,7 +852,6 @@ pub mod neo_swap {
                         })
                         .map_err(|_| MYERROR::InstructionBuilderFailed)?
                         .instruction();
-                    msg!("7");
 
                     invoke_signed(&transfer_ix, &transfer_infos, &[&[&seed[..], &[bump]]])?;
 
@@ -1007,7 +980,6 @@ pub mod neo_swap {
                         account_infos.push(acc.to_account_info());
                     }
 
-                    // msg!("manual cpi call");
                     invoke_signed(
                         &(solana_program::instruction::Instruction {
                             program_id: ctx.accounts.bubblegum_program.key(),
@@ -1199,7 +1171,6 @@ pub mod neo_swap {
                     }
                 } else {
                     return Err(error!(MYERROR::NotReady));
-                    // msg!("${}",ItemStatus::SolDeposited.to_u8())
                 }
 
                 transfered = true;
@@ -1306,8 +1277,6 @@ pub mod neo_swap {
                         .spl_token_program(ctx.accounts.spl_token_program.key())
                         .spl_ata_program(ctx.accounts.spl_ata_program.key());
 
-                    msg!("4");
-
                     // creating vase transfer info
                     let mut transfer_infos = vec![
                         ctx.accounts.swap_data_account_ata.to_account_info(),
@@ -1328,8 +1297,6 @@ pub mod neo_swap {
                     let metadata: Metadata = Metadata::from_account_info(
                         &ctx.accounts.nft_metadata.to_account_info()
                     )?;
-
-                    msg!("5");
 
                     if
                         matches!(
@@ -1352,10 +1319,6 @@ pub mod neo_swap {
                         );
                         transfer_infos.push(ctx.accounts.auth_rules_program.to_account_info());
                         transfer_infos.push(ctx.accounts.auth_rules.to_account_info());
-                        msg!("6.1");
-                    } else {
-                        // Other NFT
-                        msg!("6.2");
                     }
 
                     let transfer_ix = transfer_builder
@@ -1367,7 +1330,6 @@ pub mod neo_swap {
                         })
                         .map_err(|_| MYERROR::InstructionBuilderFailed)?
                         .instruction();
-                    msg!("7");
 
                     invoke_signed(&transfer_ix, &transfer_infos, &[&[&seed[..], &[bump]]])?;
 
@@ -1454,17 +1416,6 @@ pub mod neo_swap {
 
         // find the item linked with shared Accounts
         for item_id in 0..ctx.accounts.swap_data_account.items.len() {
-            //    msg!("{:#?}", ctx.accounts.merkle_tree.data);
-            // msg!(
-            //     "item {:#?}",
-            //     ctx.accounts.swap_data_account.items[item_id].merkle_tree
-            // );
-            // msg!("mwrkle {:#?}", ctx.accounts.merkle_tree.key());
-            // msg!(
-            //     "index {:#?} VS {:#?}",
-            //     index,
-            //     ctx.accounts.swap_data_account.items[item_id].index
-            // );
             if
                 ctx.accounts.swap_data_account.items[item_id].is_compressed &&
                 ctx.accounts.swap_data_account.items[item_id].is_nft
@@ -1519,7 +1470,6 @@ pub mod neo_swap {
                         account_infos.push(acc.to_account_info());
                     }
 
-                    // msg!("manual cpi call");
                     solana_program::program::invoke_signed(
                         &(solana_program::instruction::Instruction {
                             program_id: ctx.accounts.bubblegum_program.key(),
@@ -1690,7 +1640,7 @@ pub mod neo_swap {
                 &ctx.accounts.user_pda.key(),
                 &ctx.accounts.signer.key(),
                 &[&ctx.accounts.signer.key()],
-                1
+                item_to_add.amount
             )
             .unwrap();
 
@@ -1706,7 +1656,7 @@ pub mod neo_swap {
 
         msg!(
             "{} token {} owned by {} was delegated to {}",
-            1,
+            ,
             ctx.accounts.item_to_delegate.mint,
             ctx.accounts.signer.key(),
             ctx.accounts.user_pda.key()
@@ -1717,7 +1667,7 @@ pub mod neo_swap {
         msg!(
             "token {} was added to userPda to sell with a minimum exchange value of {}",
             item_to_add.mint,
-            item_to_add.amount_mini
+            item_to_add.price_mini
         );
 
         Ok(())
@@ -2341,13 +2291,15 @@ pub struct UserPdaData {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct ItemToSell {
     mint: Pubkey,
-    amount_mini: u64,
+    amount: u64,
+    price_mini: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct ItemToBuy {
     mint: Pubkey,
-    amount_maxi: u64,
+    amount: u64,
+    price_maxi: u64,
 }
 pub enum TradeStatus {
     Initializing,
