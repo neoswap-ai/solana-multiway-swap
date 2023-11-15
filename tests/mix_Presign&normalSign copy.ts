@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN } from "@coral-xyz/anchor";
 // const { assert } = require("chai");
-import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
+// import SwapData from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/swapData.types.neoswap";
 // import NftSwapItem from "../app/src/neoSwap.module.v4.2/utils.neoSwap/types.neo-swap/nftSwapItem.types.neoswap";
 const { assert } = require("chai");
 import {
@@ -24,6 +24,7 @@ import {
     Keypair,
     LAMPORTS_PER_SOL,
     PublicKey,
+    SystemProgram,
     Transaction,
     // Signer,
     // SystemProgram,
@@ -53,15 +54,15 @@ const signer = Keypair.fromSecretKey(usks);
 // const usc = Keypair.fromSecretKey(usks);
 
 const clusterOrUrl =
-    "https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/";
+    "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/";
 
 describe("MIX pre-signing", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
-    const program = neoSwap.UTILS.getProgram({
-        clusterOrUrl,
-        signer,
-    });
+    // const program = neoSwap.UTILS.getProgram({
+    //     clusterOrUrl,
+    //     signer,
+    // });
     // const nbuserPresigned = 3;
     // const nbuserNormal = 3;
     // const nftNb = 2;
@@ -177,73 +178,22 @@ describe("MIX pre-signing", () => {
 
     /// create specific testing functions
     it("remove Item Users Pda", async () => {
-        // console.log(swapData);
-        // const txhashs = await neoSwap.createOrModifyUserPda({
-        //     clusterOrUrl,
-        //     signer,
-        //     amountToTopUp: 0.01,
-        // });
-        // console.log("initialized", txhashs);
+        console.log(user1.publicKey.toBase58());
 
         const txhashs2 = await neoSwap.createOrModifyUserPda({
             clusterOrUrl,
             signer: user1,
             user: user1.publicKey,
-            // amountToTopUp: 0.1,
-            REMOVEitemsToBuy: [
-                {
-                    mint: new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE"),
-                    amountMaxi: new BN(0.03 * LAMPORTS_PER_SOL),
-                },
-            ],
+            amountToTopUp: { amount: 0.1, mint: SystemProgram.programId },
+
+            // REMOVEitemsToBuy: [
+            //     {
+            //         mint: new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE"),
+            //         amountMaxi: new BN(0.03 * LAMPORTS_PER_SOL),
+            //     },
+            // ],
         });
         console.log("initialized", txhashs2);
-        //     const txhashs3 = await neoSwap.createOrModifyUserPda({
-        //         clusterOrUrl,
-        //         signer: user2,
-        //         // amountToTopUp: 0.1,
-        //         itemsToSell: [
-        //             {
-        //                 mint: new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE"),
-        //                 amountMini: new BN(0.02 * LAMPORTS_PER_SOL),
-        //             },
-        //         ],
-        //     });
-        //     console.log("initialized", txhashs3);
-        // });
-        // it("create Users Pda", async () => {
-        //     // console.log(swapData);
-        //     // const txhashs = await neoSwap.createOrModifyUserPda({
-        //     //     clusterOrUrl,
-        //     //     signer,
-        //     //     amountToTopUp: 0.01,
-        //     // });
-        //     // console.log("initialized", txhashs);
-
-        //     const txhashs2 = await neoSwap.createOrModifyUserPda({
-        //         clusterOrUrl,
-        //         signer: user1,
-        //         // amountToTopUp: 0.1,
-        //         itemsToBuy: [
-        //             {
-        //                 mint: new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE"),
-        //                 amountMaxi: new BN(0.03 * LAMPORTS_PER_SOL),
-        //             },
-        //         ],
-        //     });
-        //     console.log("initialized", txhashs2);
-        //     const txhashs3 = await neoSwap.createOrModifyUserPda({
-        //         clusterOrUrl,
-        //         signer: user2,
-        //         // amountToTopUp: 0.1,
-        //         itemsToSell: [
-        //             {
-        //                 mint: new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE"),
-        //                 amountMini: new BN(0.02 * LAMPORTS_PER_SOL),
-        //             },
-        //         ],
-        //     });
-        //     console.log("initialized", txhashs3);
     });
 
     // it("initialize Swap for cancel", async () => {
