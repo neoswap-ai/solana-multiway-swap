@@ -197,44 +197,31 @@ pub mod neo_swap {
                     swap_data_account.items[item_id].owner
                 );
                 if swap_data_account.items[item_id].is_nft {
-                    let mut found_item_in_user_pda = false;
-                    for user_pda_item_id in 0..user_pda.items_to_sell.len() {
-                        if
-                            user_pda.items_to_sell[user_pda_item_id].mint.eq(
-                                &swap_data_account.items[item_id].mint
-                            )
-                        {
-                            let index = user_pda.items_to_sell[user_pda_item_id].options
-                                .iter()
-                                .position(|x| x.token.eq(&swap_data_account.accepted_payement))
-                                .unwrap();
+                    // let mut found_item_in_user_pda = false;
+                    let user_pda_item_index = user_pda.items_to_sell
+                        .iter()
+                        .position(
+                            |x|
+                                x.token.eq(&swap_data_account.accepted_payement) &&
+                                x.mint.eq(&swap_data_account.items[item_id].mint)
+                        )
+                        .unwrap();
 
-                            msg!(
-                                "amount max updated with {} in token {}",
-                                user_pda.items_to_sell[user_pda_item_id].options[index].price_min,
-                                user_pda.items_to_sell[user_pda_item_id].options[index].token
-                            );
+                    msg!(
+                        "amount max updated with {} in token {}",
+                        user_pda.items_to_sell[user_pda_item_index].price_min,
+                        user_pda.items_to_sell[user_pda_item_index].token
+                    );
 
-                            amount_min = amount_min
-                                .checked_add(
-                                    user_pda.items_to_sell[user_pda_item_id].options
-                                        [index].price_min
-                                )
-                                .unwrap();
-                            swap_data_account.items[item_id].status =
-                                ItemStatus::NFTPending.to_u8();
-                            msg!(
-                                "Found owner presigning item {} in UserPda and status changed to NFTPending {}",
-                                item_id,
-                                swap_data_account.items[item_id].mint
-                            );
-                            found_item_in_user_pda = true;
-                            // break;
-                        }
-                    }
-                    if found_item_in_user_pda == false {
-                        return Err(error!(MYERROR::ItemNotFoundInUserPda).into());
-                    }
+                    amount_min = amount_min
+                        .checked_add(user_pda.items_to_sell[user_pda_item_index].price_min)
+                        .unwrap();
+                    swap_data_account.items[item_id].status = ItemStatus::NFTPending.to_u8();
+                    msg!(
+                        "Found owner presigning item {} in UserPda and status changed to NFTPending {}",
+                        item_id,
+                        swap_data_account.items[item_id].mint
+                    );
                 } else {
                     if amount_to_give_to_swap != 0 {
                         return Err(error!(MYERROR::DoubleSend).into());
@@ -261,27 +248,23 @@ pub mod neo_swap {
                     item_id,
                     swap_data_account.items[item_id].mint
                 );
-                for user_pda_item_id in 0..user_pda.items_to_buy.len() {
-                    if
-                        user_pda.items_to_buy[user_pda_item_id].mint.eq(
-                            &swap_data_account.items[item_id].mint
-                        )
-                    {
-                        let index = user_pda.items_to_buy[user_pda_item_id].options
-                            .iter()
-                            .position(|x| x.token.eq(&swap_data_account.accepted_payement))
-                            .unwrap();
+                let user_pda_item_index = user_pda.items_to_sell
+                    .iter()
+                    .position(
+                        |x|
+                            x.token.eq(&swap_data_account.accepted_payement) &&
+                            x.mint.eq(&swap_data_account.items[item_id].mint)
+                    )
+                    .unwrap();
 
-                        msg!(
-                            "amount max updated with {} in token {}",
-                            user_pda.items_to_buy[user_pda_item_id].options[index].price_max,
-                            user_pda.items_to_buy[user_pda_item_id].options[index].token
-                        );
-                        amount_max += user_pda.items_to_buy[user_pda_item_id].options
-                            [index].price_max;
-                    }
-                }
-                // list_items.push(swap_data_account.items[item_id].clone());
+                msg!(
+                    "amount max updated with {} in token {}",
+                    user_pda.items_to_buy[user_pda_item_index].price_max,
+                    user_pda.items_to_buy[user_pda_item_index].token
+                );
+                amount_max += user_pda.items_to_buy[user_pda_item_index].price_max;
+
+                list_items.push(swap_data_account.items[item_id].clone());
             }
         }
         amount_min = amount_min.checked_add(ctx.accounts.user_pda_ata.amount).unwrap();
@@ -320,6 +303,9 @@ pub mod neo_swap {
                     );
                     return Err(error!(MYERROR::NotAllValidated).into());
                 }
+
+                // Remove all items related to a specific mint from userPda to sell
+                // ctx.accounts.user_pda.items_to_sell.retain(|x| !x.mint.eq(&item.mint)); //.filter(|x| x.mint.eq(&item.mint))
             }
         }
 
@@ -1350,7 +1336,7 @@ pub mod neo_swap {
     /// @return Void
     pub fn user_modify_nft_buy(
         ctx: Context<UserPdaModifyBuyNFT>,
-        item_to_modify: ItemToBuy,
+        item_to_modify: OptionToBuy,
         is_remove_item: bool
     ) -> Result<()> {
         if is_remove_item {
@@ -1375,10 +1361,12 @@ pub mod neo_swap {
 
                 ctx.accounts.user_pda.items_to_buy[index] = item_to_modify.clone();
                 msg!(
-                    "token {} was modified to userPda to sell at index {} with {} options",
+                    "token {} was modified to userPda to buy at index {}, {} tokens can be payed with {} for {}",
                     item_to_modify.mint,
                     index,
-                    item_to_modify.options.len()
+                    item_to_modify.amount,
+                    item_to_modify.token,
+                    item_to_modify.price_max
                 );
             } else {
                 ctx.accounts.user_pda.items_to_buy.push(item_to_modify.clone());
@@ -1390,7 +1378,7 @@ pub mod neo_swap {
 
     pub fn user_modify_p_nft_sell(
         ctx: Context<DepositPNft>,
-        item_to_modify: ItemToSell,
+        item_to_modify: OptionToSell,
         is_remove_item: bool,
         seed: Vec<u8>,
         bump: u8
@@ -1433,7 +1421,7 @@ pub mod neo_swap {
         } else {
             if
                 already_exist_sell(
-                    ctx.accounts.user_pda.items_to_buy.to_vec(),
+                    ctx.accounts.user_pda.items_to_sell.to_vec(),
                     item_to_modify.clone()
                 )
             {
@@ -1444,10 +1432,12 @@ pub mod neo_swap {
 
                 ctx.accounts.user_pda.items_to_sell[index] = item_to_modify.clone();
                 msg!(
-                    "token {} was modified to userPda to sell at index {} with {} options",
+                    "token {} was modified to userPda to sell at index {}, {} tokens can be payed with {} for {}",
                     item_to_modify.mint,
                     index,
-                    item_to_modify.options.len()
+                    item_to_modify.amount,
+                    item_to_modify.token,
+                    item_to_modify.price_min
                 );
             } else {
                 let transfert_data = create_p_nft_instruction(item_to_modify.amount, SendPNft {
@@ -1478,12 +1468,13 @@ pub mod neo_swap {
             }
 
             msg!(
-                "{} token {} owned by {} was sent to {}\n number of options: {}",
+                "{} token {} owned by {} was sent to {}\n can be payed with {} for {}",
                 item_to_modify.amount,
                 item_to_modify.mint,
                 ctx.accounts.signer.key(),
                 ctx.accounts.user_pda.key(),
-                item_to_modify.options.len()
+                item_to_modify.token,
+                item_to_modify.price_min
             );
         }
         Ok(())
@@ -1491,7 +1482,7 @@ pub mod neo_swap {
 
     pub fn user_modify_c_nft_sell<'info>(
         ctx: Context<'_, '_, '_, 'info, DepositCNft<'info>>,
-        item_to_modify: ItemToSell,
+        item_to_modify: OptionToSell,
         is_remove_item: bool,
         root: [u8; 32],
         data_hash: [u8; 32],
@@ -1538,7 +1529,7 @@ pub mod neo_swap {
         } else {
             if
                 already_exist_sell(
-                    ctx.accounts.user_pda.items_to_buy.to_vec(),
+                    ctx.accounts.user_pda.items_to_sell.to_vec(),
                     item_to_modify.clone()
                 )
             {
@@ -1549,10 +1540,12 @@ pub mod neo_swap {
 
                 ctx.accounts.user_pda.items_to_sell[index] = item_to_modify.clone();
                 msg!(
-                    "token {} was modified to userPda to sell at index {} with {} options",
+                    "token {} was modified to userPda to sell at index {}, {} tokens can be payed with {} for {}",
                     item_to_modify.mint,
                     index,
-                    item_to_modify.options.len()
+                    item_to_modify.amount,
+                    item_to_modify.token,
+                    item_to_modify.price_min
                 );
             } else {
                 let transfert_data = create_c_nft_instruction(
@@ -1580,12 +1573,13 @@ pub mod neo_swap {
                 ctx.accounts.user_pda.items_to_sell.push(item_to_modify.clone());
 
                 msg!(
-                    "{} token {} owned by {} \nwas sent to {}\nNb options: {}",
+                    "{} token {} owned by {} \nwas sent to {}\ncan be payed in {} costing {}",
                     item_to_modify.amount,
                     item_to_modify.mint,
                     ctx.accounts.user.key(),
                     ctx.accounts.user_pda.key(),
-                    item_to_modify.options.len()
+                    item_to_modify.token,
+                    item_to_modify.price_min
                 );
             }
         }
@@ -1601,7 +1595,9 @@ pub mod neo_swap {
         let transfer_ix: Instruction;
         let mut transfered = false;
         let is_system = ctx.accounts.signer_ata.key().eq(&ctx.accounts.signer.key());
-
+        msg!("amount to topup {}", amount_to_topup);
+        msg!("is_system {}", is_system);
+        // msg!("is_system {}", is_system);
         if amount_to_topup.is_positive() {
             if is_system {
                 transfer_ix = solana_program::system_instruction::transfer(
@@ -1627,7 +1623,7 @@ pub mod neo_swap {
                     ctx.accounts.signer_ata.to_account_info(),
                     ctx.accounts.user_pda_ata.to_account_info(),
                     ctx.accounts.signer.to_account_info(),
-                    ctx.accounts.user_pda.to_account_info(),
+                    // ctx.accounts.user_pda.to_account_info(),
                     ctx.accounts.token_program.to_account_info(),
                 ]
             )?;
@@ -1655,9 +1651,10 @@ pub mod neo_swap {
                 &transfer_ix,
                 &[
                     ctx.accounts.signer_ata.to_account_info(),
-                    ctx.accounts.signer.to_account_info(),
+                    // ctx.accounts.signer.to_account_info(),
                     ctx.accounts.user_pda_ata.to_account_info(),
                     ctx.accounts.user_pda.to_account_info(),
+                    ctx.accounts.token_program.to_account_info(),
                 ],
                 &[&[&seed[..], &[bump]]]
             )?;
@@ -1667,7 +1664,7 @@ pub mod neo_swap {
         msg!(
             "{} token {} owned by {} was transfered to {}",
             amount_to_topup,
-            ctx.accounts.signer_ata.mint,
+            ctx.accounts.signer_ata.key(), //mint,
             ctx.accounts.signer_ata.key(),
             ctx.accounts.user_pda_ata.key()
         );
@@ -2270,20 +2267,25 @@ pub struct UserPdaUpdateToTopUp<'info> {
         bump,
     )]
     user_pda: Box<Account<'info, UserPdaData>>,
+    /// CHECK: can only be userPDA
     #[account(
         mut,
-        constraint = user_pda_ata.mint.eq(&signer_ata.mint) || user_pda_ata.key().eq(&user_pda.key()) @ MYERROR::MintIncorrect,
-        constraint = user_pda_ata.owner.eq(&user_pda.key()) || user_pda_ata.key().eq(&user_pda.key())  @ MYERROR::IncorrectOwner,
+        // constraint = (user_pda_ata.mint.eq(&signer_ata.mint) || user_pda_ata.key().eq(&user_pda.key())) @ MYERROR::MintIncorrect,
+        // constraint = (user_pda_ata.owner.eq(&user_pda.key()) || user_pda_ata.key().eq(&user_pda.key()))  @ MYERROR::IncorrectOwner,
     )]
-    user_pda_ata: Account<'info, TokenAccount>,
+    // user_pda_ata: Account<'info, TokenAccount>,
+    user_pda_ata: AccountInfo<'info>,
+    /// CHECK: can only be userPDA
     #[account(
         mut,
-        constraint = signer_ata.owner.eq(&signer.key()) || signer_ata.key().eq(&signer.key()) @ MYERROR::IncorrectOwner
+        // constraint = signer_ata.owner.eq(&signer.key()) || signer_ata.key().eq(&signer.key()) @ MYERROR::IncorrectOwner
     )]
-    signer_ata: Account<'info, TokenAccount>,
+    // signer_ata: Account<'info, TokenAccount>,
+    signer_ata: AccountInfo<'info>,
     #[account(mut)]
     signer: Signer<'info>,
     token_program: Program<'info, Token>,
+    system_program: Program<'info, System>,
 }
 
 //
@@ -2380,35 +2382,26 @@ impl NftSwapItem {
 #[derive(Default)]
 pub struct UserPdaData {
     pub owner: Pubkey,
-    pub items_to_sell: Vec<ItemToSell>,
-    pub items_to_buy: Vec<ItemToBuy>,
+    pub items_to_sell: Vec<OptionToSell>,
+    pub items_to_buy: Vec<OptionToBuy>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct ItemToSell {
+pub struct OptionToSell {
     mint: Pubkey,
-    options: Vec<ItemSellOption>,
-    amount: u64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct ItemToBuy {
-    mint: Pubkey,
-    options: Vec<ItemBuyOption>,
-    amount: u64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct ItemBuyOption {
-    price_max: u64,
-    token: Pubkey,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct ItemSellOption {
     price_min: u64,
     token: Pubkey,
+    amount: u64,
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct OptionToBuy {
+    mint: Pubkey,
+    price_max: u64,
+    token: Pubkey,
+    amount: u64,
+}
+
 pub enum TradeStatus {
     WaitingToValidatePresigning,
     Initializing,
@@ -2566,7 +2559,10 @@ impl ItemStatus {
 //
 //
 
-pub fn already_exist_buy(list_of_items_to_buy: Vec<ItemToBuy>, item_to_check: ItemToBuy) -> bool {
+pub fn already_exist_buy(
+    list_of_items_to_buy: Vec<OptionToBuy>,
+    item_to_check: OptionToBuy
+) -> bool {
     for item in list_of_items_to_buy {
         if item.mint.eq(&item_to_check.mint) {
             return true;
@@ -2588,8 +2584,8 @@ pub fn already_exist_in_sda(list_of_items: Vec<NftSwapItem>, item_to_check: NftS
     return false;
 }
 pub fn already_exist_sell(
-    list_of_items_to_sell: Vec<ItemToBuy>,
-    item_to_check: ItemToSell
+    list_of_items_to_sell: Vec<OptionToSell>,
+    item_to_check: OptionToSell
 ) -> bool {
     for item in list_of_items_to_sell {
         if item.mint.eq(&item_to_check.mint) {
@@ -2670,7 +2666,8 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
     ];
 
     let metadata: Metadata = Metadata::from_account_info(&ctx.nft_metadata.to_account_info())?;
-
+// metadata.collection.map(|f|f.key);
+// metadata.collection.unwrap().key
     if
         matches!(
             metadata.token_standard,
@@ -2866,3 +2863,40 @@ pub enum MYERROR {
     #[msg("The list of token accepted for payment is empty")]
     NoAcceptedPaymentGiven,
 }
+
+// #[macro_export]
+// macro_rules! custom_heap_default {
+//     () => {
+//         #[cfg(all(not(feature = "custom-heap"), target_os = "solana"))]
+//         #[global_allocator]
+//         static A: $crate::entrypoint::BumpAllocator = $crate::entrypoint::BumpAllocator {
+//             start: $crate::entrypoint::HEAP_START_ADDRESS as usize,
+//             len: $crate::entrypoint::HEAP_LENGTH,
+//         };
+//     };
+// }
+
+// #[allow(clippy::arithmetic_side_effects)]
+// unsafe impl std::alloc::GlobalAlloc for BumpAllocator {
+//     #[inline]
+//     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+//         let pos_ptr = self.start as *mut usize;
+
+//         let mut pos = *pos_ptr;
+//         if pos == 0 {
+//             // First time, set starting position
+//             pos = self.start + self.len;
+//         }
+//         pos = pos.saturating_sub(layout.size());
+//         pos &= !layout.align().wrapping_sub(1);
+//         if pos < self.start + size_of::<*mut u8>() {
+//             return null_mut();
+//         }
+//         *pos_ptr = pos;
+//         pos as *mut u8
+//     }
+//     #[inline]
+//     unsafe fn dealloc(&self, _: *mut u8, _: Layout) {
+//         // I'm a bump allocator, I don't free
+//     }
+// }

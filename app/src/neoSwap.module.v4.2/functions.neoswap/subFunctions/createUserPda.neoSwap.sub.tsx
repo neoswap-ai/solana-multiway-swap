@@ -1,5 +1,4 @@
 import { Program, web3 } from '@project-serum/anchor';
-import { program } from '@project-serum/anchor/dist/cjs/spl/associated-token';
 import { publicKey } from '@project-serum/anchor/dist/cjs/utils';
 import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { appendTransactionToArray } from '../../utils.neoSwap/appendTransactionToArray.neosap';

@@ -54,8 +54,8 @@ const signer = Keypair.fromSecretKey(usks);
 // const usc = Keypair.fromSecretKey(usks);
 
 const clusterOrUrl =
-    "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/";
-
+    // "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/";
+    "https://purple-alpha-orb.solana-devnet.quiknode.pro/da30b6f0da74d8a084df9aac72c5da241ab4f9a8/";
 describe("MIX pre-signing", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
@@ -74,64 +74,64 @@ describe("MIX pre-signing", () => {
     //     keypair: Keypair;
     //     tokens: { mint: PublicKey; ata: PublicKey; value: number }[];
     // }[] = [];
-    // let pda: PublicKey;
-    let swapData: neoTypes.SwapData = {
-        initializer: signer.publicKey,
-        items: [
-            {
-                isNft: false,
-                isPresigning: false,
-                isCompressed: false,
-                index: new BN(0),
-                merkleTree: NATIVE_MINT,
-                amount: new anchor.BN(-0.025 * 2 * LAMPORTS_PER_SOL),
-                destinary: NATIVE_MINT,
-                mint: NATIVE_MINT,
-                owner: signer.publicKey,
-                status: ItemStatus.SolToClaim,
-            },
-            {
-                isNft: false,
-                isPresigning: false,
-                isCompressed: false,
-                index: new BN(0),
-                merkleTree: NATIVE_MINT,
-                amount: new anchor.BN(0.025 * LAMPORTS_PER_SOL),
-                destinary: NATIVE_MINT,
-                mint: NATIVE_MINT,
-                owner: user1.publicKey,
-                status: ItemStatus.SolToClaim,
-            },
-            {
-                isNft: false,
-                isPresigning: false,
-                isCompressed: false,
-                index: new BN(0),
-                merkleTree: NATIVE_MINT,
-                amount: new anchor.BN(0.025 * LAMPORTS_PER_SOL),
-                destinary: NATIVE_MINT,
-                mint: NATIVE_MINT,
-                owner: user2.publicKey,
-                status: ItemStatus.SolToClaim,
-            },
-            {
-                isNft: false,
-                isPresigning: true,
-                isCompressed: false,
-                index: new BN(0),
-                merkleTree: NATIVE_MINT,
-                amount: new anchor.BN(0.025 * LAMPORTS_PER_SOL),
-                destinary: NATIVE_MINT,
-                mint: NATIVE_MINT,
-                owner: user1.publicKey,
-                status: ItemStatus.SolToClaim,
-            },
-        ],
-        status: TradeStatus.Initializing,
-        nbItems: 2,
-        acceptedPayement: NATIVE_MINT,
-        preSeed: "0000",
-    };
+    // // let pda: PublicKey;
+    // let swapData: neoTypes.SwapData = {
+    //     initializer: signer.publicKey,
+    //     items: [
+    //         {
+    //             isNft: false,
+    //             isPresigning: false,
+    //             isCompressed: false,
+    //             index: new BN(0),
+    //             merkleTree: NATIVE_MINT,
+    //             amount: new BN(-0.025 * 2 * LAMPORTS_PER_SOL),
+    //             destinary: NATIVE_MINT,
+    //             mint: NATIVE_MINT,
+    //             owner: signer.publicKey,
+    //             status: ItemStatus.SolToClaim,
+    //         },
+    //         {
+    //             isNft: false,
+    //             isPresigning: false,
+    //             isCompressed: false,
+    //             index: new BN(0),
+    //             merkleTree: NATIVE_MINT,
+    //             amount: new BN(0.025 * LAMPORTS_PER_SOL),
+    //             destinary: NATIVE_MINT,
+    //             mint: NATIVE_MINT,
+    //             owner: user1.publicKey,
+    //             status: ItemStatus.SolToClaim,
+    //         },
+    //         {
+    //             isNft: false,
+    //             isPresigning: false,
+    //             isCompressed: false,
+    //             index: new BN(0),
+    //             merkleTree: NATIVE_MINT,
+    //             amount: new BN(0.025 * LAMPORTS_PER_SOL),
+    //             destinary: NATIVE_MINT,
+    //             mint: NATIVE_MINT,
+    //             owner: user2.publicKey,
+    //             status: ItemStatus.SolToClaim,
+    //         },
+    //         {
+    //             isNft: false,
+    //             isPresigning: true,
+    //             isCompressed: false,
+    //             index: new BN(0),
+    //             merkleTree: NATIVE_MINT,
+    //             amount: new BN(0.025 * LAMPORTS_PER_SOL),
+    //             destinary: NATIVE_MINT,
+    //             mint: NATIVE_MINT,
+    //             owner: user1.publicKey,
+    //             status: ItemStatus.SolToClaim,
+    //         },
+    //     ],
+    //     status: TradeStatus.Initializing,
+    //     nbItems: 2,
+    //     acceptedPayement: NATIVE_MINT,
+    //     preSeed: "0000",
+    // };
 
     // it("del pda", async () => {
     //     const account = PublicKey.findProgramAddressSync(
@@ -177,15 +177,44 @@ describe("MIX pre-signing", () => {
     // });
 
     /// create specific testing functions
-    it("remove Item Users Pda", async () => {
-        console.log(user1.publicKey.toBase58());
 
+    // it("delete Users Pda", async () => {
+    //     console.log(user1.publicKey.toBase58());
+
+    //     const txhashs2 = await neoSwap.UTILS.closeUserPda({
+    //         clusterOrUrl,
+    //         signer: user3,
+    //         // user: user1.publicKey,
+    //         // amountToTopUp: { amount: 0.1, mint: SystemProgram.programId },
+
+    //         // REMOVEitemsToBuy: [
+    //         //     {
+    //         //         mint: new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE"),
+    //         //         amountMaxi: new BN(0.03 * LAMPORTS_PER_SOL),
+    //         //     },
+    //         // ],
+    //     });
+    //     console.log("initialized", txhashs2);
+    // });
+    it("modify Item Users Pda", async () => {
+        console.log(user3.publicKey.toBase58());
         const txhashs2 = await neoSwap.createOrModifyUserPda({
             clusterOrUrl,
-            signer: user1,
-            user: user1.publicKey,
-            amountToTopUp: { amount: 0.1, mint: SystemProgram.programId },
+            signer: user3,
+            // user: user3.publicKey,
 
+            // amountToTopUp: { amount: 0.01, mint:  },
+            // amountToTopUp: { amount: 0.01, mint: SystemProgram.programId },
+
+            itemsToSell: [
+                {
+                    amount: 1,
+                    mint: new PublicKey("A37ALYcjH4xzez8dnaqztN3Bmejr5E11VfR8GSC4D21j"),
+                    token: SystemProgram.programId,
+                    price_min: 0.01,
+                },
+            ],
+            // simulation:false
             // REMOVEitemsToBuy: [
             //     {
             //         mint: new PublicKey("H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE"),
