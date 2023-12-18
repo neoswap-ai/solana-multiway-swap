@@ -173,6 +173,7 @@ pub mod neo_swap {
         require!(modified, MYERROR::NoModify);
         Ok(())
     }
+    
     /// @notice Verify Swap's PDA items to proceed to waiting for deposit state. /!\ initializer function
     /// @dev Function verify each item status and sum of lamports to mutate the smart contract status to (waiting for deposit).
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
@@ -1813,6 +1814,7 @@ pub struct NftSwapItem {
     owner: Pubkey, // owner of the NFT or SOL item
     destinary: Pubkey, // destinary of the item
     status: u8, // Status of the Item with ItemStatus
+    collection: Pubkey, // Collection of the NFT.
 }
 
 impl NftSwapItem {
