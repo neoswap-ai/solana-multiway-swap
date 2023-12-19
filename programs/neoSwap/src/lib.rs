@@ -176,13 +176,6 @@ pub mod neo_swap {
 
         require!(sum == 0, MYERROR::SumNotNull);
 
-        msg!("count_nft {} itemNft {}", count_nft, swap_data_account.nb_items.nft);
-        msg!("count_token {} itemToken {}", count_token, swap_data_account.nb_items.tokens);
-        msg!(
-            "nft {}, tokens {}",
-            swap_data_account.nft_items.len(),
-            swap_data_account.token_items.len()
-        );
         require!(swap_data_account.nb_items.nft == count_nft, MYERROR::IncorrectLength);
         require!(swap_data_account.nb_items.tokens == count_token, MYERROR::IncorrectLength);
 
@@ -212,10 +205,7 @@ pub mod neo_swap {
             })
             .unwrap();
 
-        msg!("before {:#?}", swap_data_account.token_items[pos]);
-        msg!("before {:#?}", trade_to_modify);
         swap_data_account.token_items[pos].owner = trade_to_modify.owner;
-        msg!("after {:#?}", swap_data_account.token_items[pos]);
 
         Ok(())
     }
@@ -232,8 +222,6 @@ pub mod neo_swap {
             swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
         );
-        msg!("trade_to_modify {:#?}", trade_to_modify);
-        msg!("nft_items {:#?}", swap_data_account.nft_items);
 
         if is_maker {
             let pos = swap_data_account.nft_items
@@ -252,7 +240,6 @@ pub mod neo_swap {
                 .unwrap();
 
             swap_data_account.nft_items[pos].destinary = trade_to_modify.destinary;
-            msg!("destinary {:#?}", swap_data_account.nft_items[pos].destinary);
         } else {
             let pos = swap_data_account.nft_items
                 .iter()
@@ -274,12 +261,6 @@ pub mod neo_swap {
             swap_data_account.nft_items[pos].merkle_tree = trade_to_modify.merkle_tree;
             swap_data_account.nft_items[pos].index = trade_to_modify.index;
             swap_data_account.nft_items[pos].is_compressed = trade_to_modify.is_compressed;
-
-            msg!(
-                "owner :{:#?}, mint :{}",
-                swap_data_account.nft_items[pos].owner,
-                swap_data_account.nft_items[pos].mint
-            );
         }
         Ok(())
     }
@@ -309,7 +290,7 @@ pub mod neo_swap {
                     item_search.status == ItemStatus::NFTPending.to_u8()
             })
             .unwrap();
-        msg!("index_to_send {}", index_to_send);
+
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
         let transfert_data = create_p_nft_instruction(item.amount.unsigned_abs(), SendPNft {
@@ -371,7 +352,6 @@ pub mod neo_swap {
                     item_search.status == ItemStatus::NFTPending.to_u8()
             })
             .unwrap();
-        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
@@ -425,7 +405,6 @@ pub mod neo_swap {
                     item_search.owner.eq(ctx.accounts.signer.key)
             })
             .unwrap();
-        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.token_items[index_to_send];
 
@@ -455,7 +434,6 @@ pub mod neo_swap {
                 ctx.accounts.user_ata.to_account_info(),
                 ctx.accounts.swap_data_account_ata.to_account_info(),
             ]
-            // &[&[&seed[..], &[bump]]]
         )?;
         item.status = ItemStatus::SolDeposited.to_u8();
         msg!("SolDeposited");
