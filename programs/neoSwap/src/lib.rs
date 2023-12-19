@@ -1,23 +1,24 @@
 use ::{
+    anchor_lang::{
+        prelude::*,
+        solana_program::{
+            self,
+            instruction::Instruction,
+            program::{ invoke, invoke_signed },
+            pubkey::Pubkey,
+            system_program::ID as SYSTEM_PROGRAM_ID,
+        },
+    },
+    anchor_spl::{
+        associated_token::AssociatedToken,
+        token::{ spl_token, Mint, Token, TokenAccount },
+    },
     mpl_bubblegum::program::Bubblegum,
     mpl_token_metadata::{
         instruction::{ builders::TransferBuilder, InstructionBuilder, TransferArgs },
         state::{ Metadata, TokenMetadataAccount },
     },
     spl_account_compression::{ program::SplAccountCompression, Noop },
-    anchor_lang::{
-        prelude::*,
-        solana_program::{
-            self,
-            program::{ invoke, invoke_signed },
-            pubkey::Pubkey,
-            instruction::Instruction,
-        },
-    },
-    anchor_spl::{
-        token::{ self, spl_token, Token, TokenAccount, Mint },
-        associated_token::AssociatedToken,
-    },
     spl_associated_token_account,
 };
 
@@ -40,7 +41,7 @@ pub mod neo_swap {
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => initializer
     /// @accounts system_program: Pubkey = system_program_id
-    /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
+    /// @accounts token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
     pub fn initialize_init(
         ctx: Context<InitializeInit>,
@@ -48,6 +49,7 @@ pub mod neo_swap {
         sent_data: SwapData
     ) -> Result<()> {
         require!(sent_data.pre_seed.len() < 30_usize, MYERROR::PreSeedTooLong);
+        require!(sent_data.seed_string.len() < 50_usize, MYERROR::SeedStringTooLong);
 
         // Write according Data into Swap's PDA
         ctx.accounts.swap_data_account.initializer = ctx.accounts.signer.key();
@@ -56,6 +58,7 @@ pub mod neo_swap {
         ctx.accounts.swap_data_account.status = TradeStatus::Initializing.to_u8();
         ctx.accounts.swap_data_account.nb_items = sent_data.nb_items;
         ctx.accounts.swap_data_account.pre_seed = sent_data.pre_seed;
+        ctx.accounts.swap_data_account.seed_string = sent_data.seed_string;
         ctx.accounts.swap_data_account.accepted_payement = sent_data.accepted_payement;
         Ok(())
     }
@@ -68,11 +71,10 @@ pub mod neo_swap {
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => initializer
     /// @return Void
-    pub fn initialize_add(
+    pub fn initialize_add_token(
         ctx: Context<InitializeAdd>,
         _seed: Vec<u8>,
-        trade_to_add: SwapItem
-        // tra_to_add: TokenSwapItem
+        trade_to_add: TokenSwapItem
     ) -> Result<()> {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
 
@@ -80,100 +82,55 @@ pub mod neo_swap {
             swap_data_account.status == TradeStatus::Initializing.to_u8(),
             MYERROR::UnexpectedState
         );
-
+        let mut token_item = trade_to_add;
         // Write according status to item
-        match trade_to_add {
-            SwapItem::NftSwapItem(mut nft_item) => {
-                if nft_item.amount <= 0 {
-                    return Err(error!(MYERROR::UnexpectedData).into());
-                }
-                if nft_exist_in_sda(swap_data_account.nft_items.clone(), nft_item.clone()) {
-                    return Err(error!(MYERROR::AlreadyExist).into());
-                }
-                nft_item.status = ItemStatus::NFTPending.to_u8();
-                msg!("NFT item added with status NFTPending");
 
-                swap_data_account.nft_items.push(nft_item);
-            }
-            SwapItem::TokenSwapItem(mut token_item) => {
-                if token_exist_in_sda(swap_data_account.token_items.clone(), token_item.clone()) {
-                    return Err(error!(MYERROR::AlreadyExist).into());
-                }
-                if token_item.amount.is_positive() {
-                    token_item.status = ItemStatus::SolPending.to_u8();
-                    msg!("SOL item added with status SolPending");
-                } else if token_item.amount == 0 {
-                    msg!("SOL item is null amount");
-                    return Err(error!(MYERROR::UnexpectedData).into());
-                } else {
-                    token_item.status = ItemStatus::SolToClaim.to_u8();
-                    msg!("SOL item added with status SolToClaim");
-                }
-                swap_data_account.token_items.push(token_item);
-            }
+        if token_exist_in_sda(swap_data_account.token_items.clone(), token_item.clone()) {
+            return Err(error!(MYERROR::AlreadyExist).into());
         }
+        if token_item.amount.is_positive() {
+            token_item.status = ItemStatus::SolPending.to_u8();
+            msg!("SOL item added with status SolPending");
+        } else if token_item.amount == 0 {
+            msg!("SOL item is null amount");
+            return Err(error!(MYERROR::UnexpectedData).into());
+        } else {
+            token_item.status = ItemStatus::SolToClaim.to_u8();
+            msg!("SOL item added with status SolToClaim");
+        }
+        msg!("owner {}", token_item.owner);
+        msg!("amount {}", token_item.amount);
+        msg!("status {}", token_item.status);
+
+        swap_data_account.token_items.push(token_item);
 
         Ok(())
     }
-
-    pub fn initialize_modify(
+    pub fn initialize_add_nft(
         ctx: Context<InitializeAdd>,
         _seed: Vec<u8>,
-        trade_to_modify: SwapItem,
-        is_maker: bool
+        trade_to_add: NftSwapItem
     ) -> Result<()> {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
-        let accepted_payement = swap_data_account.accepted_payement;
-        let mut modified = false;
 
         require!(
             swap_data_account.status == TradeStatus::Initializing.to_u8(),
             MYERROR::UnexpectedState
         );
-
-        // Modify item data to fill in remaining dummyData
-        match trade_to_modify {
-            SwapItem::NftSwapItem(nft_item) => {
-                swap_data_account.nft_items
-                    .iter_mut()
-                    .find(|item| (
-                        if is_maker {
-                            item.mint.eq(&nft_item.mint) &&
-                                item.owner.eq(&nft_item.owner) &&
-                                item.destinary.eq(&accepted_payement)
-                        } else {
-                            item.destinary.eq(&nft_item.destinary) &&
-                                item.mint.eq(&accepted_payement) &&
-                                item.owner.eq(&accepted_payement)
-                        }
-                    ))
-                    .map(|find_item| {
-                        if is_maker {
-                            find_item.destinary = nft_item.destinary;
-                        } else {
-                            find_item.owner = nft_item.owner;
-                            find_item.mint = nft_item.mint;
-                        }
-                        modified = true;
-                    });
-            }
-            SwapItem::TokenSwapItem(token_item) => {
-                swap_data_account.token_items
-                    .iter_mut()
-                    .find(
-                        |item| item.amount == token_item.amount && item.owner.eq(&accepted_payement)
-                    )
-                    .map(|find_item| {
-                        find_item.owner = token_item.owner;
-                        modified = true;
-                    });
-            }
+        let mut nft_item = trade_to_add;
+        // Write according status to item
+        if nft_item.amount <= 0 {
+            return Err(error!(MYERROR::UnexpectedData).into());
         }
+        if nft_exist_in_sda(swap_data_account.nft_items.clone(), nft_item.clone()) {
+            return Err(error!(MYERROR::AlreadyExist).into());
+        }
+        nft_item.status = ItemStatus::NFTPending.to_u8();
 
-        require!(modified, MYERROR::NoModify);
+        swap_data_account.nft_items.push(nft_item);
+
         Ok(())
     }
-    
     /// @notice Verify Swap's PDA items to proceed to waiting for deposit state. /!\ initializer function
     /// @dev Function verify each item status and sum of lamports to mutate the smart contract status to (waiting for deposit).
     /// @param seed: u8[] => Seed buffer corresponding to Swap's PDA
@@ -191,39 +148,139 @@ pub mod neo_swap {
 
         // Check that sum of lamports to trade is null
         let mut sum = 0 as i64;
-        let mut count = 0 as u32;
+        let mut count_nft = 0 as u32;
+        let mut count_token = 0 as u32;
 
-        for item in swap_data_account.token_items.iter() {
+        for item_token in swap_data_account.token_items.iter() {
             if
                 !(
-                    item.status == ItemStatus::SolPending.to_u8() ||
-                    item.status == ItemStatus::SolToClaim.to_u8()
+                    item_token.status == ItemStatus::SolPending.to_u8() ||
+                    item_token.status == ItemStatus::SolToClaim.to_u8()
                 )
             {
+                msg!("{} item status: {}", count_token, item_token.status);
                 return Err(error!(MYERROR::IncorrectStatus).into());
             }
 
-            sum = sum.checked_add(item.amount).unwrap();
-            count += 1;
+            sum = sum.checked_add(item_token.amount).unwrap();
+            count_token += 1;
         }
 
-        for item in swap_data_account.nft_items.iter() {
-            if item.status != ItemStatus::NFTPending.to_u8() {
-                msg!("{} item status: {}", count, item.status);
+        for nft_item in swap_data_account.nft_items.iter() {
+            if nft_item.status != ItemStatus::NFTPending.to_u8() {
+                msg!("{} item status: {}", count_nft, nft_item.status);
                 return Err(error!(MYERROR::IncorrectStatus).into());
             }
-            count += 1;
+            count_nft += 1;
         }
 
         require!(sum == 0, MYERROR::SumNotNull);
-        let nb_item = swap_data_account.nb_items.nft
-            .checked_add(swap_data_account.nb_items.tokens)
-            .unwrap();
-        require!(count == nb_item, MYERROR::IncorrectLength);
+
+        msg!("count_nft {} itemNft {}", count_nft, swap_data_account.nb_items.nft);
+        msg!("count_token {} itemToken {}", count_token, swap_data_account.nb_items.tokens);
+        msg!(
+            "nft {}, tokens {}",
+            swap_data_account.nft_items.len(),
+            swap_data_account.token_items.len()
+        );
+        require!(swap_data_account.nb_items.nft == count_nft, MYERROR::IncorrectLength);
+        require!(swap_data_account.nb_items.tokens == count_token, MYERROR::IncorrectLength);
 
         //changing status to WaitingToDeposit
         swap_data_account.status = TradeStatus::WaitingToDeposit.to_u8();
 
+        Ok(())
+    }
+
+    pub fn initialize_modify_token(
+        ctx: Context<InitializeModify>,
+        _seed: Vec<u8>,
+        trade_to_modify: TokenSwapItem
+    ) -> Result<()> {
+        let swap_data_account = &mut ctx.accounts.swap_data_account;
+
+        require!(
+            swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
+            MYERROR::UnexpectedState
+        );
+
+        // Modify item data to fill in remaining dummyData
+        let pos = swap_data_account.token_items
+            .iter_mut()
+            .position(|find_item| {
+                find_item.amount == trade_to_modify.amount && find_item.owner.eq(&SYSTEM_PROGRAM_ID)
+            })
+            .unwrap();
+
+        msg!("before {:#?}", swap_data_account.token_items[pos]);
+        msg!("before {:#?}", trade_to_modify);
+        swap_data_account.token_items[pos].owner = trade_to_modify.owner;
+        msg!("after {:#?}", swap_data_account.token_items[pos]);
+
+        Ok(())
+    }
+
+    pub fn initialize_modify_nft(
+        ctx: Context<InitializeModify>,
+        _seed: Vec<u8>,
+        trade_to_modify: NftSwapItem,
+        is_maker: bool
+    ) -> Result<()> {
+        let swap_data_account = &mut ctx.accounts.swap_data_account;
+
+        require!(
+            swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
+            MYERROR::UnexpectedState
+        );
+        msg!("trade_to_modify {:#?}", trade_to_modify);
+        msg!("nft_items {:#?}", swap_data_account.nft_items);
+
+        if is_maker {
+            let pos = swap_data_account.nft_items
+                .iter()
+                .position(
+                    |find_item|
+                        find_item.destinary.eq(&SYSTEM_PROGRAM_ID) &&
+                        find_item.owner.eq(&trade_to_modify.owner) &&
+                        find_item.merkle_tree.eq(&trade_to_modify.merkle_tree) &&
+                        find_item.mint.eq(&trade_to_modify.mint) &&
+                        find_item.collection.eq(&trade_to_modify.collection) &&
+                        find_item.is_compressed == trade_to_modify.is_compressed &&
+                        find_item.index == trade_to_modify.index &&
+                        find_item.amount == trade_to_modify.amount
+                )
+                .unwrap();
+
+            swap_data_account.nft_items[pos].destinary = trade_to_modify.destinary;
+            msg!("destinary {:#?}", swap_data_account.nft_items[pos].destinary);
+        } else {
+            let pos = swap_data_account.nft_items
+                .iter()
+                .position(
+                    |find_item|
+                        find_item.destinary.eq(&trade_to_modify.destinary) &&
+                        find_item.owner.eq(&SYSTEM_PROGRAM_ID) &&
+                        find_item.merkle_tree.eq(&SYSTEM_PROGRAM_ID) &&
+                        find_item.mint.eq(&SYSTEM_PROGRAM_ID) &&
+                        find_item.collection.eq(&trade_to_modify.collection) &&
+                        find_item.index == 0 &&
+                        find_item.is_compressed == false &&
+                        find_item.amount == trade_to_modify.amount
+                )
+                .unwrap();
+
+            swap_data_account.nft_items[pos].owner = trade_to_modify.owner;
+            swap_data_account.nft_items[pos].mint = trade_to_modify.mint;
+            swap_data_account.nft_items[pos].merkle_tree = trade_to_modify.merkle_tree;
+            swap_data_account.nft_items[pos].index = trade_to_modify.index;
+            swap_data_account.nft_items[pos].is_compressed = trade_to_modify.is_compressed;
+
+            msg!(
+                "owner :{:#?}, mint :{}",
+                swap_data_account.nft_items[pos].owner,
+                swap_data_account.nft_items[pos].mint
+            );
+        }
         Ok(())
     }
 
@@ -233,26 +290,32 @@ pub mod neo_swap {
     /// @param bump: u8 => "Bump corresponding to Swap's PDA"
     /// @accounts {system_program: Pubkey = system_program_id, token_program: Pubkey = token_program_id, swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => User that deposits,  item_from_deposit: Pubkey => User ATA related to mint, item_to_deposit: Pubkey => Swap's PDA ATA related to mint}
     /// @return Void
-    pub fn deposit_p_nft(ctx: Context<DepositPNft>, seed: Vec<u8>, bump: u8) -> Result<()> {
+    pub fn deposit_p_nft(ctx: Context<DepositPNft>, _seed: Vec<u8>) -> Result<()> {
+        require!(
+            ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
+            MYERROR::UnexpectedState
+        );
+
         let swap_data_account_account_info = ctx.accounts.swap_data_account
             .to_account_info()
             .clone();
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
-            .position(
-                |item_search|
+            .position(|item_search| {
+                !item_search.is_compressed &&
                     item_search.mint.eq(&ctx.accounts.mint.key()) &&
+                    item_search.owner.eq(&ctx.accounts.signer.key()) &&
                     item_search.status == ItemStatus::NFTPending.to_u8()
-            )
+            })
             .unwrap();
-
+        msg!("index_to_send {}", index_to_send);
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
         let transfert_data = create_p_nft_instruction(item.amount.unsigned_abs(), SendPNft {
-            from: ctx.accounts.user.to_account_info(),
+            from: ctx.accounts.signer.to_account_info(),
             from_ata: ctx.accounts.user_ata.to_account_info(),
-            to: swap_data_account_account_info.clone(),
+            to: swap_data_account_account_info,
             to_ata: ctx.accounts.swap_data_account_ata.to_account_info(),
             mint: ctx.accounts.mint.to_account_info(),
             signer: ctx.accounts.signer.to_account_info(),
@@ -264,25 +327,20 @@ pub mod neo_swap {
             nft_metadata: ctx.accounts.nft_metadata.to_account_info(),
             owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
-            spl_token_program: ctx.accounts.spl_token_program.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
             spl_ata_program: ctx.accounts.spl_ata_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
         }).unwrap();
 
-        invoke_signed(
+        invoke(
             &transfert_data.instruction,
-            &transfert_data.account_infos,
-            &[&[&seed[..], &[bump]]]
+            &transfert_data.account_infos // &[&[&seed[..], &[bump]]]
         )?;
 
         //update item status to NFTDeposited
         item.status = ItemStatus::NFTDeposited.to_u8();
         msg!("NFTDeposited");
 
-        require!(
-            ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
-            MYERROR::UnexpectedState
-        );
         Ok(())
     }
 
@@ -305,15 +363,15 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.is_compressed &&
+            .position(|item_search| {
+                item_search.is_compressed &&
                     item_search.merkle_tree.eq(&ctx.accounts.merkle_tree.key()) &&
                     index == item_search.index &&
-                    item_search.owner.eq(&ctx.accounts.user.key()) &&
+                    item_search.owner.eq(&ctx.accounts.signer.key()) &&
                     item_search.status == ItemStatus::NFTPending.to_u8()
-            )
+            })
             .unwrap();
+        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
@@ -325,7 +383,7 @@ pub mod neo_swap {
             nonce,
             index,
             SendCNft {
-                from: ctx.accounts.user.to_account_info(),
+                from: ctx.accounts.signer.to_account_info(),
                 to: swap_data_account_account_info.clone(),
                 system_program: ctx.accounts.system_program.to_account_info(),
                 leaf_delegate: ctx.accounts.leaf_delegate.to_account_info(),
@@ -354,7 +412,7 @@ pub mod neo_swap {
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => User that deposits
     /// @return Void
-    pub fn deposit_sol(ctx: Context<DepositSolOrToken>, seed: Vec<u8>, bump: u8) -> Result<()> {
+    pub fn deposit_sol(ctx: Context<DepositSolOrToken>, _seed: Vec<u8>) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
@@ -362,17 +420,17 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.token_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.status == ItemStatus::SolPending.to_u8() &&
+            .position(|item_search| {
+                item_search.status == ItemStatus::SolPending.to_u8() &&
                     item_search.owner.eq(ctx.accounts.signer.key)
-            )
+            })
             .unwrap();
+        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.token_items[index_to_send];
 
         let ix;
-        if ctx.accounts.user.key().eq(&ctx.accounts.user_ata.key()) {
+        if ctx.accounts.signer.key().eq(&ctx.accounts.user_ata.key()) {
             ix = solana_program::system_instruction::transfer(
                 &ctx.accounts.user_ata.key(),
                 &ctx.accounts.swap_data_account_ata.key(),
@@ -383,22 +441,21 @@ pub mod neo_swap {
                 &ctx.accounts.token_program.key,
                 &ctx.accounts.user_ata.key(),
                 &ctx.accounts.swap_data_account_ata.key(),
-                &ctx.accounts.user.key(),
+                &ctx.accounts.signer.key(),
                 &[&ctx.accounts.signer.key()],
                 item.amount.unsigned_abs()
             )?;
         }
-        invoke_signed(
+        invoke(
             &ix,
             &[
                 ctx.accounts.token_program.to_account_info(),
                 ctx.accounts.signer.to_account_info(),
-                ctx.accounts.user.to_account_info(),
                 ctx.accounts.user_ata.to_account_info(),
                 ctx.accounts.user_ata.to_account_info(),
                 ctx.accounts.swap_data_account_ata.to_account_info(),
-            ],
-            &[&[&seed[..], &[bump]]]
+            ]
+            // &[&[&seed[..], &[bump]]]
         )?;
         item.status = ItemStatus::SolDeposited.to_u8();
         msg!("SolDeposited");
@@ -413,44 +470,41 @@ pub mod neo_swap {
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => initializer
     /// @return Void
-    pub fn deposit_validate(ctx: Context<Validate>, _seed: Vec<u8>, _bump: u8) -> Result<()> {
+    pub fn deposit_validate(ctx: Context<Validate>, _seed: Vec<u8>) -> Result<()> {
         require!(
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
         );
 
-        // Checks that all items have been deposited
-        let nbr_items =
-            ctx.accounts.swap_data_account.nft_items.len() +
-            ctx.accounts.swap_data_account.token_items.len();
-        let mut checker = 0;
+        let mut count_nft = 0 as u32;
+        let mut count_token = 0 as u32;
 
         for item in ctx.accounts.swap_data_account.nft_items.iter() {
-            if !(item.status == ItemStatus::NFTDeposited.to_u8()) {
-                msg!("item owner {}, mint {}, status {}", item.owner, item.mint, item.status);
-                return Err(error!(MYERROR::NotReady).into());
-            }
-            checker += 1;
+            require!(item.status == ItemStatus::NFTDeposited.to_u8(), MYERROR::NotReady);
+            require!(!item.destinary.eq(&SYSTEM_PROGRAM_ID), MYERROR::UnexpectedData);
+            require!(!item.owner.eq(&SYSTEM_PROGRAM_ID), MYERROR::UnexpectedData);
+
+            count_nft += 1;
         }
         for item in ctx.accounts.swap_data_account.token_items.iter() {
-            if
-                !(
-                    item.status == ItemStatus::SolDeposited.to_u8() ||
-                    item.status == ItemStatus::SolToClaim.to_u8()
-                )
-            {
-                msg!(
-                    "item owner {}, mint {}, status {}",
-                    item.owner,
-                    ctx.accounts.swap_data_account.accepted_payement,
-                    item.status
-                );
-                return Err(error!(MYERROR::NotReady).into());
-            }
-            checker += 1;
-        }
-        require!(checker == nbr_items, MYERROR::NotReady);
+            require!(
+                item.status == ItemStatus::SolDeposited.to_u8() ||
+                    item.status == ItemStatus::SolToClaim.to_u8(),
+                MYERROR::NotReady
+            );
+            require!(!item.owner.eq(&SYSTEM_PROGRAM_ID), MYERROR::UnexpectedData);
 
+            count_token += 1;
+        }
+
+        require!(
+            ctx.accounts.swap_data_account.nb_items.nft == count_nft,
+            MYERROR::IncorrectLength
+        );
+        require!(
+            ctx.accounts.swap_data_account.nb_items.tokens == count_token,
+            MYERROR::IncorrectLength
+        );
         // Udpate status to WaitingToClaim
         ctx.accounts.swap_data_account.status = TradeStatus::WaitingToClaim.to_u8();
 
@@ -474,69 +528,50 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.token_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.status == ItemStatus::SolToClaim.to_u8() &&
+            .position(|item_search| {
+                item_search.status == ItemStatus::SolToClaim.to_u8() &&
                     item_search.owner.eq(ctx.accounts.user.key)
-            )
+            })
             .unwrap();
 
-        let item = &mut ctx.accounts.swap_data_account.token_items[index_to_send];
+        if ctx.accounts.swap_data_account.token_items[index_to_send].amount.is_negative() {
+            let amount_to_send =
+                ctx.accounts.swap_data_account.token_items[index_to_send].amount.unsigned_abs();
 
-        // find the item linked with shared Accounts
-        if item.amount.is_negative() {
-            let amount_to_send = item.amount.unsigned_abs();
-            let swap_data_lamports_initial = ctx.accounts.swap_data_account_ata.amount;
-
-            if swap_data_lamports_initial >= amount_to_send {
-                let ix;
-                if ctx.accounts.user.key().eq(&ctx.accounts.user_ata.key()) {
-                    ix = solana_program::system_instruction::transfer(
-                        &ctx.accounts.swap_data_account_ata.key(),
-                        &ctx.accounts.user_ata.key(),
-                        item.amount.unsigned_abs()
-                    );
-                } else {
-                    ix = spl_token::instruction::transfer(
-                        &ctx.accounts.token_program.key,
-                        &ctx.accounts.swap_data_account_ata.key(),
-                        &ctx.accounts.user_ata.key(),
-                        &ctx.accounts.user.key(),
-                        &[&ctx.accounts.signer.key()],
-                        amount_to_send
-                    )?;
-                }
+            if ctx.accounts.user.key().eq(&ctx.accounts.user_ata.key()) {
+                **ctx.accounts.user.lamports.borrow_mut() =
+                    ctx.accounts.user.lamports() + amount_to_send;
+                **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
+                    ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
+            } else {
+                let ix = spl_token::instruction::transfer(
+                    &ctx.accounts.token_program.key,
+                    &ctx.accounts.swap_data_account_ata.key(),
+                    &ctx.accounts.user_ata.key(),
+                    &ctx.accounts.signer.key(),
+                    &[&ctx.accounts.signer.key()],
+                    amount_to_send
+                )?;
                 invoke_signed(
                     &ix,
                     &[
                         ctx.accounts.token_program.to_account_info(),
                         ctx.accounts.signer.to_account_info(),
-                        ctx.accounts.user.to_account_info(),
                         ctx.accounts.user_ata.to_account_info(),
                         ctx.accounts.user_ata.to_account_info(),
                         ctx.accounts.swap_data_account_ata.to_account_info(),
                     ],
                     &[&[&seed[..], &[bump]]]
                 )?;
-
-                //update item status to SolClaimed
-                item.status = ItemStatus::SolClaimed.to_u8();
-                msg!("SOL item Claimed");
-            } else {
-                return Err(error!(MYERROR::NotEnoughFunds).into());
             }
+            //update item status to SolClaimed
+            ctx.accounts.swap_data_account.token_items[index_to_send].status =
+                ItemStatus::SolClaimed.to_u8();
+            msg!("SOL item Claimed");
         } else {
             return Err(error!(MYERROR::NoSend).into());
         }
-        // for item in &mut ctx.accounts.swap_data_account.token_items {
-        //     if
-        //         item.status == ItemStatus::SolToClaim.to_u8() &&
-        //         item.owner.eq(ctx.accounts.user.key) &&
-        //         transfered == false
-        //     {
-        //     }
-        // }
-        // require!(!!transfered, MYERROR::NoSend);
+
         Ok(())
     }
 
@@ -565,14 +600,14 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.status == ItemStatus::NFTDeposited.to_u8() &&
+            .position(|item_search| {
+                item_search.status == ItemStatus::NFTDeposited.to_u8() &&
                     item_search.mint.eq(&ctx.accounts.swap_data_account_ata.mint) &&
                     item_search.mint.eq(&ctx.accounts.user_ata.mint) &&
                     item_search.destinary.eq(ctx.accounts.user.key)
-            )
+            })
             .unwrap();
+        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
@@ -592,7 +627,7 @@ pub mod neo_swap {
             owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
             spl_ata_program: ctx.accounts.spl_ata_program.to_account_info(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
-            spl_token_program: ctx.accounts.spl_token_program.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
         }).unwrap();
 
@@ -605,6 +640,7 @@ pub mod neo_swap {
 
         msg!("NFT item Claimed");
         let _ = ctx.accounts.swap_data_account_ata.reload();
+
         // if no more NFT held, closes the Swap's PDA ATA
         if ctx.accounts.swap_data_account_ata.amount == 0 {
             let ix2 = spl_token::instruction::close_account(
@@ -654,15 +690,15 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.status == ItemStatus::NFTDeposited.to_u8() &&
+            .position(|item_search| {
+                item_search.status == ItemStatus::NFTDeposited.to_u8() &&
                     item_search.merkle_tree.eq(&ctx.accounts.merkle_tree.key()) &&
                     index == item_search.index &&
                     item_search.destinary.eq(&ctx.accounts.user.key()) &&
                     item_search.is_compressed
-            )
+            })
             .unwrap();
+        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
@@ -703,9 +739,9 @@ pub mod neo_swap {
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds, signer: Pubkey => initializer
     /// @accounts signer: Pubkey => initializer
     /// @accounts system_program: Pubkey = system_program_id
-    /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
+    /// @accounts token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
-    pub fn claim_validate(ctx: Context<ValidateAndClose>, _seed: Vec<u8>, _bump: u8) -> Result<()> {
+    pub fn claim_validate(ctx: Context<ValidateAndClose>, _seed: Vec<u8>) -> Result<()> {
         msg!("validate claimed status {}", ctx.accounts.swap_data_account.status);
         require_eq!(
             ctx.accounts.swap_data_account.status,
@@ -781,13 +817,13 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.token_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.owner.eq(ctx.accounts.user.key) &&
+            .position(|item_search| {
+                item_search.owner.eq(ctx.accounts.user.key) &&
                     item_search.status == ItemStatus::SolDeposited.to_u8() &&
                     item_search.amount.is_positive()
-            )
+            })
             .unwrap();
+        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.token_items[index_to_send];
 
@@ -799,43 +835,39 @@ pub mod neo_swap {
         }
 
         let amount_to_send = item.amount.unsigned_abs();
-        let swap_data_lamports_initial = ctx.accounts.swap_data_account_ata.amount;
+        // let swap_data_lamports_initial = ctx.accounts.swap_data_account_ata.amount;
 
-        if swap_data_lamports_initial >= amount_to_send {
-            let ix;
-            if ctx.accounts.user.key().eq(&ctx.accounts.user_ata.key()) {
-                ix = solana_program::system_instruction::transfer(
-                    &ctx.accounts.swap_data_account_ata.key(),
-                    &ctx.accounts.user_ata.key(),
-                    item.amount.unsigned_abs()
-                );
-            } else {
-                ix = spl_token::instruction::transfer(
-                    &ctx.accounts.token_program.key,
-                    &ctx.accounts.swap_data_account_ata.key(),
-                    &ctx.accounts.user_ata.key(),
-                    &ctx.accounts.user.key(),
-                    &[&ctx.accounts.signer.key()],
-                    amount_to_send
-                )?;
-            }
-            invoke_signed(
-                &ix,
-                &[
-                    ctx.accounts.token_program.to_account_info(),
-                    ctx.accounts.signer.to_account_info(),
-                    ctx.accounts.user.to_account_info(),
-                    ctx.accounts.user_ata.to_account_info(),
-                    ctx.accounts.user_ata.to_account_info(),
-                    ctx.accounts.swap_data_account_ata.to_account_info(),
-                ],
-                &[&[&seed[..], &[bump]]]
-            )?;
-
-            item.status = ItemStatus::SolCanceledRecovered.to_u8();
+        let ix;
+        if ctx.accounts.user.key().eq(&ctx.accounts.user_ata.key()) {
+            ix = solana_program::system_instruction::transfer(
+                &ctx.accounts.swap_data_account_ata.key(),
+                &ctx.accounts.user_ata.key(),
+                item.amount.unsigned_abs()
+            );
         } else {
-            return Err(error!(MYERROR::NotEnoughFunds).into());
+            ix = spl_token::instruction::transfer(
+                &ctx.accounts.token_program.key,
+                &ctx.accounts.swap_data_account_ata.key(),
+                &ctx.accounts.user_ata.key(),
+                &ctx.accounts.user.key(),
+                &[&ctx.accounts.signer.key()],
+                amount_to_send
+            )?;
         }
+        invoke_signed(
+            &ix,
+            &[
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.signer.to_account_info(),
+                ctx.accounts.user.to_account_info(),
+                ctx.accounts.user_ata.to_account_info(),
+                ctx.accounts.user_ata.to_account_info(),
+                ctx.accounts.swap_data_account_ata.to_account_info(),
+            ],
+            &[&[&seed[..], &[bump]]]
+        )?;
+
+        item.status = ItemStatus::SolCanceledRecovered.to_u8();
 
         // if not already, Swap status changed to 90 (Canceled)
         if ctx.accounts.swap_data_account.status != TradeStatus::Canceling.to_u8() {
@@ -873,14 +905,14 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.status == ItemStatus::NFTDeposited.to_u8() &&
+            .position(|item_search| {
+                item_search.status == ItemStatus::NFTDeposited.to_u8() &&
                     item_search.mint.eq(&user_ata.mint) &&
                     item_search.owner.eq(&ctx.accounts.user.key.clone()) &&
                     !item_search.is_compressed
-            )
+            })
             .unwrap();
+        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
@@ -908,7 +940,7 @@ pub mod neo_swap {
             owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
             spl_ata_program: ctx.accounts.spl_ata_program.to_account_info(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
-            spl_token_program: ctx.accounts.spl_token_program.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
             // token_program: ctx.accounts.token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
         }).unwrap();
@@ -991,15 +1023,15 @@ pub mod neo_swap {
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
-            .position(
-                |item_search|
-                    item_search.status == ItemStatus::NFTDeposited.to_u8() &&
+            .position(|item_search| {
+                item_search.status == ItemStatus::NFTDeposited.to_u8() &&
                     item_search.merkle_tree.eq(&ctx.accounts.merkle_tree.key()) &&
                     index == item_search.index &&
                     item_search.owner.eq(ctx.accounts.user.key) &&
                     item_search.is_compressed
-            )
+            })
             .unwrap();
+        msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
@@ -1030,7 +1062,6 @@ pub mod neo_swap {
             }
         ).unwrap();
 
-        // invoke(&transfert_data.instruction, &transfert_data.account_infos)?;
         invoke_signed(
             &transfert_data.instruction,
             &transfert_data.account_infos,
@@ -1057,13 +1088,9 @@ pub mod neo_swap {
     /// @accounts swap_data_account: Pubkey => Swap's PDA corresponding to seeds
     /// @accounts signer: Pubkey => initializer
     /// @accounts system_program: Pubkey = system_program_id
-    /// @accounts spl_token_program: Pubkey = spl_associated_token_program_id
+    /// @accounts token_program: Pubkey = spl_associated_token_program_id
     /// @return Void
-    pub fn cancel_validate(
-        ctx: Context<ValidateAndClose>,
-        _seed: Vec<u8>,
-        _bump: u8
-    ) -> Result<()> {
+    pub fn cancel_validate(ctx: Context<ValidateAndClose>, _seed: Vec<u8>) -> Result<()> {
         if
             !(
                 ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8() ||
@@ -1173,7 +1200,7 @@ pub struct InitializeInit<'info> {
     #[account(mut)]
     signer: Signer<'info>,
     system_program: Program<'info, System>,
-    spl_token_program: Program<'info, AssociatedToken>,
+    token_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -1192,50 +1219,36 @@ pub struct InitializeAdd<'info> {
 
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
+pub struct InitializeModify<'info> {
+    #[account(
+        mut,
+        seeds = [&seed[..]],
+        bump,
+        constraint = swap_data_account.initializer.eq(&signer.key()) @ MYERROR::NotInit
+    )]
+    swap_data_account: Box<Account<'info, SwapData>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+}
+#[derive(Accounts)]
+#[instruction(seed: Vec<u8>)]
 pub struct InitializeVerify<'info> {
     #[account(
         mut,
-        seeds = [&seed[..]], 
+        seeds = [&seed[..]],
         bump,
-        constraint = swap_data_account.initializer.eq(&signer.key()) @ MYERROR::NotInit        
+        constraint = swap_data_account.initializer.eq(&signer.key()) @ MYERROR::NotInit
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
 }
 
-// #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>)]
-// pub struct UserConfirm<'info> {
-//     #[account(
-//         mut,
-//         seeds = [&seed[..]],
-//         bump,
-//         constraint = swap_data_account.initializer.eq(&signer.key()) @ MYERROR::NotInit
-//     )]
-//     swap_data_account: Box<Account<'info, SwapData>>,
-//     #[account(mut,seeds = [&user.key().to_bytes()[..]], bump)]
-//     user_pda: Box<Account<'info, UserPdaData>>,
-//     #[account(
-//         mut,
-//         constraint = user_pda_ata.owner.eq(&user_pda.to_account_info().key())  @ MYERROR::IncorrectOwner
-//     )]
-//     user_pda_ata: Account<'info, TokenAccount>,
-//     /// CHECK: in CPI
-//     #[account(mut)]
-//     user: AccountInfo<'info>,
-//     #[account(mut)]
-//     signer: Signer<'info>,
-// }
-
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
 pub struct DepositPNft<'info> {
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
-    /// CHECK: in CPI
-    #[account(mut)]
-    user: AccountInfo<'info>,
     #[account(mut)]
     signer: Signer<'info>,
     #[account(
@@ -1285,74 +1298,9 @@ pub struct DepositPNft<'info> {
     /// CHECK: in constraints
     #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
     spl_ata_program: AccountInfo<'info>,
-    spl_token_program: Program<'info, Token>,
-    system_program: Program<'info, System>,
     token_program: Program<'info, Token>,
+    system_program: Program<'info, System>,
 }
-
-// #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>)]
-// pub struct DepositPNftPresigned<'info> {
-//     #[account(mut,seeds = [&seed[..]], bump)]
-//     swap_data_account: Box<Account<'info, SwapData>>,
-//     #[account(
-//         mut,
-//         constraint = swap_data_account_ata.owner.eq(&swap_data_account.to_account_info().key())  @ MYERROR::IncorrectOwner
-//     )]
-//     swap_data_account_ata: Account<'info, TokenAccount>,
-//     /// CHECK: can only be userPDA
-//     user: AccountInfo<'info>,
-
-//     #[account(mut, seeds = [&signer.key().to_bytes()[..]], bump)]
-//     user_pda: Box<Account<'info, UserPdaData>>,
-//     #[account(
-//         mut,
-//         constraint = user_pda_ata.mint.eq(&swap_data_account_ata.mint) @ MYERROR::MintIncorrect,
-//         constraint = user_pda_ata.owner.eq(&user_pda.key()) @ MYERROR::IncorrectOwner,
-//     )]
-//     user_pda_ata: Account<'info, TokenAccount>,
-
-//     #[account(mut)]
-//     signer: Signer<'info>,
-
-//     #[account(constraint = user_pda_ata.mint == mint.key()  @ MYERROR::MintIncorrect)]
-//     mint: Account<'info, Mint>,
-//     /// CHECK: in constraints
-//     #[account(mut,
-//         seeds =[
-//             b"metadata".as_ref(),
-//             metadata_program.key().as_ref(),
-//             mint.key().as_ref()],
-//         bump,
-//         owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
-//         seeds::program = metadata_program.key()
-//     )]
-//     nft_metadata: AccountInfo<'info>,
-//     /// CHECK: in constraints
-//     nft_master_edition: AccountInfo<'info>,
-//     /// CHECK: in constraints
-//     #[account(mut)]
-//     owner_token_record: AccountInfo<'info>,
-//     /// CHECK: in constraints
-//     #[account(mut)]
-//     destination_token_record: AccountInfo<'info>,
-//     /// CHECK: account checked in CPI
-//     auth_rules_program: AccountInfo<'info>,
-//     /// CHECK: account checked in CPI
-//     auth_rules: AccountInfo<'info>,
-//     system_program: Program<'info, System>,
-//     token_program: Program<'info, Token>,
-//     spl_token_program: Program<'info, Token>,
-//     /// CHECK: in constraints
-//     #[account(constraint = metadata_program.key().eq(&mpl_token_metadata::id()) @ MYERROR::IncorrectMetadata)]
-//     metadata_program: AccountInfo<'info>,
-//     /// CHECK: in constraints
-//     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
-//     sysvar_instructions: AccountInfo<'info>,
-//     /// CHECK: in constraints
-//     #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
-//     spl_ata_program: AccountInfo<'info>,
-// }
 
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
@@ -1360,7 +1308,7 @@ pub struct DepositCNft<'info> {
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(mut)]
-    user: Signer<'info>,
+    signer: Signer<'info>,
     #[account(mut)]
     leaf_delegate: Signer<'info>,
     /// CHECK: in cpi
@@ -1384,52 +1332,11 @@ pub struct DepositCNft<'info> {
     /// CHECK: in constraints
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
-    spl_token_program: Program<'info, Token>,
+    token_program: Program<'info, Token>,
     /// CHECK: in constraints
     #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
     spl_ata_program: AccountInfo<'info>,
 }
-
-// #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>)]
-// pub struct DepositCNft<'info> {
-//     #[account(mut,seeds = [&seed[..]], bump)]
-//     swap_data_account: Box<Account<'info, SwapData>>,
-//     // #[account(init, payer = signer, seeds = [&user.key().to_bytes()[..]], bump, space = 10240)]
-//     // user_pda: Box<Account<'info, UserPdaData>>,
-//     /// CHECK: in cpi
-//     #[account()]
-//     user: AccountInfo<'info>,
-//     #[account(mut)]
-//     signer: Signer<'info>,
-//     #[account(mut)]
-//     leaf_delegate: Signer<'info>,
-//     /// CHECK: in cpi
-//     #[account(
-//        mut,
-//        seeds = [merkle_tree.key().as_ref()],
-//        bump,
-//        seeds::program = bubblegum_program.key()
-//    )]
-//     tree_authority: UncheckedAccount<'info>,
-//     /// CHECK: in cpi
-//     #[account(mut)]
-//     merkle_tree: UncheckedAccount<'info>,
-//     system_program: Program<'info, System>,
-//     log_wrapper: Program<'info, Noop>,
-//     compression_program: Program<'info, SplAccountCompression>,
-//     bubblegum_program: Program<'info, Bubblegum>,
-//     /// CHECK: in constraints
-//     #[account(constraint = metadata_program.key().eq(&mpl_token_metadata::ID) @ MYERROR::IncorrectMetadata)]
-//     metadata_program: AccountInfo<'info>,
-//     /// CHECK: in constraints
-//     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
-//     sysvar_instructions: AccountInfo<'info>,
-//     spl_token_program: Program<'info, Token>,
-//     /// CHECK: in constraints
-//     #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
-//     spl_ata_program: AccountInfo<'info>,
-// }
 
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
@@ -1438,60 +1345,21 @@ pub struct DepositSolOrToken<'info> {
     token_program: Program<'info, Token>,
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
+    /// CHECK: in constraints
     #[account(
         mut,
-        constraint = swap_data_account_ata.is_native() @ MYERROR::MintIncorrect,
-        constraint = swap_data_account_ata.owner.eq(&swap_data_account.key())  @ MYERROR::IncorrectOwner
+        constraint = (swap_data_account_ata.owner.eq(&swap_data_account.key()) || swap_data_account_ata.key().eq(&swap_data_account.key())) @ MYERROR::IncorrectOwner
     )]
-    swap_data_account_ata: Account<'info, TokenAccount>,
-    /// CHECK: can only be userPDA
-    #[account(mut)]
-    user: AccountInfo<'info>,
+    swap_data_account_ata: AccountInfo<'info>, //, TokenAccount>,
+    /// CHECK: in constraints
     #[account(
         mut,
-        constraint = user_ata.is_native() @ MYERROR::MintIncorrect,
-        constraint = user_ata.owner.eq(&user.key())  @ MYERROR::IncorrectOwner,
-        constraint = user_ata.amount > 0 @ MYERROR::NotEnoughFunds
+        constraint = (user_ata.owner.eq(&signer.key()) || user_ata.key().eq(&signer.key()))  @ MYERROR::IncorrectOwner,
     )]
-    user_ata: Account<'info, TokenAccount>,
+    user_ata: AccountInfo<'info>, // TokenAccount>,
     #[account(mut)]
     signer: Signer<'info>,
 }
-
-// #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>)]
-// pub struct Deposit<'info> {
-//     system_program: Program<'info, System>,
-//     token_program: Program<'info, Token>,
-//     #[account(mut, seeds = [&seed[..]], bump)]
-//     swap_data_account: Box<Account<'info, SwapData>>,
-//     #[account(
-//         mut,
-//         constraint = swap_data_account_ata.owner.eq(&swap_data_account.to_account_info().key())  @ MYERROR::IncorrectOwner,
-//         constraint = swap_data_account_ata.is_native() @ MYERROR::MintIncorrect,
-//     )]
-//     swap_data_account_ata: Account<'info, TokenAccount>,
-//     /// CHECK: can only be userPDA
-//     #[account(mut,
-//         // constraint = user.key().eq(&user_pda.owner)  @ MYERROR::IncorrectOwner,
-//     )]
-//     user: AccountInfo<'info>,
-//     // #[account(
-//     //     mut,
-//     //     seeds = [&user.key().to_bytes()[..]],
-//     //     bump //= user_bump,
-//     // )]
-//     // user_pda: Box<Account<'info, UserPdaData>>,
-//     #[account(
-//         mut,
-//         constraint = user_ata.owner.eq(&user.key())  @ MYERROR::IncorrectOwner,
-//         constraint = user_ata.is_native() @ MYERROR::MintIncorrect,
-//         constraint = user_ata.amount > 0 @ MYERROR::NotEnoughFunds
-//     )]
-//     user_ata: Account<'info, TokenAccount>,
-//     #[account(mut)]
-//     signer: Signer<'info>,
-// }
 
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
@@ -1509,13 +1377,13 @@ pub struct Validate<'info> {
 #[instruction(seed: Vec<u8>)]
 pub struct ValidateAndClose<'info> {
     system_program: Program<'info, System>,
-    spl_token_program: Program<'info, AssociatedToken>,
+    token_program: Program<'info, AssociatedToken>,
     #[account(
         mut,
-        seeds = [&seed[..]], 
-        bump, 
+        seeds = [&seed[..]],
+        bump,
         close = signer,
-        constraint = swap_data_account.initializer.eq(&signer.key()) @ MYERROR::NotInit    
+        constraint = swap_data_account.initializer.eq(&signer.key()) @ MYERROR::NotInit
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(mut)]
@@ -1527,7 +1395,7 @@ pub struct ValidateAndClose<'info> {
 pub struct ClaimPNft<'info> {
     #[account(
         mut,
-        seeds = [&seed[..]], 
+        seeds = [&seed[..]],
         bump
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
@@ -1584,7 +1452,6 @@ pub struct ClaimPNft<'info> {
     /// CHECK: in constraint
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
-    spl_token_program: Program<'info, Token>,
     /// CHECK: in constraints
     #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
     spl_ata_program: AccountInfo<'info>,
@@ -1626,7 +1493,7 @@ pub struct ClaimCNft<'info> {
     /// CHECK: in constraint
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
-    spl_token_program: Program<'info, Token>,
+    token_program: Program<'info, Token>,
     /// CHECK: in constraints
     #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
     spl_ata_program: AccountInfo<'info>,
@@ -1637,21 +1504,23 @@ pub struct ClaimCNft<'info> {
 pub struct ClaimTokenOrSol<'info> {
     #[account(mut,seeds = [&seed[..]], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
+    /// CHECK: can only be userPDA
     #[account(
         mut,
-        constraint = swap_data_account_ata.is_native() @ MYERROR::MintIncorrect,
-        constraint = swap_data_account_ata.owner.eq(&swap_data_account.key())  @ MYERROR::IncorrectOwner
+        // constraint = swap_data_account_ata.is_native() @ MYERROR::MintIncorrect,
+        constraint = (swap_data_account_ata.key().eq(&swap_data_account.key()) || swap_data_account_ata.owner.eq(&swap_data_account.key()) )  @ MYERROR::IncorrectOwner
     )]
-    swap_data_account_ata: Account<'info, TokenAccount>,
+    swap_data_account_ata: AccountInfo<'info>, // TokenAccount>,
     /// CHECK: can only be userPDA
     #[account(mut)]
     user: AccountInfo<'info>,
+    /// CHECK: can only be userPDA
     #[account(
         mut,
-        constraint = user_ata.is_native() @ MYERROR::MintIncorrect,
-        constraint = user_ata.owner.eq(&user.key())  @ MYERROR::IncorrectOwner
+        // constraint = user_ata.is_native() @ MYERROR::MintIncorrect,
+        // constraint = (user_ata.key().eq(&user.key()) || user_ata.owner.eq(&user.key()))  @ MYERROR::IncorrectOwner
     )]
-    user_ata: Account<'info, TokenAccount>,
+    user_ata: AccountInfo<'info>, // TokenAccount>,
     #[account(mut)]
     signer: Signer<'info>,
     system_program: Program<'info, System>,
@@ -1667,7 +1536,7 @@ pub struct ClaimTokenOrSol<'info> {
 //     #[account(mut)]
 //     signer: Signer<'info>,
 //     system_program: Program<'info, System>,
-//     spl_token_program: Program<'info, AssociatedToken>,
+//     token_program: Program<'info, AssociatedToken>,
 // }
 // #[derive(Accounts)]
 // pub struct UserPdaClose<'info> {
@@ -1682,7 +1551,7 @@ pub struct ClaimTokenOrSol<'info> {
 //     #[account(mut)]
 //     signer: Signer<'info>,
 //     system_program: Program<'info, System>,
-//     spl_token_program: Program<'info, AssociatedToken>,
+//     token_program: Program<'info, AssociatedToken>,
 // }
 // #[derive(Accounts)]
 // pub struct UserPdaModifyBuyNFT<'info> {
@@ -1776,6 +1645,7 @@ pub struct SwapData {
     pub status: u8, // Gives the status of the current swap with TradeStatus
     pub nb_items: NbItems, // Required to initialize the PDA account data size
     pub pre_seed: String, // String to initialize PDA's seed
+    pub seed_string: String, // String to initialize PDA's seed
     pub nft_items: Vec<NftSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
     pub token_items: Vec<TokenSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
     pub accepted_payement: Pubkey, // List of tokens accepted for payment
@@ -1787,7 +1657,8 @@ impl SwapData {
         1 + //u8
         4 * 2 + //u32
         // 4 +
-        32 + // max 32 char
+        32 + // max 32 char pre_seed
+        50 + // max 50 char seed_string
         32 * 2; //Pubkey
 
     pub fn size(swap_data: SwapData) -> usize {
@@ -1795,6 +1666,7 @@ impl SwapData {
         let token_size = TokenSwapItem::LEN.checked_mul(
             swap_data.nb_items.tokens as usize
         ).unwrap();
+        msg!("nft_size {} token_size {}", nft_size, token_size);
         return SwapData::LEN.checked_add(nft_size.checked_add(token_size).unwrap()).unwrap();
     }
 }
@@ -1804,7 +1676,7 @@ pub struct NbItems {
     nft: u32,
     tokens: u32,
 }
-#[derive(AnchorDeserialize, AnchorSerialize, Clone)]
+#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug)]
 pub struct NftSwapItem {
     is_compressed: bool, // if NFT is compressed
     mint: Pubkey, // Mint of the NFT. if item not NFT expected PublicKey should be system_program
@@ -1819,12 +1691,13 @@ pub struct NftSwapItem {
 
 impl NftSwapItem {
     const LEN: usize =
-        32 * 4 + //pubkey
-        2 + //bool / u8
+        32 * 5 + //pubkey
+        1 +
+        1 + //bool / u8
         8 * 2; //i64
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, Clone)]
+#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug)]
 pub struct TokenSwapItem {
     amount: i64, // amount of tokens or lamports to transfer
     owner: Pubkey, // owner of the NFT or SOL item
@@ -1838,11 +1711,12 @@ impl TokenSwapItem {
         8 * 2; //i64
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, Clone)]
-pub enum SwapItem {
-    NftSwapItem(NftSwapItem),
-    TokenSwapItem(TokenSwapItem),
-}
+// #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
+// pub enum SwapItem {
+//     NFT(NftSwapItem),
+//     TOKEN(TokenSwapItem),
+// }
+
 // #[account]
 // #[derive(Default)]
 // pub struct UserPdaData {
@@ -1870,6 +1744,7 @@ pub enum SwapItem {
 pub enum TradeStatus {
     // WaitingToValidatePresigning,
     Initializing,
+    // MakerInitializing,
     WaitingToDeposit,
     WaitingToClaim,
     Closed,
@@ -1912,7 +1787,6 @@ impl TradeStatus {
 pub enum ItemStatus {
     // NFTPresigningWaitingForApproval,
     // SolPresigningWaitingForApproval,
-
     NFTPending,
     SolPending,
     SolToClaim,
@@ -1925,7 +1799,6 @@ pub enum ItemStatus {
 
     // NFTCanceled,
     // SolCanceled,
-
     NFTCanceledRecovered,
     SolCanceledRecovered,
 }
@@ -1935,12 +1808,10 @@ impl ItemStatus {
         match status {
             // 0 => ItemStatus::NFTPresigningWaitingForApproval,
             // 1 => ItemStatus::SolPresigningWaitingForApproval,
-
             10 => ItemStatus::NFTPending,
             11 => ItemStatus::SolPending,
             // 12 => ItemStatus::NFTPending,
             // 13 => ItemStatus::SolPending,
-
             20 => ItemStatus::NFTDeposited,
             21 => ItemStatus::SolDeposited,
             22 => ItemStatus::SolToClaim,
@@ -1950,7 +1821,6 @@ impl ItemStatus {
 
             // 100 => ItemStatus::NFTCanceled,
             // 101 => ItemStatus::SolCanceled,
-
             100 => ItemStatus::NFTCanceledRecovered,
             101 => ItemStatus::SolCanceledRecovered,
 
@@ -1962,7 +1832,6 @@ impl ItemStatus {
         match self {
             // ItemStatus::NFTPresigningWaitingForApproval => 0,
             // ItemStatus::SolPresigningWaitingForApproval => 1,
-
             ItemStatus::NFTPending => 10,
             ItemStatus::SolPending => 11,
 
@@ -1975,7 +1844,6 @@ impl ItemStatus {
 
             // ItemStatus::NFTCanceled => 100,
             // ItemStatus::SolCanceled => 101,
-
             ItemStatus::NFTCanceledRecovered => 100,
             ItemStatus::SolCanceledRecovered => 101,
         }
@@ -2068,6 +1936,8 @@ pub fn token_exist_in_sda(list_of_items: Vec<TokenSwapItem>, item_to_check: Toke
 //     return false;
 // }
 
+// #[derive(Accounts)]
+
 pub struct SendPNft<'info> {
     from: AccountInfo<'info>,
     from_ata: AccountInfo<'info>,
@@ -2084,10 +1954,22 @@ pub struct SendPNft<'info> {
     metadata_program: AccountInfo<'info>,
     sysvar_instructions: AccountInfo<'info>,
     spl_ata_program: AccountInfo<'info>,
-    spl_token_program: AccountInfo<'info>,
+    token_program: AccountInfo<'info>,
     system_program: AccountInfo<'info>,
 }
-
+// mint: Data.mint.toBase58(),
+// nftMetadata: nftMetadata.toBase58(),
+// nftMasterEdition: nftMasterEdition.toBase58(),
+// ownerTokenRecord: ownerTokenRecord.toBase58(),
+// destinationTokenRecord: destinationTokenRecord.toBase58(),
+// authRulesProgram: METAPLEX_AUTH_RULES_PROGRAM,
+// authRules,
+// metadataProgram: TOKEN_METADATA_PROGRAM,
+// sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY.toBase58(),
+// splAtaProgram: SOLANA_SPL_ATA_PROGRAM_ID,
+// splTokenProgram: TOKEN_PROGRAM_ID.toBase58(),
+// systemProgram: SystemProgram.programId.toBase58(),
+// #[derive(Accounts)]
 pub struct SendCNft<'info> {
     from: AccountInfo<'info>,
     to: AccountInfo<'info>,
@@ -2101,6 +1983,7 @@ pub struct SendCNft<'info> {
     remaining_accounts: Vec<AccountInfo<'info>>,
 }
 
+// #[derive(Accounts)]
 pub struct TransferData<'a> {
     instruction: Instruction,
     account_infos: Vec<AccountInfo<'a>>,
@@ -2119,7 +2002,7 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
         .payer(ctx.signer.key())
         .system_program(ctx.system_program.key())
         .sysvar_instructions(ctx.sysvar_instructions.key())
-        .spl_token_program(ctx.spl_token_program.key())
+        .spl_token_program(ctx.token_program.key())
         .spl_ata_program(ctx.spl_ata_program.key());
 
     // creating vase transfer info
@@ -2127,26 +2010,27 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
         ctx.from.to_account_info(),
         ctx.from_ata.to_account_info(),
         ctx.to.to_account_info(),
+        ctx.to_ata.to_account_info(),
         ctx.mint.to_account_info(),
         ctx.nft_metadata.to_account_info(),
         ctx.signer.to_account_info(),
         ctx.system_program.to_account_info(),
         ctx.sysvar_instructions.to_account_info(),
-        ctx.spl_token_program.to_account_info(),
+        ctx.token_program.to_account_info(),
         ctx.spl_ata_program.to_account_info(),
         ctx.sysvar_instructions.to_account_info(),
         ctx.metadata_program.to_account_info()
     ];
 
     let metadata: Metadata = Metadata::from_account_info(&ctx.nft_metadata.to_account_info())?;
-    // metadata.collection.map(|f|f.key);
-    // metadata.collection.unwrap().key
+
     if
         matches!(
             metadata.token_standard,
             Some(mpl_token_metadata::state::TokenStandard::ProgrammableNonFungible)
         )
     {
+        msg!("pnft");
         transfer_builder
             .edition(ctx.nft_master_edition.key())
             .owner_token_record(ctx.owner_token_record.key())
@@ -2333,47 +2217,14 @@ pub enum MYERROR {
     NotAuthorized,
     #[msg("PreSeed has too many character (max: 32)")]
     PreSeedTooLong,
+    #[msg("SeedString has too many character (max: 32)")]
+    SeedStringTooLong,
     #[msg("The list of token accepted for payment is empty")]
     NoAcceptedPaymentGiven,
     #[msg("Nothing fund to modify")]
     NoModify,
     #[msg("Already found something to modify")]
     AlreadyModified,
+    #[msg("Cannot find the requested item")]
+    CannotFind,
 }
-
-// #[macro_export]
-// macro_rules! custom_heap_default {
-//     () => {
-//         #[cfg(all(not(feature = "custom-heap"), target_os = "solana"))]
-//         #[global_allocator]
-//         static A: $crate::entrypoint::BumpAllocator = $crate::entrypoint::BumpAllocator {
-//             start: $crate::entrypoint::HEAP_START_ADDRESS as usize,
-//             len: $crate::entrypoint::HEAP_LENGTH,
-//         };
-//     };
-// }
-
-// #[allow(clippy::arithmetic_side_effects)]
-// unsafe impl std::alloc::GlobalAlloc for BumpAllocator {
-//     #[inline]
-//     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-//         let pos_ptr = self.start as *mut usize;
-
-//         let mut pos = *pos_ptr;
-//         if pos == 0 {
-//             // First time, set starting position
-//             pos = self.start + self.len;
-//         }
-//         pos = pos.saturating_sub(layout.size());
-//         pos &= !layout.align().wrapping_sub(1);
-//         if pos < self.start + size_of::<*mut u8>() {
-//             return null_mut();
-//         }
-//         *pos_ptr = pos;
-//         pos as *mut u8
-//     }
-//     #[inline]
-//     unsafe fn dealloc(&self, _: *mut u8, _: Layout) {
-//         // I'm a bump allocator, I don't free
-//     }
-// }
