@@ -53,6 +53,7 @@ const user4 = Keypair.fromSecretKey(usk4);
 import usk5 from "../deleteme/user5";
 const user5 = Keypair.fromSecretKey(usk5);
 import usk6 from "../deleteme/user6";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 const user6 = Keypair.fromSecretKey(usk6);
 // import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 // import usclisks from "/home/biboux/.config/solana/id.json";
@@ -66,7 +67,7 @@ describe("MIX pre-signing", () => {
     const connection = new Connection(clusterOrUrl);
 
     // let swapDataAccount = new PublicKey("6nXFtWreXWfEw4rkoXMH56CFWAQcZqWaz9a6yzCCRzCZ");
-    let swapDataAccount = new PublicKey("HVV1PNuTxHNWUT3VAgL2P81uWghHgQ4GAcU4mKbQh7pG");
+    let swapDataAccount = new PublicKey("42CfNUzBRJfkkDAQTDGgndtT32g5DWnsTz3M7zseyGB7");
     // let swapDataAccount = undefined;
 
     let swapInfo: neoTypes.SwapInfo = {
@@ -79,7 +80,7 @@ describe("MIX pre-signing", () => {
                 items: {
                     get: [
                         {
-                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
+                            address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             givers: [{ address: user1.publicKey.toString(), amount: 1 }],
@@ -87,7 +88,7 @@ describe("MIX pre-signing", () => {
                     ],
                     give: [
                         {
-                            address: SystemProgram.programId.toString(),
+                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             getters: [
@@ -106,7 +107,7 @@ describe("MIX pre-signing", () => {
                 items: {
                     give: [
                         {
-                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
+                            address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             getters: [{ address: SystemProgram.programId.toString(), amount: 1 }],
@@ -114,7 +115,7 @@ describe("MIX pre-signing", () => {
                     ],
                     get: [
                         {
-                            address: SystemProgram.programId.toString(),
+                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             givers: [
@@ -140,7 +141,7 @@ describe("MIX pre-signing", () => {
                 items: {
                     get: [
                         {
-                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
+                            address: "H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE",
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             givers: [{ address: user1.publicKey.toString(), amount: 1 }],
@@ -148,7 +149,7 @@ describe("MIX pre-signing", () => {
                     ],
                     give: [
                         {
-                            address: "H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE",
+                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             getters: [
@@ -167,7 +168,7 @@ describe("MIX pre-signing", () => {
                 items: {
                     give: [
                         {
-                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
+                            address: "H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE",
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             getters: [{ address: user2.publicKey.toString(), amount: 1 }],
@@ -175,7 +176,7 @@ describe("MIX pre-signing", () => {
                     ],
                     get: [
                         {
-                            address: "H9YsFbkJxpJaABkWu6kweErV6r2THxULkpyMPNuR6DWE",
+                            address: "AZ5QrDPZBWPBrRJtjTi9rJqUZ6wgNgntxTjzksvKRghX",
                             amount: 1,
                             collection: SystemProgram.programId.toString(),
                             givers: [
@@ -280,20 +281,9 @@ describe("MIX pre-signing", () => {
     //     } else console.warn("depositing user 2 skipped");
     // });
 
-    it("claim and close", async () => {
-        if (swapDataAccount) {
-            const hashs = await neoSwap.claimAndCloseSwap({
-                clusterOrUrl,
-                signer,
-                swapDataAccount,
-            });
-            console.log("Claim & close transactionHashs :", hashs);
-        } else console.warn("Claim & close skipped");
-    });
-
-    // it("cancel and close", async () => {
+    // it("claim and close", async () => {
     //     if (swapDataAccount) {
-    //         const hashs = await neoSwap.cancelAndCloseSwap({
+    //         const hashs = await neoSwap.claimAndCloseSwap({
     //             clusterOrUrl,
     //             signer,
     //             swapDataAccount,
@@ -302,62 +292,73 @@ describe("MIX pre-signing", () => {
     //     } else console.warn("Claim & close skipped");
     // });
 
-    // it("get all atas", async () => {
-    //     console.log("user1", user1.publicKey.toBase58());
-    //     console.log(
-    //         (
-    //             await connection.getParsedTokenAccountsByOwner(user1.publicKey, {
-    //                 programId: TOKEN_PROGRAM_ID,
-    //             })
-    //         ).value.map((v) => v.pubkey.toString())
-    //     );
-    //     console.log("user2", user2.publicKey.toBase58());
-    //     console.log(
-    //         (
-    //             await connection.getParsedTokenAccountsByOwner(user2.publicKey, {
-    //                 programId: TOKEN_PROGRAM_ID,
-    //             })
-    //         ).value.map((v) => v.pubkey.toString())
-    //     );
-    //     console.log("user3", user3.publicKey.toBase58());
-    //     console.log(
-    //         (
-    //             await connection.getParsedTokenAccountsByOwner(user3.publicKey, {
-    //                 programId: TOKEN_PROGRAM_ID,
-    //             })
-    //         ).value.map((v) => v.pubkey.toString())
-    //     );
-    //     console.log("user4", user4.publicKey.toBase58());
-    //     console.log(
-    //         (
-    //             await connection.getParsedTokenAccountsByOwner(user4.publicKey, {
-    //                 programId: TOKEN_PROGRAM_ID,
-    //             })
-    //         ).value.map((v) => v.pubkey.toString())
-    //     );
-    //     console.log("user5", user5.publicKey.toBase58());
-    //     console.log(
-    //         (
-    //             await connection.getParsedTokenAccountsByOwner(user5.publicKey, {
-    //                 programId: TOKEN_PROGRAM_ID,
-    //             })
-    //         ).value.map((v) => v.pubkey.toString())
-    //     );
-    //     console.log("user6", user6.publicKey.toBase58());
-    //     console.log(
-    //         (
-    //             await connection.getParsedTokenAccountsByOwner(user6.publicKey, {
-    //                 programId: TOKEN_PROGRAM_ID,
-    //             })
-    //         ).value.map((v) => v.pubkey.toString())
-    //     );
-    //     console.log("signer", signer.publicKey.toBase58());
-    //     console.log(
-    //         (
-    //             await connection.getParsedTokenAccountsByOwner(signer.publicKey, {
-    //                 programId: TOKEN_PROGRAM_ID,
-    //             })
-    //         ).value.map((v) => v.pubkey.toString())
-    //     );
-    // });
+    it("cancel and close", async () => {
+        if (swapDataAccount) {
+            const hashs = await neoSwap.cancelAndCloseSwap({
+                clusterOrUrl,
+                signer,
+                swapDataAccount,
+            });
+            console.log("Claim & close transactionHashs :", hashs);
+        } else console.warn("Claim & close skipped");
+    });
+
+    it("get all atas", async () => {
+        console.log("user1", user1.publicKey.toBase58());
+        console.log(
+            (
+                await connection.getParsedTokenAccountsByOwner(user1.publicKey, {
+                    programId: TOKEN_PROGRAM_ID,
+                })
+            ).value.map((v) => v.pubkey.toString())
+        );
+        console.log("user2", user2.publicKey.toBase58());
+        console.log(
+            (
+                await connection.getParsedTokenAccountsByOwner(user2.publicKey, {
+                    programId: TOKEN_PROGRAM_ID,
+                })
+            ).value.map((v) => v.pubkey.toString())
+        );
+        console.log("user3", user3.publicKey.toBase58());
+        console.log(
+            (
+                await connection.getParsedTokenAccountsByOwner(user3.publicKey, {
+                    programId: TOKEN_PROGRAM_ID,
+                })
+            ).value.map((v) => v.pubkey.toString())
+        );
+        console.log("user4", user4.publicKey.toBase58());
+        console.log(
+            (
+                await connection.getParsedTokenAccountsByOwner(user4.publicKey, {
+                    programId: TOKEN_PROGRAM_ID,
+                })
+            ).value.map((v) => v.pubkey.toString())
+        );
+        console.log("user5", user5.publicKey.toBase58());
+        console.log(
+            (
+                await connection.getParsedTokenAccountsByOwner(user5.publicKey, {
+                    programId: TOKEN_PROGRAM_ID,
+                })
+            ).value.map((v) => v.pubkey.toString())
+        );
+        console.log("user6", user6.publicKey.toBase58());
+        console.log(
+            (
+                await connection.getParsedTokenAccountsByOwner(user6.publicKey, {
+                    programId: TOKEN_PROGRAM_ID,
+                })
+            ).value.map((v) => v.pubkey.toString())
+        );
+        console.log("signer", signer.publicKey.toBase58());
+        console.log(
+            (
+                await connection.getParsedTokenAccountsByOwner(signer.publicKey, {
+                    programId: TOKEN_PROGRAM_ID,
+                })
+            ).value.map((v) => v.pubkey.toString())
+        );
+    });
 });

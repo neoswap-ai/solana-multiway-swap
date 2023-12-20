@@ -204,8 +204,11 @@ pub mod neo_swap {
                 find_item.amount == trade_to_modify.amount && find_item.owner.eq(&SYSTEM_PROGRAM_ID)
             })
             .unwrap();
-
-        swap_data_account.token_items[pos].owner = trade_to_modify.owner;
+        if ctx.accounts.signer.key().eq(&swap_data_account.initializer) {
+            swap_data_account.token_items[pos].owner = trade_to_modify.owner;
+        } else {
+            swap_data_account.token_items[pos].owner = ctx.accounts.signer.key();
+        }
 
         Ok(())
     }
@@ -239,7 +242,11 @@ pub mod neo_swap {
                 )
                 .unwrap();
 
-            swap_data_account.nft_items[pos].destinary = trade_to_modify.destinary;
+            if ctx.accounts.signer.key().eq(&swap_data_account.initializer) {
+                swap_data_account.nft_items[pos].destinary = trade_to_modify.destinary;
+            } else {
+                swap_data_account.nft_items[pos].destinary = ctx.accounts.signer.key();
+            }
         } else {
             let pos = swap_data_account.nft_items
                 .iter()
@@ -256,7 +263,11 @@ pub mod neo_swap {
                 )
                 .unwrap();
 
-            swap_data_account.nft_items[pos].owner = trade_to_modify.owner;
+            if ctx.accounts.signer.key().eq(&swap_data_account.initializer) {
+                swap_data_account.nft_items[pos].owner = trade_to_modify.owner;
+            } else {
+                swap_data_account.nft_items[pos].owner = ctx.accounts.signer.key();
+            }
             swap_data_account.nft_items[pos].mint = trade_to_modify.mint;
             swap_data_account.nft_items[pos].merkle_tree = trade_to_modify.merkle_tree;
             swap_data_account.nft_items[pos].index = trade_to_modify.index;
@@ -803,7 +814,7 @@ pub mod neo_swap {
             .unwrap();
         msg!("index_to_send {}", index_to_send);
 
-        let item = &mut ctx.accounts.swap_data_account.token_items[index_to_send];
+        let item = ctx.accounts.swap_data_account.token_items[index_to_send].clone();
 
         if
             !ctx.accounts.signer.key().eq(&item.owner) &&
@@ -815,15 +826,13 @@ pub mod neo_swap {
         let amount_to_send = item.amount.unsigned_abs();
         // let swap_data_lamports_initial = ctx.accounts.swap_data_account_ata.amount;
 
-        let ix;
         if ctx.accounts.user.key().eq(&ctx.accounts.user_ata.key()) {
-            ix = solana_program::system_instruction::transfer(
-                &ctx.accounts.swap_data_account_ata.key(),
-                &ctx.accounts.user_ata.key(),
-                item.amount.unsigned_abs()
-            );
+            **ctx.accounts.user.lamports.borrow_mut() =
+                ctx.accounts.user.lamports() + amount_to_send;
+            **ctx.accounts.swap_data_account.to_account_info().lamports.borrow_mut() =
+                ctx.accounts.swap_data_account.to_account_info().lamports() - amount_to_send;
         } else {
-            ix = spl_token::instruction::transfer(
+            let ix = spl_token::instruction::transfer(
                 &ctx.accounts.token_program.key,
                 &ctx.accounts.swap_data_account_ata.key(),
                 &ctx.accounts.user_ata.key(),
@@ -831,21 +840,22 @@ pub mod neo_swap {
                 &[&ctx.accounts.signer.key()],
                 amount_to_send
             )?;
+            invoke_signed(
+                &ix,
+                &[
+                    ctx.accounts.token_program.to_account_info(),
+                    ctx.accounts.signer.to_account_info(),
+                    ctx.accounts.user.to_account_info(),
+                    ctx.accounts.user_ata.to_account_info(),
+                    ctx.accounts.user_ata.to_account_info(),
+                    ctx.accounts.swap_data_account_ata.to_account_info(),
+                ],
+                &[&[&seed[..], &[bump]]]
+            )?;
         }
-        invoke_signed(
-            &ix,
-            &[
-                ctx.accounts.token_program.to_account_info(),
-                ctx.accounts.signer.to_account_info(),
-                ctx.accounts.user.to_account_info(),
-                ctx.accounts.user_ata.to_account_info(),
-                ctx.accounts.user_ata.to_account_info(),
-                ctx.accounts.swap_data_account_ata.to_account_info(),
-            ],
-            &[&[&seed[..], &[bump]]]
-        )?;
 
-        item.status = ItemStatus::SolCanceledRecovered.to_u8();
+        ctx.accounts.swap_data_account.token_items[index_to_send].status =
+            ItemStatus::SolCanceledRecovered.to_u8();
 
         // if not already, Swap status changed to 90 (Canceled)
         if ctx.accounts.swap_data_account.status != TradeStatus::Canceling.to_u8() {
@@ -1202,11 +1212,14 @@ pub struct InitializeModify<'info> {
         mut,
         seeds = [&seed[..]],
         bump,
-        constraint = swap_data_account.initializer.eq(&signer.key()) @ MYERROR::NotInit
+        // constraint = swap_data_account.initializer.eq(&.key()) @ MYERROR::NotInit
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(mut)]
     signer: Signer<'info>,
+    /// CHECK: in constraints
+    #[account(mut)]
+    user: AccountInfo<'info>,
 }
 #[derive(Accounts)]
 #[instruction(seed: Vec<u8>)]
