@@ -66,7 +66,7 @@ pub mod neo_swap {
         ctx.accounts.swap_data_account.pre_seed = sent_data.pre_seed;
         ctx.accounts.swap_data_account.seed_string = sent_data.seed_string;
         ctx.accounts.swap_data_account.accepted_payement = sent_data.accepted_payement;
-        ctx.accounts.swap_data_account.open_time = sent_data.open_time;
+        ctx.accounts.swap_data_account.start_time = Clock::get()?.unix_timestamp;
         ctx.accounts.swap_data_account.duration = sent_data.duration;
         Ok(())
     }
@@ -405,13 +405,13 @@ pub mod neo_swap {
         );
 
         require!(
-            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.open_time,
+            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.start_time,
             MYERROR::TooEarly
         );
 
         require!(
             Clock::get()?.unix_timestamp <
-                ctx.accounts.swap_data_account.open_time + ctx.accounts.swap_data_account.duration,
+                ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
             MYERROR::Expired
         );
 
@@ -483,13 +483,13 @@ pub mod neo_swap {
         );
 
         require!(
-            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.open_time,
+            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.start_time,
             MYERROR::TooEarly
         );
 
         require!(
             Clock::get()?.unix_timestamp <
-                ctx.accounts.swap_data_account.open_time + ctx.accounts.swap_data_account.duration,
+                ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
             MYERROR::Expired
         );
 
@@ -551,13 +551,13 @@ pub mod neo_swap {
         );
 
         require!(
-            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.open_time,
+            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.start_time,
             MYERROR::TooEarly
         );
 
         require!(
             Clock::get()?.unix_timestamp <
-                ctx.accounts.swap_data_account.open_time + ctx.accounts.swap_data_account.duration,
+                ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
             MYERROR::Expired
         );
         let index_to_send = ctx.accounts.swap_data_account.token_items
@@ -1865,7 +1865,7 @@ pub struct SwapData {
     pub nft_items: Vec<NftSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
     pub token_items: Vec<TokenSwapItem>, // List of items engaged in a swap (can be SOL or NFT)
     pub accepted_payement: Pubkey, // List of tokens accepted for payment
-    pub open_time: i64, // Timestamp of the opening of the swap
+    pub start_time: i64, // Timestamp of the opening of the swap
     pub duration: i64, // Duration of the swap
 }
 
