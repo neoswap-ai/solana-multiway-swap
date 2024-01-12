@@ -68,7 +68,7 @@ describe("MIX pre-signing", () => {
 
     let preSeed = "000023";
     // let swapDataAccount = new PublicKey("6nXFtWreXWfEw4rkoXMH56CFWAQcZqWaz9a6yzCCRzCZ");
-    let swapDataAccount = new PublicKey("GfYzjZAS1HE7PmTsUcavCoz3NVQLjZvHUomkuCh2QCbL");
+    let swapDataAccount = new PublicKey("DUvdPWooyDgN2zhqAcaUvrvu4ErNCkG4deVZBzTqNr9z");
     // let swapDataAccount = undefined;
 
     let collection1Data = {
@@ -89,24 +89,24 @@ describe("MIX pre-signing", () => {
         currency: SystemProgram.programId.toString(),
         preSeed,
         status: "initializing",
-        duration: days * 3,
-        openTime: Math.ceil(Date.now() / 1000),
+        duration: 100000,
+        startTime: Math.ceil(Date.now() / 1000),
         users: [
             {
-                address: user2.publicKey.toString(),
+                address: user1.publicKey.toString(),
                 items: {
                     get: [
                         {
                             address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: collection1Data.collection,
-                            givers: [{ address: SystemProgram.programId.toBase58(), amount: 1 }],
+                            givers: [{ address: SystemProgram.programId.toString(), amount: 1 }],
                         },
                         {
                             address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: collection1Data.collection,
-                            givers: [{ address: SystemProgram.programId.toBase58(), amount: 1 }],
+                            givers: [{ address: SystemProgram.programId.toString(), amount: 1 }],
                         },
                     ],
                     give: [
@@ -133,13 +133,13 @@ describe("MIX pre-signing", () => {
                             address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
                         },
                         {
                             address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
                         },
                     ],
                     get: [
@@ -149,7 +149,7 @@ describe("MIX pre-signing", () => {
                             collection: collection2Data.collection,
                             givers: [
                                 {
-                                    address: user2.publicKey.toString(),
+                                    address: user1.publicKey.toString(),
                                     amount: 1,
                                 },
                             ],
@@ -160,28 +160,103 @@ describe("MIX pre-signing", () => {
             },
         ],
     };
+    // {
+    //     currency: SystemProgram.programId.toString(),
+    //     preSeed,
+    //     status: "initializing",
+    //     duration: days * 3,
+    //     startTime: Math.ceil(Date.now() / 1000),
+    //     users: [
+    //         {
+    //             address: SystemProgram.programId.toString(),
+    //             items: {
+    //                 get: [
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         givers: [{ address: user2.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         givers: [{ address: user2.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                 ],
+    //                 give: [
+    //                     {
+    //                         address: collection2Data.items[2][1],
+    //                         amount: 1,
+    //                         collection: collection2Data.collection,
+    //                         getters: [
+    //                             {
+    //                                 address: user2.publicKey.toString(),
+    //                                 amount: 1,
+    //                             },
+    //                         ],
+    //                     },
+    //                 ],
+    //                 token: { amount: -1 },
+    //             },
+    //         },
+    //         {
+    //             address: user2.publicKey.toString(),
+    //             items: {
+    //                 give: [
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         getters: [{ address: SystemProgram.programId.toString(), amount: 1 }],
+    //                     },
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         getters: [{ address: SystemProgram.programId.toString(), amount: 1 }],
+    //                     },
+    //                 ],
+    //                 get: [
+    //                     {
+    //                         address: collection2Data.items[2][1],
+    //                         amount: 1,
+    //                         collection: collection2Data.collection,
+    //                         givers: [
+    //                             {
+    //                                 address: SystemProgram.programId.toString(),
+    //                                 amount: 1,
+    //                             },
+    //                         ],
+    //                     },
+    //                 ],
+    //                 token: { amount: 1 },
+    //             },
+    //         },
+    //     ],
+    // };
     let swapInfoTaker: neoTypes.SwapInfo = {
         currency: SystemProgram.programId.toString(),
         preSeed,
         status: "initializing",
         duration: 100000,
-        openTime: Math.ceil(Date.now() / 1000),
+        startTime: Math.ceil(Date.now() / 1000),
         users: [
             {
-                address: user2.publicKey.toString(),
+                address: user1.publicKey.toString(),
                 items: {
                     get: [
                         {
                             address: collection1Data.items[1][1],
                             amount: 1,
                             collection: collection1Data.collection,
-                            givers: [{ address: user1.publicKey.toString(), amount: 1 }],
+                            givers: [{ address: user2.publicKey.toString(), amount: 1 }],
                         },
                         {
                             address: collection1Data.items[1][2],
                             amount: 1,
                             collection: collection1Data.collection,
-                            givers: [{ address: user1.publicKey.toString(), amount: 1 }],
+                            givers: [{ address: user2.publicKey.toString(), amount: 1 }],
                         },
                     ],
                     give: [
@@ -191,7 +266,7 @@ describe("MIX pre-signing", () => {
                             collection: collection2Data.collection,
                             getters: [
                                 {
-                                    address: user1.publicKey.toString(),
+                                    address: user2.publicKey.toString(),
                                     amount: 1,
                                 },
                             ],
@@ -201,20 +276,20 @@ describe("MIX pre-signing", () => {
                 },
             },
             {
-                address: user1.publicKey.toString(),
+                address: user2.publicKey.toString(),
                 items: {
                     give: [
                         {
                             address: collection1Data.items[1][1],
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
                         },
                         {
                             address: collection1Data.items[1][2],
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
                         },
                     ],
                     get: [
@@ -224,7 +299,7 @@ describe("MIX pre-signing", () => {
                             collection: collection2Data.collection,
                             givers: [
                                 {
-                                    address: user2.publicKey.toString(),
+                                    address: user1.publicKey.toString(),
                                     amount: 1,
                                 },
                             ],
@@ -248,6 +323,21 @@ describe("MIX pre-signing", () => {
     //     );
     // });
 
+    it("make Swap", async () => {
+        if (!swapDataAccount) {
+            console.log("user1.publicKey", user1.publicKey);
+
+            const { swapDataAccount, hashs } = await neoSwap.makeSwap({
+                clusterOrUrl,
+                swapInfo,
+                signer: user1,
+            });
+
+            console.log("hashs", hashs);
+            console.log("swapDataAccount", swapDataAccount);
+        } else console.warn("makeSwap skipped");
+    });
+
     it("get Swap", async () => {
         if (swapDataAccount) {
             anchor.Program;
@@ -263,76 +353,71 @@ describe("MIX pre-signing", () => {
             console.log("initializeData", sdaD);
         } else console.warn("initializing swap skipped");
     });
-    it("initialize Swap", async () => {
-        // console.log(swapInfo);
-        // console.log(1704284828);
 
-        if (!swapDataAccount) {
-            const { initializeData, transactionHashs } = await neoSwap.initializeSwap({
-                clusterOrUrl,
-                swapInfo,
-                signer,
-
-                // validateOwnership:
-                // simulation: false,
-                // skipConfirmation:
-            });
-
-            console.log("initializeData", initializeData);
-            console.log("initializeData", transactionHashs);
-        } else console.warn("initializing swap skipped");
-    });
-
-    it("Deposit user 1", async () => {
-        if (swapDataAccount) {
-            const hashs = await neoSwap.depositSwap({
-                clusterOrUrl,
-                signer: user2,
-                swapDataAccount,
-            });
-            console.log("hashs", hashs);
-        } else console.warn("depositing user 2 skipped");
-    });
-
-    // it("User 2 depositSwap should fail", async () => {
+    // it("take swap", async () => {
     //     if (swapDataAccount) {
-    //         const hashs = await neoSwap.depositSwap({
+    //         const hashs = await neoSwap.takeSwap({
     //             clusterOrUrl,
     //             signer: user2,
     //             swapDataAccount,
+    //             swapInfo: swapInfoTaker,
+    //         });
+    //         console.log("hashs", hashs);
+    //     } else {
+    //         console.log("hashtakeSwap skipped");
+    //     }
+    // });
+
+    // // // it("User 2 depositSwap should fail", async () => {
+    // // //     if (swapDataAccount) {
+    // // //         const hashs = await neoSwap.depositSwap({
+    // // //             clusterOrUrl,
+    // // //             signer: user2,
+    // // //             swapDataAccount,
+    // // //         });
+    // // //         console.log("hashs", hashs);
+    // // //     } else console.warn("depositing user 2 skipped");
+    // // // });
+
+    // it("User 2 completes Data", async () => {
+    //     if (swapDataAccount) {
+    //         console.log("swapInfoTaker", swapInfoTaker);
+
+    //         const hashs = await neoSwap.modifySwap({
+    //             clusterOrUrl,
+    //             swapDataAccount,
+    //             signer,
+    //             swapInfo: swapInfoTaker,
     //         });
     //         console.log("hashs", hashs);
     //     } else console.warn("depositing user 2 skipped");
     // });
 
-    it("User 2 completes Data", async () => {
-        if (swapDataAccount) {
-            console.log("swapInfoTaker", swapInfoTaker);
+    // // it("User 2 deposits", async () => {
+    // //     if (swapDataAccount) {
+    // //         const hashs = await neoSwap.depositSwap({
+    // //             clusterOrUrl,
+    // //             signer: user1,
+    // //             swapDataAccount,
+    // //         });
+    // //         console.log("hashs", hashs);
+    // //     } else console.warn("depositing user 2 skipped");
+    // // });
 
-            const hashs = await neoSwap.modifySwap({
-                clusterOrUrl,
-                swapDataAccount,
-                signer,
-                swapInfo: swapInfoTaker,
-            });
-            console.log("hashs", hashs);
-        } else console.warn("depositing user 2 skipped");
-    });
+    // // it("claim and close", async () => {
+    // //     if (swapDataAccount) {
+    // //         const hashs = await neoSwap.claimAndCloseSwap({
+    // //             clusterOrUrl,
+    // //             signer,
+    // //             swapDataAccount,
+    // //         });
+    // //         console.log("Claim & close transactionHashs :", hashs);
+    // //     } else console.warn("Claim & close skipped");
+    // // });
 
-    it("User 2 deposits", async () => {
+    it("cancel and close", async () => {
         if (swapDataAccount) {
-            const hashs = await neoSwap.depositSwap({
-                clusterOrUrl,
-                signer: user1,
-                swapDataAccount,
-            });
-            console.log("hashs", hashs);
-        } else console.warn("depositing user 2 skipped");
-    });
-
-    it("claim and close", async () => {
-        if (swapDataAccount) {
-            const hashs = await neoSwap.claimAndCloseSwap({
+            const hashs = await neoSwap.cancelAndCloseSwap({
                 clusterOrUrl,
                 signer,
                 swapDataAccount,
@@ -341,19 +426,8 @@ describe("MIX pre-signing", () => {
         } else console.warn("Claim & close skipped");
     });
 
-    // it("cancel and close", async () => {
-    //     if (swapDataAccount) {
-    //         const hashs = await neoSwap.cancelAndCloseSwap({
-    //             clusterOrUrl,
-    //             signer,
-    //             swapDataAccount,
-    //         });
-    //         console.log("Claim & close transactionHashs :", hashs);
-    //     } else console.warn("Claim & close skipped");
-    // });
-
     // it("get all atas", async () => {
-    //     console.log("user1", user1.publicKey.toBase58());
+    //     console.log("user1", user1.publicKey.toString());
     //     console.log(
     //         (
     //             await connection.getParsedTokenAccountsByOwner(user1.publicKey, {
@@ -361,7 +435,7 @@ describe("MIX pre-signing", () => {
     //             })
     //         ).value.map((v) => v.pubkey.toString())
     //     );
-    //     console.log("user2", user2.publicKey.toBase58());
+    //     console.log("user2", user2.publicKey.toString());
     //     console.log(
     //         (
     //             await connection.getParsedTokenAccountsByOwner(user2.publicKey, {
@@ -369,7 +443,7 @@ describe("MIX pre-signing", () => {
     //             })
     //         ).value.map((v) => v.pubkey.toString())
     //     );
-    //     console.log("user3", user3.publicKey.toBase58());
+    //     console.log("user3", user3.publicKey.toString());
     //     console.log(
     //         (
     //             await connection.getParsedTokenAccountsByOwner(user3.publicKey, {
@@ -377,7 +451,7 @@ describe("MIX pre-signing", () => {
     //             })
     //         ).value.map((v) => v.pubkey.toString())
     //     );
-    //     console.log("user4", user4.publicKey.toBase58());
+    //     console.log("user4", user4.publicKey.toString());
     //     console.log(
     //         (
     //             await connection.getParsedTokenAccountsByOwner(user4.publicKey, {
@@ -385,7 +459,7 @@ describe("MIX pre-signing", () => {
     //             })
     //         ).value.map((v) => v.pubkey.toString())
     //     );
-    //     console.log("user5", user5.publicKey.toBase58());
+    //     console.log("user5", user5.publicKey.toString());
     //     console.log(
     //         (
     //             await connection.getParsedTokenAccountsByOwner(user5.publicKey, {
@@ -393,7 +467,7 @@ describe("MIX pre-signing", () => {
     //             })
     //         ).value.map((v) => v.pubkey.toString())
     //     );
-    //     console.log("user6", user6.publicKey.toBase58());
+    //     console.log("user6", user6.publicKey.toString());
     //     console.log(
     //         (
     //             await connection.getParsedTokenAccountsByOwner(user6.publicKey, {
@@ -401,7 +475,7 @@ describe("MIX pre-signing", () => {
     //             })
     //         ).value.map((v) => v.pubkey.toString())
     //     );
-    //     console.log("signer", signer.publicKey.toBase58());
+    //     console.log("signer", signer.publicKey.toString());
     //     console.log(
     //         (
     //             await connection.getParsedTokenAccountsByOwner(signer.publicKey, {

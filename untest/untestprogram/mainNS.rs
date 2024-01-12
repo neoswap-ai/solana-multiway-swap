@@ -253,14 +253,14 @@ pub mod neo_swap {
             MYERROR::UnexpectedState
         );
 
-        msg!("trade_to_modify.collection {:#?}", trade_to_modify.collection);
+        msg!("trade_to_modify {:#?}", trade_to_modify);
 
         let collection = Metadata::from_account_info(
             &ctx.accounts.nft_metadata.to_account_info()
         )?.collection.expect(&MYERROR::NoCollection.to_string());
         // ctx.accounts.mint.key()
-        msg!("collection {:#?}", collection);
-        msg!("collection {:#?}", collection.key);
+        // msg!("collection {:#?}", collection);
+        // msg!("collection {:#?}", collection.key);
 
         require!(
             !!collection.verified && collection.key.eq(&trade_to_modify.collection),
@@ -282,7 +282,7 @@ pub mod neo_swap {
                         find_item.amount == trade_to_modify.amount
                 )
                 .expect(&MYERROR::CannotFind.to_string());
-            // msg!("raw {:#?}", swap_data_account.nft_items[pos]);
+            msg!("raw {:#?}", swap_data_account.nft_items[pos]);
 
             if is_signer {
                 swap_data_account.nft_items[pos].destinary = trade_to_modify.destinary;
@@ -311,7 +311,7 @@ pub mod neo_swap {
             } else {
                 swap_data_account.nft_items[pos].owner = ctx.accounts.signer.key();
             }
-            // msg!("raw {:#?}", swap_data_account.nft_items[pos]);
+            msg!("raw {:#?}", swap_data_account.nft_items[pos]);
 
             swap_data_account.nft_items[pos].mint = trade_to_modify.mint;
             swap_data_account.nft_items[pos].merkle_tree = trade_to_modify.merkle_tree;
