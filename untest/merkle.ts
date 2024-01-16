@@ -293,6 +293,7 @@ describe("MIX pre-signing", () => {
             142, 120, 215, 238, 5, 231, 89, 235, 55, 122, 15, 36, 45, 63, 192, 124, 189, 175, 104,
             245, 20, 41, 223, 184, 69, 135, 136, 93, 51, 167, 91, 21,
         ]);
+
         let dataHash = Buffer.from([
             106, 73, 125, 43, 5, 111, 225, 183, 125, 18, 75, 37, 98, 33, 190, 251, 254, 215, 114,
             80, 178, 205, 26, 250, 21, 124, 252, 155, 36, 164, 11, 225,
@@ -397,6 +398,7 @@ describe("MIX pre-signing", () => {
             editionNonce,
             tokenStandard: null,
             collection: {
+                //@ts-ignore
                 key: collectionPk,
                 verified: false,
             },
@@ -406,19 +408,20 @@ describe("MIX pre-signing", () => {
         };
 
         const instruction = await program.methods
-            .readMerkleTree(dataHash, creatorHash, nonce, collectionPk, meta)
+            .readMerkleTree(dataHash, creatorHash, nonce, collectionPk) //, meta)
             .accounts({
                 signer: signer.publicKey,
                 treeAuthority,
                 leafOwner,
                 leafDelegate: leafOwner,
                 merkleTree,
-                systemProgram: SystemProgram.programId,
                 logWrapper: SPL_NOOP_PROGRAM_ID,
                 compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+                systemProgram: SystemProgram.programId,
                 bubblegumProgram: MPL_BUBBLEGUM_PROGRAM_ID,
             })
             .instruction();
+        console.log(instruction);
 
         let tx = new Transaction().add(instruction);
         tx.feePayer = signer.publicKey;
@@ -427,6 +430,17 @@ describe("MIX pre-signing", () => {
         const simulation = await connection.simulateTransaction(vtx);
 
         console.log(simulation);
+    });
+
+    it("cancel and close", async () => {
+        let test = Buffer.from([
+            121, 33, 62, 98, 62, 100, 107, 59, 96, 136, 222, 213, 45, 214, 63, 231, 244, 152, 245,
+            172, 5, 88, 74, 118, 18, 64, 4, 164, 14, 249, 15, 90,
+        ]);
+
+        let leaf = new PublicKey(test);
+        console.log(leaf.toString());
+        
     });
     // let ii = {
     //     interface: "V1_NFT",

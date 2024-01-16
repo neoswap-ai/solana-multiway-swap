@@ -75,12 +75,6 @@ export const idl: Idl = {
                     name: "collection",
                     type: "publicKey",
                 },
-                {
-                    name: "metadata",
-                    type: {
-                        defined: "MetadataArgs",
-                    },
-                },
             ],
         },
     ],

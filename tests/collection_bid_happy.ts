@@ -85,15 +85,169 @@ describe("MIX pre-signing", () => {
         items: { 2: { 1: "8DLmHWWRvghtFrhNVu6hvVQ2RujgL7GbwVLeLisvwtbJ" } },
     };
     let days = 86400;
+
+    /// ONE WAY
+    // let swapInfo: neoTypes.SwapInfo = {
+    //     currency: SystemProgram.programId.toString(),
+    //     preSeed,
+    //     status: "initializing",
+    //     duration: 3 * days,
+    //     startTime: Math.ceil(Date.now() / 1000),
+    //     users: [
+    //         {
+    //             address: user1.publicKey.toString(),
+    //             items: {
+    //                 get: [
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         givers: [{ address: SystemProgram.programId.toString(), amount: 1 }],
+    //                     },
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         givers: [{ address: SystemProgram.programId.toString(), amount: 1 }],
+    //                     },
+    //                 ],
+    //                 give: [
+    //                     {
+    //                         address: collection2Data.items[2][1],
+    //                         amount: 1,
+    //                         collection: collection2Data.collection,
+    //                         getters: [
+    //                             {
+    //                                 address: SystemProgram.programId.toString(),
+    //                                 amount: 1,
+    //                             },
+    //                         ],
+    //                     },
+    //                 ],
+    //                 token: { amount: -1 },
+    //             },
+    //         },
+    //         {
+    //             address: SystemProgram.programId.toString(),
+    //             items: {
+    //                 give: [
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                     {
+    //                         address: SystemProgram.programId.toString(),
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                 ],
+    //                 get: [
+    //                     {
+    //                         address: collection2Data.items[2][1],
+    //                         amount: 1,
+    //                         collection: collection2Data.collection,
+    //                         givers: [
+    //                             {
+    //                                 address: user1.publicKey.toString(),
+    //                                 amount: 1,
+    //                             },
+    //                         ],
+    //                     },
+    //                 ],
+    //                 token: { amount: 1 },
+    //             },
+    //         },
+    //     ],
+    // };
+    // let swapInfoTaker: neoTypes.SwapInfo = {
+    //     currency: SystemProgram.programId.toString(),
+    //     preSeed,
+    //     status: "initializing",
+    //     duration: 3 * days,
+    //     startTime: Math.ceil(Date.now() / 1000),
+    //     users: [
+    //         {
+    //             address: user1.publicKey.toString(),
+    //             items: {
+    //                 get: [
+    //                     {
+    //                         address: collection1Data.items[1][1],
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         givers: [{ address: user2.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                     {
+    //                         address: collection1Data.items[1][2],
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         givers: [{ address: user2.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                 ],
+    //                 give: [
+    //                     {
+    //                         address: collection2Data.items[2][1],
+    //                         amount: 1,
+    //                         collection: collection2Data.collection,
+    //                         getters: [
+    //                             {
+    //                                 address: user2.publicKey.toString(),
+    //                                 amount: 1,
+    //                             },
+    //                         ],
+    //                     },
+    //                 ],
+    //                 token: { amount: -1 },
+    //             },
+    //         },
+    //         {
+    //             address: user2.publicKey.toString(),
+    //             items: {
+    //                 give: [
+    //                     {
+    //                         address: collection1Data.items[1][1],
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                     {
+    //                         address: collection1Data.items[1][2],
+    //                         amount: 1,
+    //                         collection: collection1Data.collection,
+    //                         getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+    //                     },
+    //                 ],
+    //                 get: [
+    //                     {
+    //                         address: collection2Data.items[2][1],
+    //                         amount: 1,
+    //                         collection: collection2Data.collection,
+    //                         givers: [
+    //                             {
+    //                                 address: user1.publicKey.toString(),
+    //                                 amount: 1,
+    //                             },
+    //                         ],
+    //                     },
+    //                 ],
+    //                 token: { amount: 1 },
+    //             },
+    //         },
+    //     ],
+    // };
+
+    /// THE OTHER
     let swapInfo: neoTypes.SwapInfo = {
         currency: SystemProgram.programId.toString(),
         preSeed,
         status: "initializing",
-        duration: 100000,
+        duration: 3 * days,
         startTime: Math.ceil(Date.now() / 1000),
         users: [
             {
-                address: user1.publicKey.toString(),
+                address: user2.publicKey.toString(),
                 items: {
                     get: [
                         {
@@ -133,13 +287,13 @@ describe("MIX pre-signing", () => {
                             address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
                         },
                         {
                             address: SystemProgram.programId.toString(),
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
                         },
                     ],
                     get: [
@@ -149,7 +303,7 @@ describe("MIX pre-signing", () => {
                             collection: collection2Data.collection,
                             givers: [
                                 {
-                                    address: user1.publicKey.toString(),
+                                    address: user2.publicKey.toString(),
                                     amount: 1,
                                 },
                             ],
@@ -160,103 +314,28 @@ describe("MIX pre-signing", () => {
             },
         ],
     };
-    // {
-    //     currency: SystemProgram.programId.toString(),
-    //     preSeed,
-    //     status: "initializing",
-    //     duration: days * 3,
-    //     startTime: Math.ceil(Date.now() / 1000),
-    //     users: [
-    //         {
-    //             address: SystemProgram.programId.toString(),
-    //             items: {
-    //                 get: [
-    //                     {
-    //                         address: SystemProgram.programId.toString(),
-    //                         amount: 1,
-    //                         collection: collection1Data.collection,
-    //                         givers: [{ address: user2.publicKey.toString(), amount: 1 }],
-    //                     },
-    //                     {
-    //                         address: SystemProgram.programId.toString(),
-    //                         amount: 1,
-    //                         collection: collection1Data.collection,
-    //                         givers: [{ address: user2.publicKey.toString(), amount: 1 }],
-    //                     },
-    //                 ],
-    //                 give: [
-    //                     {
-    //                         address: collection2Data.items[2][1],
-    //                         amount: 1,
-    //                         collection: collection2Data.collection,
-    //                         getters: [
-    //                             {
-    //                                 address: user2.publicKey.toString(),
-    //                                 amount: 1,
-    //                             },
-    //                         ],
-    //                     },
-    //                 ],
-    //                 token: { amount: -1 },
-    //             },
-    //         },
-    //         {
-    //             address: user2.publicKey.toString(),
-    //             items: {
-    //                 give: [
-    //                     {
-    //                         address: SystemProgram.programId.toString(),
-    //                         amount: 1,
-    //                         collection: collection1Data.collection,
-    //                         getters: [{ address: SystemProgram.programId.toString(), amount: 1 }],
-    //                     },
-    //                     {
-    //                         address: SystemProgram.programId.toString(),
-    //                         amount: 1,
-    //                         collection: collection1Data.collection,
-    //                         getters: [{ address: SystemProgram.programId.toString(), amount: 1 }],
-    //                     },
-    //                 ],
-    //                 get: [
-    //                     {
-    //                         address: collection2Data.items[2][1],
-    //                         amount: 1,
-    //                         collection: collection2Data.collection,
-    //                         givers: [
-    //                             {
-    //                                 address: SystemProgram.programId.toString(),
-    //                                 amount: 1,
-    //                             },
-    //                         ],
-    //                     },
-    //                 ],
-    //                 token: { amount: 1 },
-    //             },
-    //         },
-    //     ],
-    // };
     let swapInfoTaker: neoTypes.SwapInfo = {
         currency: SystemProgram.programId.toString(),
         preSeed,
         status: "initializing",
-        duration: 100000,
+        duration: 3 * days,
         startTime: Math.ceil(Date.now() / 1000),
         users: [
             {
-                address: user1.publicKey.toString(),
+                address: user2.publicKey.toString(),
                 items: {
                     get: [
                         {
                             address: collection1Data.items[1][1],
                             amount: 1,
                             collection: collection1Data.collection,
-                            givers: [{ address: user2.publicKey.toString(), amount: 1 }],
+                            givers: [{ address:user1.publicKey.toString(), amount: 1 }],
                         },
                         {
                             address: collection1Data.items[1][2],
                             amount: 1,
                             collection: collection1Data.collection,
-                            givers: [{ address: user2.publicKey.toString(), amount: 1 }],
+                            givers: [{ address:user1.publicKey.toString(), amount: 1 }],
                         },
                     ],
                     give: [
@@ -266,7 +345,7 @@ describe("MIX pre-signing", () => {
                             collection: collection2Data.collection,
                             getters: [
                                 {
-                                    address: user2.publicKey.toString(),
+                                    address:user1.publicKey.toString(),
                                     amount: 1,
                                 },
                             ],
@@ -276,20 +355,20 @@ describe("MIX pre-signing", () => {
                 },
             },
             {
-                address: user2.publicKey.toString(),
+                address:user1.publicKey.toString(),
                 items: {
                     give: [
                         {
                             address: collection1Data.items[1][1],
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
                         },
                         {
                             address: collection1Data.items[1][2],
                             amount: 1,
                             collection: collection1Data.collection,
-                            getters: [{ address: user1.publicKey.toString(), amount: 1 }],
+                            getters: [{ address: user2.publicKey.toString(), amount: 1 }],
                         },
                     ],
                     get: [
@@ -299,7 +378,7 @@ describe("MIX pre-signing", () => {
                             collection: collection2Data.collection,
                             givers: [
                                 {
-                                    address: user1.publicKey.toString(),
+                                    address: user2.publicKey.toString(),
                                     amount: 1,
                                 },
                             ],
@@ -310,6 +389,7 @@ describe("MIX pre-signing", () => {
             },
         ],
     };
+
 
     // it("check SDA", async () => {
     //     const normal = await neoSwap.UTILS.swapDataConverter({ swapInfo, connection });
@@ -323,50 +403,51 @@ describe("MIX pre-signing", () => {
     //     );
     // });
 
-    it("make Swap", async () => {
-        if (!swapDataAccount) {
-            console.log("user1.publicKey", user1.publicKey);
+    // it("make Swap", async () => {
+    //     if (!swapDataAccount) {
+    //         console.log("user1.publicKey", user1.publicKey);
 
-            const { swapDataAccount, hashs } = await neoSwap.makeSwap({
-                clusterOrUrl,
-                swapInfo,
-                signer: user1,
-            });
-
-            console.log("hashs", hashs);
-            console.log("swapDataAccount", swapDataAccount);
-        } else console.warn("makeSwap skipped");
-    });
-
-    it("get Swap", async () => {
-        if (swapDataAccount) {
-            anchor.Program;
-            const sdaD = await neoSwap.UTILS.getSwapDataAccountFromPublicKey({
-                clusterOrUrl,
-                swapDataAccount_publicKey: swapDataAccount,
-
-                // validateOwnership:
-                // simulation: false,
-                // skipConfirmation:
-            });
-
-            console.log("initializeData", sdaD);
-        } else console.warn("initializing swap skipped");
-    });
-
-    // it("take swap", async () => {
-    //     if (swapDataAccount) {
-    //         const hashs = await neoSwap.takeSwap({
+    //         const { swapDataAccount, hashs } = await neoSwap.makeSwap({
     //             clusterOrUrl,
-    //             signer: user2,
-    //             swapDataAccount,
-    //             swapInfo: swapInfoTaker,
+    //             swapInfo,
+    //             signer: user1,
     //         });
+
     //         console.log("hashs", hashs);
-    //     } else {
-    //         console.log("hashtakeSwap skipped");
-    //     }
+    //         console.log("swapDataAccount", swapDataAccount);
+    //     } else console.warn("makeSwap skipped");
     // });
+
+    // it("get Swap", async () => {
+    //     if (swapDataAccount) {
+    //         anchor.Program;
+    //         const sdaD = await neoSwap.UTILS.getSwapDataAccountFromPublicKey({
+    //             clusterOrUrl,
+    //             swapDataAccount_publicKey: swapDataAccount,
+
+    //             // validateOwnership:
+    //             // simulation: false,
+    //             // skipConfirmation:
+    //         });
+
+    //         console.log("initializeData", sdaD);
+    //     } else console.warn("initializing swap skipped");
+    // });
+
+    it("take swap", async () => {
+        if (swapDataAccount) {
+            const hashs = await neoSwap.takeSwap({
+                clusterOrUrl,
+                signer: user2,
+                swapDataAccount,
+                swapInfo: swapInfoTaker,
+                // simulation: true,
+            });
+            console.log("hashs", hashs);
+        } else {
+            console.log("hashtakeSwap skipped");
+        }
+    });
 
     // // // it("User 2 depositSwap should fail", async () => {
     // // //     if (swapDataAccount) {
@@ -415,16 +496,16 @@ describe("MIX pre-signing", () => {
     // //     } else console.warn("Claim & close skipped");
     // // });
 
-    it("cancel and close", async () => {
-        if (swapDataAccount) {
-            const hashs = await neoSwap.cancelAndCloseSwap({
-                clusterOrUrl,
-                signer,
-                swapDataAccount,
-            });
-            console.log("Claim & close transactionHashs :", hashs);
-        } else console.warn("Claim & close skipped");
-    });
+    // it("cancel and close", async () => {
+    //     if (swapDataAccount) {
+    //         const hashs = await neoSwap.cancelAndCloseSwap({
+    //             clusterOrUrl,
+    //             signer: user1,
+    //             swapDataAccount,
+    //         });
+    //         console.log("Claim & close transactionHashs :", hashs);
+    //     } else console.warn("Claim & close skipped");
+    // });
 
     // it("get all atas", async () => {
     //     console.log("user1", user1.publicKey.toString());

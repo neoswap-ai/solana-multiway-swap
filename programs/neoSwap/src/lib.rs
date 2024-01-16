@@ -403,14 +403,11 @@ pub mod neo_swap {
             TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
         );
+        let now = Clock::get()?.unix_timestamp;
+        require!(now > ctx.accounts.swap_data_account.start_time, MYERROR::TooEarly);
 
         require!(
-            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.start_time,
-            MYERROR::TooEarly
-        );
-
-        require!(
-            Clock::get()?.unix_timestamp <
+            now <
                 ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
             MYERROR::Expired
         );
@@ -481,14 +478,11 @@ pub mod neo_swap {
             TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
         );
+        let now = Clock::get()?.unix_timestamp;
+        require!(now > ctx.accounts.swap_data_account.start_time, MYERROR::TooEarly);
 
         require!(
-            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.start_time,
-            MYERROR::TooEarly
-        );
-
-        require!(
-            Clock::get()?.unix_timestamp <
+            now <
                 ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
             MYERROR::Expired
         );
@@ -549,14 +543,11 @@ pub mod neo_swap {
             TradeStatus::WaitingToDeposit.to_u8(),
             MYERROR::UnexpectedState
         );
+        let now = Clock::get()?.unix_timestamp;
+        require!(now > ctx.accounts.swap_data_account.start_time, MYERROR::TooEarly);
 
         require!(
-            Clock::get()?.unix_timestamp > ctx.accounts.swap_data_account.start_time,
-            MYERROR::TooEarly
-        );
-
-        require!(
-            Clock::get()?.unix_timestamp <
+            now <
                 ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
             MYERROR::Expired
         );
@@ -958,28 +949,23 @@ pub mod neo_swap {
         {
             return Err(error!(MYERROR::NotReady).into());
         }
-        if
-            Clock::get()?.unix_timestamp.gt(
-                &ctx.accounts.swap_data_account.start_time
-                    .checked_add(ctx.accounts.swap_data_account.duration)
-                    .unwrap()
-            )
-        {
+        let now = Clock::get()?.unix_timestamp;
+        let end_time = ctx.accounts.swap_data_account.start_time
+            .checked_add(ctx.accounts.swap_data_account.duration)
+            .unwrap();
+
+        if now.gt(&end_time) {
             msg!("swap expired");
         } else if
             !ctx.accounts.signer.key().eq(&ctx.accounts.swap_data_account.initializer) &&
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
         {
             msg!(
-                "only admin can initiate cancelation until swap expired : {}",
-                ctx.accounts.swap_data_account.start_time
-                    .checked_add(ctx.accounts.swap_data_account.duration)
-                    .unwrap()
+                "only admin can initiate cancelation until swap expired in : {} seconds",
+                end_time - now
             );
             return Err(error!(MYERROR::NotAuthorized).into());
         }
-
-        let initializer = ctx.accounts.swap_data_account.initializer;
 
         let index_to_send = ctx.accounts.swap_data_account.token_items
             .iter()
@@ -992,13 +978,6 @@ pub mod neo_swap {
         msg!("index_to_send {}", index_to_send);
 
         let item = ctx.accounts.swap_data_account.token_items[index_to_send].clone();
-
-        if
-            !ctx.accounts.signer.key().eq(&item.owner) &&
-            !ctx.accounts.signer.key().eq(&initializer)
-        {
-            return Err(error!(MYERROR::UserNotPartOfTrade).into());
-        }
 
         let amount_to_send = item.amount.unsigned_abs();
         // let swap_data_lamports_initial = ctx.accounts.swap_data_account_ata.amount;
@@ -1055,12 +1034,6 @@ pub mod neo_swap {
     /// @accounts item_to_deposit: Pubkey => User ATA related to mint
     /// @return Void
     pub fn cancel_p_nft(ctx: Context<ClaimPNft>, seed: Vec<u8>, bump: u8) -> Result<()> {
-        require_keys_eq!(
-            ctx.accounts.signer.key(),
-            ctx.accounts.swap_data_account.initializer,
-            MYERROR::NotAuthorized
-        );
-
         let user_ata = &ctx.accounts.user_ata;
         let sda_ata_account_info = ctx.accounts.swap_data_account_ata.to_account_info();
         let swap_data_account_key = ctx.accounts.swap_data_account.key();
@@ -1071,29 +1044,23 @@ pub mod neo_swap {
                 ctx.accounts.swap_data_account.status == TradeStatus::Canceling.to_u8(),
             MYERROR::NotReady
         );
+        let now = Clock::get()?.unix_timestamp;
+        let end_time = ctx.accounts.swap_data_account.start_time
+            .checked_add(ctx.accounts.swap_data_account.duration)
+            .unwrap();
 
-        if
-            Clock::get()?.unix_timestamp.gt(
-                &ctx.accounts.swap_data_account.start_time
-                    .checked_add(ctx.accounts.swap_data_account.duration)
-                    .unwrap()
-            )
-        {
+        if now.gt(&end_time) {
             msg!("swap expired");
         } else if
             !ctx.accounts.signer.key().eq(&ctx.accounts.swap_data_account.initializer) &&
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8()
         {
             msg!(
-                "only admin can initiate cancelation until swap expired : {}",
-                ctx.accounts.swap_data_account.start_time
-                    .checked_add(ctx.accounts.swap_data_account.duration)
-                    .unwrap()
+                "only admin can initiate cancelation until swap expired in : {} seconds",
+                end_time - now
             );
             return Err(error!(MYERROR::NotAuthorized).into());
         }
-
-        let initializer = ctx.accounts.swap_data_account.initializer;
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
@@ -1107,13 +1074,6 @@ pub mod neo_swap {
         msg!("index_to_send {}", index_to_send);
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
-
-        if
-            !ctx.accounts.signer.key().eq(&item.owner) &&
-            !ctx.accounts.signer.key().eq(&initializer)
-        {
-            return Err(error!(MYERROR::UserNotPartOfTrade).into());
-        }
 
         // Transfer deposited NFT back to user
         let transfert_data = create_p_nft_instruction(item.amount.unsigned_abs(), SendPNft {
@@ -1199,24 +1159,20 @@ pub mod neo_swap {
             MYERROR::NotReady
         );
         let initializer = ctx.accounts.swap_data_account.initializer;
+        let now = Clock::get()?.unix_timestamp;
+        let end_time = ctx.accounts.swap_data_account.start_time
+            .checked_add(ctx.accounts.swap_data_account.duration)
+            .unwrap();
 
-        if
-            Clock::get()?.unix_timestamp.gt(
-                &ctx.accounts.swap_data_account.start_time
-                    .checked_add(ctx.accounts.swap_data_account.duration)
-                    .unwrap()
-            )
-        {
+        if now.gt(&end_time) {
             msg!("swap expired");
         } else if
             !ctx.accounts.signer.key().eq(&initializer) &&
             ctx.accounts.swap_data_account.status == TradeStatus::WaitingToDeposit.to_u8() // &&  !ctx.accounts.user.key().eq(&ctx.accounts.signer.key())
         {
             msg!(
-                "only admin can initiate cancelation until swap expired : {}",
-                ctx.accounts.swap_data_account.start_time
-                    .checked_add(ctx.accounts.swap_data_account.duration)
-                    .unwrap()
+                "only admin can initiate cancelation until swap expired in : {} seconds",
+                end_time - now
             );
             return Err(error!(MYERROR::NotAuthorized).into());
         }
@@ -1239,12 +1195,6 @@ pub mod neo_swap {
 
         let item = &mut ctx.accounts.swap_data_account.nft_items[index_to_send];
 
-        if
-            !ctx.accounts.signer.key().eq(&item.owner) &&
-            !ctx.accounts.signer.key().eq(&initializer)
-        {
-            return Err(error!(MYERROR::UserNotPartOfTrade).into());
-        }
         // Transfer deposited NFT back to user
         let transfert_data = create_c_nft_instruction(
             root,

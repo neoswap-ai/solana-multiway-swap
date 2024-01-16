@@ -1,4 +1,4 @@
-// mod metaplex_adapter;
+mod metaplex_adapter;
 use ::{
     mpl_bubblegum::{ state::{ TreeConfig, metaplex_adapter::MetadataArgs }, program::Bubblegum },
     spl_account_compression::{ program::SplAccountCompression, Noop },
@@ -47,8 +47,8 @@ pub mod neo_swap {
         data_hash: [u8; 32],
         creator_hash: [u8; 32],
         nonce: u64,
-        collection: Pubkey,
-        metadata: MetadataArgs
+        collection: Pubkey
+        // metadata: MetadataArgs
     ) -> Result<()> {
         // let data = ctx.accounts.merkle_tree.deserialize_data().unwrap();
         let merkle_tree = ctx.accounts.merkle_tree.to_account_info();
@@ -65,7 +65,7 @@ pub mod neo_swap {
         // msg!("creator_hash {:#?}", creator_hash);
 
         // Transfers must be initiated by either the leaf owner or leaf delegate.
-        let _previous_leaf = LeafSchema::new_v0(
+        let previous_leaf = LeafSchema::new_v0(
             asset_id,
             owner.key(),
             delegate.key(),
@@ -73,16 +73,21 @@ pub mod neo_swap {
             data_hash,
             creator_hash
         );
-        // msg!("previous_leaf {:#?}", previous_leaf);
-        let metadata_args_hash = keccak::hashv(&[metadata.try_to_vec()?.as_slice()]);
-        // Calculate new data hash.
-        let meta = keccak
-            ::hashv(
-                &[&metadata_args_hash.to_bytes(), &metadata.seller_fee_basis_points.to_le_bytes()]
-            )
-            .to_bytes();
+        let nodeleaf = previous_leaf.to_node();
+        let nodeleaf = previous_leaf.to_node();
 
-        msg!("meta {:#?}", meta);
+        msg!("nodeleaf {:#?}", nodeleaf);
+
+        // msg!("previous_leaf {:#?}", previous_leaf);
+        // let metadata_args_hash = keccak::hashv(&[metadata.try_to_vec()?.as_slice()]);
+        // // Calculate new data hash.
+        // let meta = keccak
+        //     ::hashv(
+        //         &[&metadata_args_hash.to_bytes(), &metadata.seller_fee_basis_points.to_le_bytes()]
+        //     )
+        //     .to_bytes();
+
+        // msg!("meta {:#?}", meta);
         // let tt = wrap_application_data_v1(
         //     previous_leaf.to_event().try_to_vec()?,
         //     &ctx.accounts.log_wrapper
