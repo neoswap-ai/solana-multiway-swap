@@ -43,40 +43,64 @@ pub mod neo_swap {
 
     pub fn read_merkle_tree(
         ctx: Context<ReadMerkleTree>,
-        // root: [u8; 32],
-        data_hash: [u8; 32],
-        creator_hash: [u8; 32],
+        given_asset_id: Pubkey,
         nonce: u64,
-        collection: Pubkey
-        // metadata: MetadataArgs
+        data_hash: [u8; 32],
+        // creator_hash: [u8; 32],
+        collection: Pubkey,
+        given_metadata_args: MetadataArgs
     ) -> Result<()> {
-        // let data = ctx.accounts.merkle_tree.deserialize_data().unwrap();
-        let merkle_tree = ctx.accounts.merkle_tree.to_account_info();
-        let owner = ctx.accounts.leaf_owner.to_account_info();
-        let delegate = ctx.accounts.leaf_delegate.to_account_info();
+        let metadata_args_hash = keccak::hashv(&[given_metadata_args.try_to_vec()?.as_slice()]);
+        let data_hash_calculated = keccak::hashv(
+            &[
+                &metadata_args_hash.to_bytes(),
+                &given_metadata_args.seller_fee_basis_points.to_le_bytes(),
+            ]
+        );
+        msg!("data_hash {:#?}", data_hash);
+        msg!("data_hash_calculated {:#?}", data_hash_calculated.to_bytes());
+
+        // if data_hash == data_hash_calculated.to_bytes() {
+        //     return Err(Errors::InvalidDataHash.into());
+        // }
+
+        msg!("given_metadata_args.collection {:#?}", given_metadata_args.collection.unwrap());
         msg!("collection {:#?}", collection);
 
-        msg!("merkle_tree {:#?}", merkle_tree.key);
-        msg!("owner {:#?}", owner.key);
-
-        let asset_id = get_asset_id(&merkle_tree.key(), nonce);
+        // let tid = Pubkey::find_program_address(
+        //     &[ASSET_PREFIX.as_ref(), ctx.accounts.merkle_tree.key().as_ref(), &nonce.to_le_bytes()],
+        //     &crate::id()
+        // ).0;
+        
+        let asset_id = get_asset_id(&ctx.accounts.merkle_tree.key(), nonce);
         msg!("asset_id {:#?}", asset_id);
-        // msg!("data_hash {:#?}", data_hash);
-        // msg!("creator_hash {:#?}", creator_hash);
+        msg!("given_asset_id {:#?}", given_asset_id);
 
-        // Transfers must be initiated by either the leaf owner or leaf delegate.
-        let previous_leaf = LeafSchema::new_v0(
-            asset_id,
-            owner.key(),
-            delegate.key(),
-            nonce,
-            data_hash,
-            creator_hash
-        );
-        let nodeleaf = previous_leaf.to_node();
-        let nodeleaf = previous_leaf.to_node();
+        // // require_eq!(data_hash, data_hash_calculated.to_bytes(), MyError::InvalidDataHash);
+        // // let data = ctx.accounts.merkle_tree.deserialize_data().unwrap();
+        // let owner = ctx.accounts.leaf_owner.to_account_info();
+        // let delegate = ctx.accounts.leaf_delegate.to_account_info();
 
-        msg!("nodeleaf {:#?}", nodeleaf);
+        // msg!("merkle_tree {:#?}", merkle_tree.key);
+        // msg!("owner {:#?}", owner.key);
+
+        // let asset_id = get_asset_id(&merkle_tree.key(), nonce);
+        // msg!("asset_id {:#?}", asset_id);
+        // // msg!("data_hash {:#?}", data_hash);
+        // // msg!("creator_hash {:#?}", creator_hash);
+
+        // // Transfers must be initiated by either the leaf owner or leaf delegate.
+        // let previous_leaf = LeafSchema::new_v0(
+        //     asset_id,
+        //     owner.key(),
+        //     delegate.key(),
+        //     nonce,
+        //     data_hash,
+        //     creator_hash
+        // );
+        // let nodeleaf = previous_leaf.to_node();
+
+        // msg!("nodeleaf {:#?}", nodeleaf);
 
         // msg!("previous_leaf {:#?}", previous_leaf);
         // let metadata_args_hash = keccak::hashv(&[metadata.try_to_vec()?.as_slice()]);
@@ -121,6 +145,11 @@ pub struct ReadMerkleTree<'info> {
     pub bubblegum_program: Program<'info, Bubblegum>,
 }
 
+#[error_code]
+pub enum Errors {
+    #[msg("Invalid data hash")]
+    InvalidDataHash,
+}
 // #[account]
 // #[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Debug)]
 

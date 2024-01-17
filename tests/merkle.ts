@@ -17,6 +17,8 @@ import {
     MPL_BUBBLEGUM_PROGRAM_ID,
     MetadataArgs,
     TokenProgramVersion,
+    Uses,
+    getMetadataArgsSerializer,
 } from "@metaplex-foundation/mpl-bubblegum";
 import { PublicKey as PpublicKey } from "@metaplex-foundation/umi-public-keys/dist/types/common";
 import { Option } from "@metaplex-foundation/umi-options/src/common";
@@ -48,6 +50,8 @@ import {
     SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
+import { option } from "@metaplex-foundation/umi/serializers";
+import { none, some } from "@metaplex-foundation/umi";
 
 export async function delay(time: number) {
     // console.log('delay');
@@ -287,128 +291,187 @@ describe("MIX pre-signing", () => {
             idl,
             new PublicKey("7H73hAEk1R1EXXgheDBdAn3Un3W7SQKMuKtwpfU67eet")
         );
-        // let tokenId = "CJbhEgXESCq49TeQhLS7RwSPwaJBJoZXgYKAqt6mbu2M";
+
+        // let tokenId = "3mbhKFpVp88hdWKLJynih4Z7Lea8TFfsSNiSRPTFwj6P";
+        let tokenId = "6oiNr9GSfKvQwqQtvytKGZML2NDvj7to4jq8XH5cmwW4";
+        // const {
+        //     merkleTree: merkleTree2,
+        //     dataHash: dataHash2,
+        //     treeAuthority: treeAuthority2,
+        // } = await neoSwap.UTILS.NFT_ACCOUNTS.getCNFTData({
+        //     Cluster: "mainnet-beta",
+        //     tokenId,
+        //     // connection,
+        // });
+
+        // console.log(
+        //     // new PublicKey(creatorHash),
+        //     new PublicKey(merkleTree2),
+        //     new PublicKey(dataHash2),
+        //     // nonce,
+        //     new PublicKey(treeAuthority2)
+        // );
+
+        // const response = (await (
+        //     await fetch("https://mainnet.helius-rpc.com/?api-key=3df6d163-6527-46bf-aa92-5f2e7af41aa4", {
+        //         method: "POST",
+        //         headers: {
+        //             "Content-Type": "application/json",
+        //         },
+        //         body: JSON.stringify({
+        //             jsonrpc: "2.0",
+        //             id: "rpd-op-123",
+        //             method: "getAsset",
+        //             params: {
+        //                 id: tokenId.toString(),
+        //             },
+        //         }),
+        //     })
+        // ).json()) as any;
+        const response = await fetch(
+            "https://mainnet.helius-rpc.com/?api-key=3df6d163-6527-46bf-aa92-5f2e7af41aa4",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: "rpd-op-123",
+                    method: "getAsset",
+                    params: {
+                        id: tokenId,
+                    },
+                }),
+            }
+        ).then(async (res) => (await res.json()) as any);
+
+        console.log("treeProofResponse", response.result);
+
+        // console.log("treeProofResponse", response.result);
+        // console.log("esponse.result.content.metadata", response.result.content.json_uri);
+        // const response2 = (await (
+        //     await fetch(
+        //         "https://prod-tensor-creators-s3.s3.us-east-1.amazonaws.com/drop/e6ed698b-ae10-42f9-8d2e-16b8d844439e/5fa78dac-1ec9-4441-aa95-0b88cf453b82",
+        //         {
+        //             method: "GET",
+        //             headers: {
+        //                 "Content-Type": "application/json",
+        //             },
+        //             // body: JSON.stringify({
+        //             //     jsonrpc: "2.0",
+        //             //     id: "rpd-op-123",
+        //             //     method: "getAsset",
+        //             //     params: {
+        //             //         id: tokenId,
+        //             //     },
+        //             // }),
+        //         }
+        //     )
+        // ).json()) as any; // MetadataArgs;
+        // console.log("response2", response2);
+        // option(some(response2.collection), { prefix: null, fixed: false });
+        // let tt = await getMetadataArgsSerializer();
+        // let ttw = some(response2.collection);
+        // console.log("tt", tt);
+        // let creators: Creator[] = response2.creators.map((creator) => {
+        //     return {
+        //         address: creator.address as PpublicKey,
+        //         share: creator.share,
+        //         verified: creator.verified!,
+        //     };
+        // });
+        // let uses: Option<Uses> = response2.uses ? some(response2.uses) : none();
+        // let meta: MetadataArgs = {
+        //     collection: some(response2.collection),
+        //     creators,
+        //     name: response2.name,
+        //     symbol: response2.symbol,
+        //     uri: response2.uri,
+        //     sellerFeeBasisPoints: response2.sellerFeeBasisPoints,
+        //     primarySaleHappened: response2.primarySaleHappened,
+        //     isMutable: response2.isMutable,
+        //     editionNonce: some(response2.editionNonce),
+        //     tokenStandard: response2.tokenStandard,
+        //     uses,
+        //     tokenProgramVersion: response2.tokenProgramVersion,
+        // };
+        let mmeta: MetadataArgs = {
+            name: "Tensorian #10000",
+            symbol: "TNSRNS",
+            uri: "https://prod-tensor-creators-s3.s3.us-east-1.amazonaws.com/drop/e6ed698b-ae10-42f9-8d2e-16b8d844439e/31d11fab-a6bf-4755-bf6c-4204a581e609",
+            sellerFeeBasisPoints: 300,
+            primarySaleHappened: true,
+            isMutable: true,
+            editionNonce: null,
+            tokenStandard: null,
+            collection: some({
+                verified: false,
+                key: "5PA96eCFHJSFPY9SWFeRJUHrpoNF5XZL6RrE1JADXhxf" as PpublicKey,
+            }),
+            uses: null,
+            tokenProgramVersion: TokenProgramVersion.Original,
+            creators: [
+                {
+                    address: "6pZYD8qi7g8XT8pPg8L6NJs2znZkQ4CoPjTz6xqwnBWg" as PpublicKey,
+                    verified: false,
+                    share: 100,
+                },
+            ],
+        };
         let merkleTree = new PublicKey("28K4n3AZe2nJ7yNgRbfAcaEppq2N9zi2Sdu8BoP4qzFD");
-        let creatorHash = Buffer.from([
-            142, 120, 215, 238, 5, 231, 89, 235, 55, 122, 15, 36, 45, 63, 192, 124, 189, 175, 104,
-            245, 20, 41, 223, 184, 69, 135, 136, 93, 51, 167, 91, 21,
-        ]);
+        // let creatorHash = Buffer.from([
+        //     142, 120, 215, 238, 5, 231, 89, 235, 55, 122, 15, 36, 45, 63, 192, 124, 189, 175, 104,
+        //     245, 20, 41, 223, 184, 69, 135, 136, 93, 51, 167, 91, 21,
+        // ]);
 
         let dataHash = Buffer.from([
             106, 73, 125, 43, 5, 111, 225, 183, 125, 18, 75, 37, 98, 33, 190, 251, 254, 215, 114,
             80, 178, 205, 26, 250, 21, 124, 252, 155, 36, 164, 11, 225,
         ]);
-        let nonce = new anchor.BN(1001);
+        // let nonce = new anchor.BN(1001);
         let treeAuthority = new PublicKey("AQCwvz5oCrtCsxPwBDqaaFX6EuGBhk1kf6G6Pehrhvb1");
 
-        let treeProof = {
-            interface: "V1_NFT",
-            id: "CJbhEgXESCq49TeQhLS7RwSPwaJBJoZXgYKAqt6mbu2M",
-            content: {
-                $schema: "https://schema.metaplex.com/nft1.0.json",
-                json_uri:
-                    "https://prod-tensor-creators-s3.s3.us-east-1.amazonaws.com/drop/e6ed698b-ae10-42f9-8d2e-16b8d844439e/5a5c32cf-1922-4dc5-8d01-ee6e21e26403",
-                files: [[Object]],
-                metadata: {
-                    attributes: [Array],
-                    description: "A long time ago in a Solaxy far, far away...",
-                    name: "Tensorian #3502",
-                    symbol: "TNSRNS",
-                },
-                links: {
-                    image: "https://prod-tensor-creators-s3.s3.us-east-1.amazonaws.com/drop-metadata/24f27171-430f-42ca-b442-6a75a8daadad/images/4643.png",
-                    external_url: "https://www.tensor.trade/",
-                },
-            },
-            authorities: [
-                {
-                    address: "AQCwvz5oCrtCsxPwBDqaaFX6EuGBhk1kf6G6Pehrhvb1",
-                    scopes: [Array],
-                },
-            ],
-            compression: {
-                eligible: false,
-                compressed: true,
-                data_hash: "89uDBH723hi2eBumPNGGbnoV4AH6Hi7KCNxEVm9JRB8L",
-                creator_hash: "Ab9mXRaQEA1QuiGUgBj68siPSqZNwQ2F9izNtFkghudE",
-                asset_hash: "99qjUWFzLZxeGDuhkRjxyVjDiqvf8FqihMPWcwytmiVo",
-                tree: "28K4n3AZe2nJ7yNgRbfAcaEppq2N9zi2Sdu8BoP4qzFD",
-                seq: 23780,
-                leaf_id: 1001,
-            },
-            grouping: [
-                {
-                    group_key: "collection",
-                    group_value: "5PA96eCFHJSFPY9SWFeRJUHrpoNF5XZL6RrE1JADXhxf",
-                },
-            ],
-            royalty: {
-                royalty_model: "creators",
-                target: null,
-                percent: 0.030000000000000002,
-                basis_points: 300,
-                primary_sale_happened: true,
-                locked: false,
-            },
-            creators: [
-                {
-                    address: "6pZYD8qi7g8XT8pPg8L6NJs2znZkQ4CoPjTz6xqwnBWg",
-                    share: 100,
-                    verified: false,
-                },
-            ] as Creator[],
-            ownership: {
-                frozen: false,
-                delegated: false,
-                delegate: null,
-                ownership_model: "single",
-                owner: "BsKkdx1WPtdXQHsStXfTi1Cf3Wae6iWrt89UWLJxCA1E",
-            },
-            supply: { print_max_supply: 0, print_current_supply: 0, edition_nonce: null },
-            mutable: true,
-            burnt: false,
-        };
-
         let collectionPk = new PublicKey("5PA96eCFHJSFPY9SWFeRJUHrpoNF5XZL6RrE1JADXhxf");
-        let leafOwner = new PublicKey("BsKkdx1WPtdXQHsStXfTi1Cf3Wae6iWrt89UWLJxCA1E");
+        let leafOwner = new PublicKey("6fpk8ALvxTyCdr6Bq3opNg9wxLjz2x2NXmeGtGXUSzJy");
 
-        let collection: Option<Collection> = {
-            __option: "Some",
-            value: {
-                key: collectionPk.toString() as any,
-                verified: false,
-            },
-        };
-        let tokenStandard: Option<TokenStandard> = {
-            __option: "Some",
-            value: TokenStandard.NonFungible,
-        };
-        let editionNonce: Option<number> = {
-            __option: "Some",
-            value: treeProof.supply.edition_nonce,
-        };
-
-        let meta: MetadataArgs = {
-            name: treeProof.content.metadata.name,
-            symbol: treeProof.content.metadata.symbol,
-            uri: treeProof.content.json_uri,
-            sellerFeeBasisPoints: treeProof.royalty.basis_points,
-            primarySaleHappened: treeProof.royalty.primary_sale_happened,
-            isMutable: treeProof.mutable,
-            editionNonce,
-            tokenStandard: null,
-            collection: {
-                //@ts-ignore
-                key: collectionPk,
-                verified: false,
-            },
-            uses: null,
-            tokenProgramVersion: TokenProgramVersion.Original,
-            creators: treeProof.creators,
-        };
+        // let collection: Option<Collection> = {
+        //     __option: "Some",
+        //     value: {
+        //         key: collectionPk.toString() as any,
+        //         verified: false,
+        //     },
+        // };
+        // let tokenStandard: Option<TokenStandard> = {
+        //     __option: "Some",
+        //     value: TokenStandard.NonFungible,
+        // };
+        // let editionNonce: Option<number> = {
+        //     __option: "Some",
+        //     value: treeProof.supply.edition_nonce,
+        // };
+        // let collection: Option<Collection> = {
+        //     __option: "Some",
+        //     value: { key: collectionPk.toString() as PpublicKey, verified: false },
+        // };
+        // response2.creators.map((c: any) => (c.address = c.address as PpublicKey));
+        // let meta: MetadataArgs = {
+        //     name: response2.name,
+        //     symbol: response2.symbol,
+        //     uri: response2.uri,
+        //     sellerFeeBasisPoints: response2.sellerFeeBasisPoints,
+        //     primarySaleHappened: response2.primarySaleHappened,
+        //     isMutable: response2.isMutable,
+        //     editionNonce: response2.editionNonce,
+        //     tokenStandard: response2.tokenStandard,
+        //     collection: response2.collection,
+        //     uses: response2.uses,
+        //     tokenProgramVersion: response2.tokenProgramVersion,
+        //     creators: response2.creators,
+        // };
 
         const instruction = await program.methods
-            .readMerkleTree(dataHash, creatorHash, nonce, collectionPk) //, meta)
+            .readMerkleTree(dataHash, collectionPk, mmeta)
             .accounts({
                 signer: signer.publicKey,
                 treeAuthority,
@@ -432,16 +495,18 @@ describe("MIX pre-signing", () => {
         console.log(simulation);
     });
 
-    it("cancel and close", async () => {
-        let test = Buffer.from([
-            121, 33, 62, 98, 62, 100, 107, 59, 96, 136, 222, 213, 45, 214, 63, 231, 244, 152, 245,
-            172, 5, 88, 74, 118, 18, 64, 4, 164, 14, 249, 15, 90,
-        ]);
-
-        let leaf = new PublicKey(test);
-        console.log(leaf.toString());
-        
-    });
+    // it("test hash", async () => {
+    //     // let test = Buffer.from([
+    //     //     121, 33, 62, 98, 62, 100, 107, 59, 96, 136, 222, 213, 45, 214, 63, 231, 244, 152, 245,
+    //     //     172, 5, 88, 74, 118, 18, 64, 4, 164, 14, 249, 15, 90,
+    //     // ]);
+    //     let test = Buffer.from([
+    //         152, 9, 217, 216, 218, 152, 218, 37, 106, 188, 91, 185, 140, 137, 203, 49, 21, 159, 168,
+    //         223, 61, 67, 83, 62, 164, 89, 11, 32, 150, 15, 233, 209,
+    //     ]);
+    //     let leaf = new PublicKey(test);
+    //     console.log(leaf.toString());
+    // });
     // let ii = {
     //     interface: "V1_NFT",
     //     id: "CJbhEgXESCq49TeQhLS7RwSPwaJBJoZXgYKAqt6mbu2M",

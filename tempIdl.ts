@@ -62,18 +62,14 @@ export const idl: Idl = {
                     },
                 },
                 {
-                    name: "creatorHash",
-                    type: {
-                        array: ["u8", 32],
-                    },
-                },
-                {
-                    name: "nonce",
-                    type: "u64",
-                },
-                {
                     name: "collection",
                     type: "publicKey",
+                },
+                {
+                    name: "givenMetadataArgs",
+                    type: {
+                        defined: "MetadataArgs",
+                    },
                 },
             ],
         },
@@ -275,6 +271,13 @@ export const idl: Idl = {
                     },
                 ],
             },
+        },
+    ],
+    errors: [
+        {
+            code: 6000,
+            name: "InvalidDataHash",
+            msg: "Invalid data hash",
         },
     ],
 };
