@@ -22,10 +22,12 @@ use ::{
         state::{ Metadata, TokenMetadataAccount },
     },
     spl_account_compression::{ program::SplAccountCompression, Noop },
-    spl_associated_token_account,
+
+    // spl_associated_token_account,
 };
 
-declare_id!("7H73hAEk1R1EXXgheDBdAn3Un3W7SQKMuKtwpfU67eet");
+declare_id!("2vumtPDSVo3UKqYYxMVbDaQz1K4foQf6A31KiUaii1M7");
+// declare_id!("7H73hAEk1R1EXXgheDBdAn3Un3W7SQKMuKtwpfU67eet");
 // declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
 // declare_id!("HCg7NKnvWwWZdLXqDwZdjn9RDz9eLDYuSAcUHqeC1vmH");
 // declare_id!("EU5zoiRSvPE5k1Fy49UJZvPMBKxzatdBGFJ11XPFD42Z");
@@ -92,12 +94,7 @@ pub mod neo_swap {
             MYERROR::UnexpectedState
         );
         let mut token_item = trade_to_add;
-        // Write according status to item
-        // let nbtk = token_exist_in_sda(swap_data_account.token_items.clone(), token_item.clone());
-        // msg!("token item {}", nbtk);
-        // if token_exist_in_sda(swap_data_account.token_items.clone(), token_item.clone()) {
-        //     return Err(error!(MYERROR::AlreadyExist).into());
-        // }
+
         if token_item.amount.is_positive() {
             token_item.status = ItemStatus::SolPending.to_u8();
             msg!("SOL item added with status SolPending");
@@ -108,9 +105,7 @@ pub mod neo_swap {
             token_item.status = ItemStatus::SolToClaim.to_u8();
             msg!("SOL item added with status SolToClaim");
         }
-        msg!("owner {}", token_item.owner);
-        msg!("amount {}", token_item.amount);
-        msg!("status {}", token_item.status);
+        msg!("token_item {:?}", token_item);
 
         swap_data_account.token_items.push(token_item);
 
@@ -133,13 +128,6 @@ pub mod neo_swap {
         if nft_item.amount <= 0 {
             return Err(error!(MYERROR::UnexpectedData).into());
         }
-        // msg!(
-        //     "token item {:#?}",
-        //     nft_exist_in_sda(swap_data_account.nft_items.clone(), nft_item.clone())
-        // );
-        // if nft_exist_in_sda(swap_data_account.nft_items.clone(), nft_item.clone()) {
-        //     return Err(error!(MYERROR::AlreadyExist).into());
-        // }
         nft_item.status = ItemStatus::NFTPending.to_u8();
         msg!("trade to add {:#?}", nft_item.clone());
         swap_data_account.nft_items.push(nft_item);
@@ -254,18 +242,14 @@ pub mod neo_swap {
         );
 
         msg!("{:#?} trade_to_modify {:#?}", is_maker, trade_to_modify);
-
         let collection = Metadata::from_account_info(
             &ctx.accounts.nft_metadata.to_account_info()
         )?.collection.expect(&MYERROR::NoCollection.to_string());
-        // ctx.accounts.mint.key()
-        // msg!("collection {:#?}", collection);
-        // msg!("collection {:#?}", collection.key);
 
-        require!(
-            !!collection.verified && collection.key.eq(&trade_to_modify.collection),
-            MYERROR::WrongCollection
-        );
+        require!(!!collection.verified, MYERROR::UnverifiedCollection);
+
+        require_keys_eq!(collection.key, trade_to_modify.collection, MYERROR::WrongCollection);
+
         let is_signer = ctx.accounts.signer.key().eq(&swap_data_account.initializer);
         if is_maker {
             let pos = swap_data_account.nft_items
@@ -336,9 +320,15 @@ pub mod neo_swap {
             MYERROR::UnexpectedState
         );
 
-        require!(
-            true, // !!collection.verified && collection.key.eq(&trade_to_modify.collection),
+        require_keys_eq!(
+            ctx.accounts.collection_pda.collection,
+            trade_to_modify.collection,
             MYERROR::WrongCollection
+        );
+
+        require!(
+            ctx.accounts.collection_pda.merkle_list.contains(&trade_to_modify.merkle_tree.key()),
+            MYERROR::UnauthorizedCollection
         );
 
         if is_maker {
@@ -404,13 +394,14 @@ pub mod neo_swap {
             MYERROR::UnexpectedState
         );
         let now = Clock::get()?.unix_timestamp;
-        require!(now > ctx.accounts.swap_data_account.start_time, MYERROR::TooEarly);
+        let end_time = ctx.accounts.swap_data_account.start_time
+            .checked_add(ctx.accounts.swap_data_account.duration)
+            .unwrap();
 
-        require!(
-            now <
-                ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
-            MYERROR::Expired
-        );
+        require!(now.gt(&ctx.accounts.swap_data_account.start_time), MYERROR::TooEarly);
+        if !ctx.accounts.swap_data_account.duration.eq(&0) {
+            require!(!now.gt(&end_time), MYERROR::Expired);
+        }
 
         let swap_data_account_account_info = ctx.accounts.swap_data_account
             .to_account_info()
@@ -444,7 +435,7 @@ pub mod neo_swap {
             owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
-            spl_ata_program: ctx.accounts.spl_ata_program.to_account_info(),
+            ata_program: ctx.accounts.ata_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
         }).unwrap();
 
@@ -479,13 +470,15 @@ pub mod neo_swap {
             MYERROR::UnexpectedState
         );
         let now = Clock::get()?.unix_timestamp;
-        require!(now > ctx.accounts.swap_data_account.start_time, MYERROR::TooEarly);
+        let end_time = ctx.accounts.swap_data_account.start_time
+            .checked_add(ctx.accounts.swap_data_account.duration)
+            .unwrap();
 
-        require!(
-            now <
-                ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
-            MYERROR::Expired
-        );
+        require!(now.gt(&ctx.accounts.swap_data_account.start_time), MYERROR::TooEarly);
+
+        if !ctx.accounts.swap_data_account.duration.eq(&0) {
+            require!(!now.gt(&end_time), MYERROR::Expired);
+        }
 
         let index_to_send = ctx.accounts.swap_data_account.nft_items
             .iter()
@@ -544,13 +537,15 @@ pub mod neo_swap {
             MYERROR::UnexpectedState
         );
         let now = Clock::get()?.unix_timestamp;
-        require!(now > ctx.accounts.swap_data_account.start_time, MYERROR::TooEarly);
+        let end_time = ctx.accounts.swap_data_account.start_time
+            .checked_add(ctx.accounts.swap_data_account.duration)
+            .unwrap();
 
-        require!(
-            now <
-                ctx.accounts.swap_data_account.start_time + ctx.accounts.swap_data_account.duration,
-            MYERROR::Expired
-        );
+        require!(now.gt(&ctx.accounts.swap_data_account.start_time), MYERROR::TooEarly);
+        if !ctx.accounts.swap_data_account.duration.eq(&0) {
+            require!(!now.gt(&end_time), MYERROR::Expired);
+        }
+
         let index_to_send = ctx.accounts.swap_data_account.token_items
             .iter()
             .position(|item_search| {
@@ -761,7 +756,7 @@ pub mod neo_swap {
             nft_master_edition: ctx.accounts.nft_master_edition.to_account_info(),
             nft_metadata: ctx.accounts.nft_metadata.to_account_info(),
             owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
-            spl_ata_program: ctx.accounts.spl_ata_program.to_account_info(),
+            ata_program: ctx.accounts.ata_program.to_account_info(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
@@ -1090,10 +1085,9 @@ pub mod neo_swap {
             nft_master_edition: ctx.accounts.nft_master_edition.to_account_info(),
             nft_metadata: ctx.accounts.nft_metadata.to_account_info(),
             owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
-            spl_ata_program: ctx.accounts.spl_ata_program.to_account_info(),
+            ata_program: ctx.accounts.ata_program.to_account_info(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
-            // token_program: ctx.accounts.token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
         }).unwrap();
 
@@ -1302,6 +1296,100 @@ pub mod neo_swap {
 
         Ok(())
     }
+
+    /// Maintaining AdminPda
+    pub fn admin_pda_init(ctx: Context<CreateAdminPda>, _nb: u32) -> Result<()> {
+        ctx.accounts.admin_pda.admin_list = [ctx.accounts.signer.key()].to_vec();
+        Ok(())
+    }
+
+    pub fn admin_pda_modify(
+        ctx: Context<ModifyAdminPda>,
+        admin_to_add: Pubkey,
+        is_delete: bool
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.admin_pda.admin_list.contains(&ctx.accounts.signer.key()),
+            MYERROR::NotAuthorized
+        );
+
+        if is_delete {
+            let pos = ctx.accounts.admin_pda.admin_list
+                .iter()
+                .position(|x| x.eq(&admin_to_add))
+                .expect(&MYERROR::CannotFind.to_string());
+            msg!("will remove {}", ctx.accounts.admin_pda.admin_list[pos]);
+            ctx.accounts.admin_pda.admin_list.remove(pos);
+        } else {
+            let pos = ctx.accounts.admin_pda.admin_list
+                .iter()
+                .position(|x| x.eq(&admin_to_add))
+                .unwrap_or_else(|| 0);
+            if pos != 0 || !!ctx.accounts.admin_pda.admin_list[0].eq(&admin_to_add) {
+                return Err(error!(MYERROR::AlreadyExist).into());
+            }
+            msg!("will add {}", ctx.accounts.admin_pda.admin_list[pos]);
+            ctx.accounts.admin_pda.admin_list.push(admin_to_add);
+        }
+        Ok(())
+    }
+    /// Maintaining CollectionPda
+
+    pub fn collection_pda_init(
+        ctx: Context<CreateCollectionPda>,
+        _nb: u32,
+        collection: Pubkey
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.admin_pda.admin_list.contains(&ctx.accounts.signer.key()),
+            MYERROR::NotAuthorized
+        );
+
+        ctx.accounts.collection_pda.collection = collection;
+        ctx.accounts.collection_pda.merkle_list = [].to_vec();
+        Ok(())
+    }
+    pub fn collection_pda_modify(
+        ctx: Context<ModifyCollectionPda>,
+        merkle_key: Pubkey,
+        is_delete: bool
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.admin_pda.admin_list.contains(&ctx.accounts.signer.key()),
+            MYERROR::NotAuthorized
+        );
+
+        if is_delete {
+            let pos = ctx.accounts.collection_pda.merkle_list
+                .iter()
+                .position(|x| x.eq(&merkle_key))
+                .expect(&MYERROR::CannotFind.to_string());
+
+            ctx.accounts.collection_pda.merkle_list.remove(pos);
+        } else {
+            if ctx.accounts.collection_pda.merkle_list.len() > 0 {
+                let pos = ctx.accounts.collection_pda.merkle_list
+                    .iter()
+                    .position(|x| x.eq(&merkle_key))
+                    .unwrap_or_else(|| 0);
+                if pos != 0 || !!ctx.accounts.collection_pda.merkle_list[0].eq(&merkle_key) {
+                    return Err(error!(MYERROR::AlreadyExist).into());
+                }
+            }
+            msg!("will add {}", merkle_key);
+            ctx.accounts.collection_pda.merkle_list.push(merkle_key);
+        }
+        Ok(())
+    }
+
+    pub fn collection_pda_del(ctx: Context<DeleteCollectionPda>) -> Result<()> {
+        require!(
+            ctx.accounts.admin_pda.admin_list.contains(&ctx.accounts.signer.key()),
+            MYERROR::NotAuthorized
+        );
+        // require!(ctx.accounts.collection_pda.merkle_list.len() == 0, MYERROR::NotAuthorized);
+        Ok(())
+    }
 }
 
 //
@@ -1332,7 +1420,7 @@ pub struct InitializeInit<'info> {
     #[account(mut)]
     signer: Signer<'info>,
     system_program: Program<'info, System>,
-    token_program: Program<'info, AssociatedToken>,
+    token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
@@ -1366,7 +1454,7 @@ pub struct InitializeModifyT<'info> {
     user: AccountInfo<'info>,
 }
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>)]
+#[instruction(seed: Vec<u8>, trade_to_modify: NftSwapItem)]
 pub struct InitializeModifyP<'info> {
     #[account(
         mut,
@@ -1375,6 +1463,8 @@ pub struct InitializeModifyP<'info> {
         // constraint = swap_data_account.initializer.eq(&.key()) @ MYERROR::NotInit
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
+    // #[account(mut, seeds = [&&trade_to_modify.collection.key().to_bytes()[..]], bump)]
+    // collection_pda: Box<Account<'info, CollectionPda>>,
     #[account(mut)]
     signer: Signer<'info>,
     /// CHECK: in constraints
@@ -1401,7 +1491,7 @@ pub struct InitializeModifyP<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(seed: Vec<u8>)]
+#[instruction(seed: Vec<u8>, trade_to_modify: NftSwapItem)]
 pub struct InitializeModifyC<'info> {
     #[account(
         mut,
@@ -1409,6 +1499,8 @@ pub struct InitializeModifyC<'info> {
         bump,
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
+    #[account(mut, seeds = [&&trade_to_modify.collection.key().to_bytes()[..]], bump)]
+    collection_pda: Box<Account<'info, CollectionPda>>,
     #[account(mut)]
     signer: Signer<'info>,
     /// CHECK: in constraints
@@ -1497,9 +1589,7 @@ pub struct DepositPNft<'info> {
     /// CHECK: in constraints
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
-    /// CHECK: in constraints
-    #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
-    spl_ata_program: AccountInfo<'info>,
+    ata_program: Program<'info, AssociatedToken>,
     token_program: Program<'info, Token>,
     system_program: Program<'info, System>,
 }
@@ -1535,9 +1625,7 @@ pub struct DepositCNft<'info> {
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
     token_program: Program<'info, Token>,
-    /// CHECK: in constraints
-    #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
-    spl_ata_program: AccountInfo<'info>,
+    ata_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -1579,7 +1667,7 @@ pub struct Validate<'info> {
 #[instruction(seed: Vec<u8>)]
 pub struct ValidateAndClose<'info> {
     system_program: Program<'info, System>,
-    token_program: Program<'info, AssociatedToken>,
+    ata_program: Program<'info, AssociatedToken>,
     #[account(
         mut,
         seeds = [&seed[..]],
@@ -1657,9 +1745,7 @@ pub struct ClaimPNft<'info> {
     /// CHECK: in constraint
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
-    /// CHECK: in constraints
-    #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
-    spl_ata_program: AccountInfo<'info>,
+    ata_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -1699,9 +1785,7 @@ pub struct ClaimCNft<'info> {
     #[account(constraint = sysvar_instructions.key().eq(&solana_program::sysvar::instructions::ID) @ MYERROR::IncorrectSysvar)]
     sysvar_instructions: AccountInfo<'info>,
     token_program: Program<'info, Token>,
-    /// CHECK: in constraints
-    #[account(constraint = spl_ata_program.key().eq(&spl_associated_token_account::ID)  @ MYERROR::IncorrectSplAta)]
-    spl_ata_program: AccountInfo<'info>,
+    ata_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
@@ -1732,6 +1816,77 @@ pub struct ClaimTokenOrSol<'info> {
     token_program: Program<'info, Token>,
 }
 
+#[derive(Accounts)]
+#[instruction(nb: u32)]
+pub struct CreateAdminPda<'info> {
+    #[account(init, payer = signer, seeds = [b"admin".as_ref()], bump, space = AdminPda::LEN)]
+    admin_pda: Box<Account<'info, AdminPda>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+    system_program: Program<'info, System>,
+    token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+#[instruction()]
+pub struct ModifyAdminPda<'info> {
+    #[account(mut, seeds = [b"admin".as_ref()], bump)]
+    admin_pda: Box<Account<'info, AdminPda>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(nb: u32, collection: Pubkey)]
+pub struct CreateCollectionPda<'info> {
+    #[account(seeds = [b"admin".as_ref()], bump)]
+    admin_pda: Box<Account<'info, AdminPda>>,
+    #[account(
+        init,
+        payer = signer,
+        seeds = [&&collection.to_bytes()[..]],
+        bump,
+        space = CollectionPda::size(nb)
+    )]
+    collection_pda: Box<Account<'info, CollectionPda>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+    system_program: Program<'info, System>,
+    token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+#[instruction()]
+pub struct ModifyCollectionPda<'info> {
+    #[account(seeds = [b"admin".as_ref()], bump)]
+    admin_pda: Box<Account<'info, AdminPda>>,
+    #[account(mut, seeds = [&&collection_pda.collection.to_bytes()[..],], bump)]
+    collection_pda: Box<Account<'info, CollectionPda>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction()]
+pub struct DeleteCollectionPda<'info> {
+    #[account(seeds = [b"admin".as_ref()], bump)]
+    admin_pda: Box<Account<'info, AdminPda>>,
+    #[account(mut, seeds = [&&collection_pda.collection.to_bytes()[..],], bump, close = signer)]
+    collection_pda: Box<Account<'info, CollectionPda>>,
+    #[account(mut)]
+    signer: Signer<'info>,
+    system_program: Program<'info, System>,
+    ata_program: Program<'info, AssociatedToken>,
+    // #[account(
+    //     mut,
+    //     seeds = [&seed[..]],
+    //     bump,
+    //     close = initializer,
+    //     constraint = swap_data_account.initializer.eq(&initializer.key()) @ MYERROR::NotInit
+    // )]
+    // swap_data_account: Box<Account<'info, SwapData>>,
+}
+
 //
 //
 //
@@ -1751,6 +1906,41 @@ pub struct ClaimTokenOrSol<'info> {
 //
 //
 //
+
+#[account]
+#[derive(Default)]
+pub struct AdminPda {
+    pub admin_list: Vec<Pubkey>, // List of items admin of NeoSwap
+}
+
+impl AdminPda {
+    const LEN: usize = 8 + 32 * 10;
+
+    pub fn size(nb: u32) -> usize {
+        let account_size = AdminPda::LEN.checked_add(nb.checked_mul(32).unwrap() as usize).unwrap();
+        msg!("{} merkle_tree(s) allowed, account_size {}", nb, account_size);
+        return account_size;
+    }
+}
+
+#[account]
+#[derive(Default)]
+pub struct CollectionPda {
+    pub collection: Pubkey, // Pubkey of the collection account
+    pub merkle_list: Vec<Pubkey>, // List of items merkle trees invloved in the collection
+}
+
+impl CollectionPda {
+    const LEN: usize = 8 + 32;
+
+    pub fn size(nb: u32) -> usize {
+        let account_size = CollectionPda::LEN.checked_add(
+            nb.checked_mul(32).unwrap() as usize
+        ).unwrap();
+        msg!("{} merkle_tree(s) allowed, account_size {}", nb, account_size);
+        return account_size;
+    }
+}
 
 #[account]
 #[derive(Default)]
@@ -1936,7 +2126,7 @@ pub struct SendPNft<'info> {
     auth_rules: AccountInfo<'info>,
     metadata_program: AccountInfo<'info>,
     sysvar_instructions: AccountInfo<'info>,
-    spl_ata_program: AccountInfo<'info>,
+    ata_program: AccountInfo<'info>,
     token_program: AccountInfo<'info>,
     system_program: AccountInfo<'info>,
 }
@@ -1972,7 +2162,7 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
         .system_program(ctx.system_program.key())
         .sysvar_instructions(ctx.sysvar_instructions.key())
         .spl_token_program(ctx.token_program.key())
-        .spl_ata_program(ctx.spl_ata_program.key());
+        .spl_ata_program(ctx.ata_program.key());
 
     // creating vase transfer info
     let mut account_infos: Vec<AccountInfo<'_>> = vec![
@@ -1986,7 +2176,7 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
         ctx.system_program.to_account_info(),
         ctx.sysvar_instructions.to_account_info(),
         ctx.token_program.to_account_info(),
-        ctx.spl_ata_program.to_account_info(),
+        ctx.ata_program.to_account_info(),
         ctx.sysvar_instructions.to_account_info(),
         ctx.metadata_program.to_account_info()
     ];
@@ -2215,4 +2405,10 @@ pub enum MYERROR {
     NoCollection,
     #[msg("The swap isn't openned yet for depositing")]
     TooEarly,
+    #[msg(
+        "The Collection you are trying to add isn't maintaind by NeoSwap, please contact Neoswap for further information"
+    )]
+    UnauthorizedCollection,
+    #[msg("Collection not verified")]
+    UnverifiedCollection,
 }
