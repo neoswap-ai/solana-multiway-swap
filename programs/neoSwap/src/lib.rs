@@ -245,7 +245,7 @@ pub struct Initialize<'info> {
 pub struct AddBid<'info> {
     #[account(
         mut,
-        seeds = [&seed[..]],
+        seeds = [&swap_data_account.seed.as_bytes()],
         bump,
         constraint = swap_data_account.maker == maker.key() @ MYERROR::NotMaker
     )]
@@ -269,24 +269,10 @@ pub struct AddBid<'info> {
     mint_token: Option<Account<'info, Mint>>,
     token_program: Program<'info, Token>,
 }
-// #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>)]
-// pub struct ValidateInitialize<'info> {
-//     #[account(
-//         mut,
-//         seeds = [&seed[..]],
-//         bump,
-//         constraint = swap_data_account.initializer == signer.key() @ MYERROR::NotMaker
-//     )]
-//     swap_data_account: Box<Account<'info, SwapData>>,
-//     #[account(mut)]
-//     signer: Signer<'info>,
-// }
-
 #[derive(Accounts)]
 #[instruction()]
 pub struct DepositInitialBid<'info> {
-    #[account(mut,seeds = [&swap_data_account.seed], bump)]
+    #[account(mut,seeds = [&swap_data_account.seed.as_bytes()], bump)]
     swap_data_account: Box<Account<'info, SwapData>>,
     /// CHECK: in constraints
     #[account(
@@ -367,7 +353,7 @@ pub struct SwapData {
     pub accepted_bid_index: Option<i8>, // index of accepted bid if Taker accepted one
 
     pub accepted_payement: Pubkey, // token accepted for payment
-    pub seed: Vec<u8>, // String to initialize PDA's seed
+    pub seed: String, // String to initialize PDA's seed
 }
 impl SwapData {
     const LEN: usize =
