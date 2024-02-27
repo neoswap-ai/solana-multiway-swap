@@ -522,9 +522,11 @@ pub struct SwapData {
 impl SwapData {
     const LEN: usize =
         8 + //Base
-        25 * Bid::LEN + //bid len
+        1 + //Royalties
+        8 + //i64
+        (25 + 1) * Bid::LEN + //bid len
         32 + //seed
-        32 * 4; //Pubkey
+        32 * 5; //Pubkey
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug)]
@@ -534,7 +536,7 @@ pub struct Bid {
     fees: Fees, // Object fith amounts that need to be sent for paying fees
 }
 impl Bid {
-    const LEN: usize = 32 + 8;
+    const LEN: usize = 32 + 8 + Fees::LEN;
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug)]
@@ -545,39 +547,42 @@ pub struct Fees {
     taker_royalties: u64,
     maker_royalties: u64, // Destinary : Creators
 }
-
-pub enum TradeStatus {
-    Initializing = 0,
-    Initialized = 1,
-    Accepted = 2,
-    Closed = 3,
-    Canceling = 100,
+impl Fees {
+    const LEN: usize = 8 * 4;
 }
-impl TradeStatus {
-    pub fn from_u8(status: u8) -> TradeStatus {
-        match status {
-            0 => TradeStatus::Initializing,
-            1 => TradeStatus::Initialized,
-            2 => TradeStatus::Accepted,
-            3 => TradeStatus::Closed,
 
-            100 => TradeStatus::Canceling,
+// pub enum TradeStatus {
+//     Initializing = 0,
+//     Initialized = 1,
+//     Accepted = 2,
+//     Closed = 3,
+//     Canceling = 100,
+// }
+// impl TradeStatus {
+//     pub fn from_u8(status: u8) -> TradeStatus {
+//         match status {
+//             0 => TradeStatus::Initializing,
+//             1 => TradeStatus::Initialized,
+//             2 => TradeStatus::Accepted,
+//             3 => TradeStatus::Closed,
 
-            _ => panic!("Invalid Proposal Status"),
-        }
-    }
+//             100 => TradeStatus::Canceling,
 
-    pub fn to_u8(&self) -> u8 {
-        match self {
-            TradeStatus::Initializing => 0,
-            TradeStatus::Initialized => 1,
-            TradeStatus::Accepted => 2,
-            TradeStatus::Closed => 3,
+//             _ => panic!("Invalid Proposal Status"),
+//         }
+//     }
 
-            TradeStatus::Canceling => 100,
-        }
-    }
-}
+//     pub fn to_u8(&self) -> u8 {
+//         match self {
+//             TradeStatus::Initializing => 0,
+//             TradeStatus::Initialized => 1,
+//             TradeStatus::Accepted => 2,
+//             TradeStatus::Closed => 3,
+
+//             TradeStatus::Canceling => 100,
+//         }
+//     }
+// }
 pub struct SendPNft<'info> {
     from: AccountInfo<'info>,
     from_ata: AccountInfo<'info>,
