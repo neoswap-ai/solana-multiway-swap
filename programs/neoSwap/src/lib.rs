@@ -968,9 +968,9 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
 
 #[error_code]
 pub enum MYERROR {
-    /// NS ERRORS 8000-8999
+    /// NS ERRORS 6000-6999
 
-    /// Data errors 8000-8099
+    /// Data errors 6000-6099
     #[msg("List of Bids is empty")]
     EmptyBids,
     #[msg("Incorrect Mint")]
@@ -980,7 +980,7 @@ pub enum MYERROR {
     #[msg("The status given is not correct")]
     UnexpectedState,
 
-    /// User errors 8100-8199
+    /// User errors 6100-6199
     #[msg("wrong signer, only maker can perform this action")]
     NotMaker,
     #[msg("wrong address for Taker")]
@@ -988,13 +988,13 @@ pub enum MYERROR {
     #[msg("Owner Given is incorrect")]
     IncorrectOwner,
 
-    /// Item errors 8200-8299
+    /// Item errors 6200-6299
     #[msg("Collection is unverified")]
     UnVerifiedCollection,
     #[msg("Collection doesnt't match givent mint collection")]
     IncorrectCollection,
 
-    /// Pda errors 8300-8399
+    /// Pda errors 6300-6399
     #[msg("The item you're trying to add already exists in the SDA")]
     AlreadyExist,
     #[msg("Cannot find the account")]
@@ -1006,13 +1006,13 @@ pub enum MYERROR {
     #[msg("Swap already accepted")]
     AlreadyTaken,
 
-    /// Program errors 8900-8999
+    /// Program errors 6900-6999
     #[msg("Incorrect Sysvar Instruction Program")]
-    IncorrectSysvar,
+    IncorrectSysvar = 900,
     #[msg("Incorrect Metadata Program")]
-    IncorrectMetadata,
+    IncorrectMetadata = 901,
     #[msg("Incorrect Token ATA Program")]
-    IncorrectSplAta,
+    IncorrectSplAta = 902,
 
     // #[msg("User not part of the trade")]
     // UserNotPartOfTrade,
