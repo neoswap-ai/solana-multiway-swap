@@ -7,6 +7,7 @@ use ::{
             pubkey::Pubkey,
             // system_program::ID as SYSTEM_PROGRAM_ID,
             sysvar::ID as SYSVAR_INSTRUCTIONS_ID,
+            pubkey,
         },
     },
     anchor_spl::token::{ spl_token, Mint, Token, TokenAccount },
@@ -30,7 +31,14 @@ declare_id!("CtZHiWNnLu5rQuTN3jo7CmYDR8Wns6qXHn7taPvmnACp"); // devnet Test
 pub mod neo_swap {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, mint: Pubkey, payment_mint: Pubkey) -> Result<()> {
+    const _NS_FEE_ACCOUNT: Pubkey = pubkey!("FjecsBcSXQh4rjPSksh2eBiXUswcMpAwU25ykcr842j8");
+
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        mint: Pubkey,
+        payment_mint: Pubkey,
+        duration: i64
+    ) -> Result<()> {
         let maker = ctx.accounts.maker.key();
         // Write according Data into Swap's PDA
         ctx.accounts.swap_data_account.maker = maker;
@@ -40,6 +48,7 @@ pub mod neo_swap {
 
         ctx.accounts.swap_data_account.royalties_paid = false;
 
+        ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
         ctx.accounts.swap_data_account.seed = get_seed_string(maker, mint);
         ctx.accounts.swap_data_account.payment_mint = payment_mint;
 
@@ -51,15 +60,8 @@ pub mod neo_swap {
         let maker = &ctx.accounts.maker;
         let mint_nft = &ctx.accounts.mint_nft;
 
-        // require_keys_eq!(meta.mint, mint_nft.key(), MYERROR::MintIncorrect);
-        // require!(swap_data_account.accepted_bid_index.is_none(), MYERROR::UnexpectedState);
         require_keys_eq!(swap_data_account.maker, maker.key(), MYERROR::NotMaker);
         require_keys_eq!(swap_data_account.maker_mint, mint_nft.key(), MYERROR::MintIncorrect);
-        // require_keys_eq!(
-        //     swap_data_account.maker_collection,
-        //     collection.key,
-        //     MYERROR::MintIncorrect
-        // );
 
         require_keys_eq!(
             swap_data_account.payment_mint,
@@ -100,29 +102,34 @@ pub mod neo_swap {
         );
         invoke(&transfert_nft_data.instruction, &transfert_nft_data.account_infos)?;
 
-        //transfer Maker Token
-        if bid_to_add.amount.is_negative() {
-            let transfert_token_data = get_transfer_token_ix(
-                bid_to_add.amount.unsigned_abs(),
-                SendToken {
-                    from: ctx.accounts.maker.to_account_info(),
-                    from_ata: ctx.accounts.maker_token_ata.clone(),
-                    to: swap_data_account.to_account_info(),
-                    to_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                    // mint: ctx.accounts.mint_token.clone(),
-                    token_program: ctx.accounts.token_program.to_account_info(),
-                }
-            ).unwrap();
+        //Calculate amount to send
+        let mut amount_to_send = bid_to_add.fees.maker_neoswap_fee
+            .checked_add(bid_to_add.fees.maker_royalties)
+            .unwrap();
 
-            msg!(
-                "transfer {:?} of {:?} from {:?} to {:?} ",
-                bid_to_add.amount.unsigned_abs(),
-                swap_data_account.payment_mint,
-                ctx.accounts.maker.key(),
-                swap_data_account.key()
-            );
-            invoke(&transfert_token_data.instruction, &transfert_token_data.account_infos)?;
+        if bid_to_add.amount.is_negative() {
+            msg!("bid_to_add.amount {:?}", -bid_to_add.amount);
+            amount_to_send = amount_to_send.checked_add(bid_to_add.amount.unsigned_abs()).unwrap();
         }
+
+        //transfer Maker Token
+        let transfert_token_data = get_transfer_token_ix(amount_to_send, SendToken {
+            from: ctx.accounts.maker.to_account_info(),
+            from_ata: ctx.accounts.maker_token_ata.clone(),
+            to: swap_data_account.to_account_info(),
+            to_ata: ctx.accounts.swap_data_account_token_ata.clone(),
+            // mint: ctx.accounts.mint_token.clone(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+        }).unwrap();
+
+        msg!(
+            "transfer {:?} of {:?} from {:?} to {:?} ",
+            amount_to_send,
+            swap_data_account.payment_mint,
+            ctx.accounts.maker.key(),
+            swap_data_account.key()
+        );
+        invoke(&transfert_token_data.instruction, &transfert_token_data.account_infos)?;
 
         Ok(())
     }
@@ -183,12 +190,94 @@ pub mod neo_swap {
         Ok(())
     }
 
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+
+    pub fn override_time(ctx: Context<OverrideTime>, duration: i64) -> Result<()> {
+        require!(ctx.accounts.swap_data_account.accepted_bid.is_none(), MYERROR::UnexpectedState);
+        ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
+        Ok(())
+    }
     // //claim
     //     let meta = get_metadata(ctx.accounts.nft_metadata.clone());
     // let creators = meta.creators.clone().unwrap();
     // creators.iter().for_each(|creator| {});
 }
-// const neoswap_fee_address= Pubkey::from('neoswap_fee_address'):
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 #[derive(Accounts)]
 #[instruction(mint: Pubkey)]
@@ -203,28 +292,18 @@ pub struct Initialize<'info> {
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(mut)]
     maker: Signer<'info>,
-    /// CHECK: in constraints
-    // #[account(mut,
-    //     seeds =[
-    //         b"metadata".as_ref(),
-    //         metadata_program.key().as_ref(),
-    //         mint.key().as_ref()],
-    //     bump,
-    //     owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
-    //     seeds::program = metadata_program.key()
-    // )]
-    // nft_metadata: AccountInfo<'info>,
-    // mint: Account<'info, Mint>,
     system_program: Program<'info, System>,
-    // / CHECK: in constraints
-    // #[account(constraint = metadata_program.key().eq(&MPL_TOKEN_METADATA_ID) @ MYERROR::IncorrectMetadata)]
-    // metadata_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 #[instruction()]
 pub struct DepositInitialBid<'info> {
-    #[account(mut,seeds = [&swap_data_account.seed.as_bytes()], bump)]
+    #[account(
+        mut,
+        seeds = [&swap_data_account.seed.as_bytes()], 
+        bump,
+        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
+    )]
     swap_data_account: Box<Account<'info, SwapData>>,
     /// CHECK: in constraints
     #[account(
@@ -322,6 +401,98 @@ pub struct AddBid<'info> {
     token_program: Program<'info, Token>,
 }
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+#[derive(Accounts)]
+#[instruction()]
+pub struct OverrideTime<'info> {
+    #[account(
+        mut,
+        seeds = [&swap_data_account.seed.as_bytes()], 
+        bump,
+        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
+    )]
+    swap_data_account: Box<Account<'info, SwapData>>,
+    #[account(mut)]
+    maker: Signer<'info>,
+}
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 #[account]
 #[derive(Default)]
 pub struct SwapData {
@@ -334,7 +505,8 @@ pub struct SwapData {
     pub taker_mint: Option<Pubkey>, // mint of the taker's NFT
     pub accepted_bid: Option<Bid>, // index of accepted bid when Taker accepted one
 
-    // pub royalties: Option<Pubkey>, // taker Pubkey
+    pub end_time: i64, // time until when the trade valid
+
     pub royalties_paid: bool, // if royalties have been paid
 
     pub payment_mint: Pubkey, // token accepted for payment
@@ -434,6 +606,45 @@ pub struct TransferData<'a> {
     account_infos: Vec<AccountInfo<'a>>,
 }
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 fn get_seed_buffer(maker: Pubkey, mint: Pubkey) -> [u8; 32] {
     let mut seed = [0u8; 32];
 
@@ -529,13 +740,50 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
         })
         .instruction();
 
-    let transfer_pnft_data = TransferData {
+    Ok(TransferData {
         instruction,
         account_infos,
-    };
-
-    Ok(transfer_pnft_data)
+    })
 }
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 #[error_code]
 pub enum MYERROR {
