@@ -90,21 +90,25 @@ export const idlSwap: Idl = {
                     name: "nftMasterEdition",
                     isMut: false,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "ownerTokenRecord",
                     isMut: true,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "destinationTokenRecord",
                     isMut: true,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "authRules",
                     isMut: false,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "systemProgram",
@@ -203,21 +207,25 @@ export const idlSwap: Idl = {
                     name: "nftMasterEdition",
                     isMut: false,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "ownerTokenRecord",
                     isMut: true,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "destinationTokenRecord",
                     isMut: true,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "authRules",
                     isMut: false,
                     isSigner: false,
+                    isOptional: true,
                 },
                 {
                     name: "systemProgram",

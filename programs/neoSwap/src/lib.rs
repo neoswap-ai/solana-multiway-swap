@@ -29,6 +29,8 @@ declare_id!("CtZHiWNnLu5rQuTN3jo7CmYDR8Wns6qXHn7taPvmnACp"); // devnet Test
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
 pub mod neo_swap {
+    use solana_program::program::invoke_signed;
+
     use super::*;
 
     const _NS_FEE_ACCOUNT: Pubkey = pubkey!("FjecsBcSXQh4rjPSksh2eBiXUswcMpAwU25ykcr842j8");
@@ -87,13 +89,13 @@ pub mod neo_swap {
             to_ata: ctx.accounts.swap_data_account_nft_ata.to_account_info(),
             mint: mint_nft.to_account_info(),
             signer: maker.to_account_info(),
-            auth_rules: ctx.accounts.auth_rules.to_account_info(),
+            auth_rules: ctx.accounts.auth_rules.clone(),
             auth_rules_program: ctx.accounts.auth_rules_program.to_account_info(),
-            destination_token_record: ctx.accounts.destination_token_record.to_account_info(),
+            destination_token_record: ctx.accounts.destination_token_record.clone(),
             metadata_program: ctx.accounts.metadata_program.to_account_info(),
-            nft_master_edition: ctx.accounts.nft_master_edition.to_account_info(),
+            nft_master_edition: ctx.accounts.nft_master_edition.clone(),
             nft_metadata: ctx.accounts.nft_metadata.to_account_info(),
-            owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
+            owner_token_record: ctx.accounts.owner_token_record.clone(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
             ata_program: ctx.accounts.ata_program.to_account_info(),
@@ -192,13 +194,13 @@ pub mod neo_swap {
             to_ata: ctx.accounts.maker_nft_ata.to_account_info(),
             mint: taker_mint_nft.to_account_info(),
             signer: taker.to_account_info(),
-            auth_rules: ctx.accounts.auth_rules.to_account_info(),
+            auth_rules: ctx.accounts.auth_rules.clone(),
             auth_rules_program: ctx.accounts.auth_rules_program.to_account_info(),
-            destination_token_record: ctx.accounts.destination_token_record.to_account_info(),
+            destination_token_record: ctx.accounts.destination_token_record.clone(),
             metadata_program: ctx.accounts.metadata_program.to_account_info(),
-            nft_master_edition: ctx.accounts.nft_master_edition.to_account_info(),
+            nft_master_edition: ctx.accounts.nft_master_edition.clone(),
             nft_metadata: ctx.accounts.nft_metadata.to_account_info(),
-            owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
+            owner_token_record: ctx.accounts.owner_token_record.clone(),
             sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
             ata_program: ctx.accounts.ata_program.to_account_info(),
@@ -291,49 +293,91 @@ pub mod neo_swap {
         // search for duplicate
         let duplicate_index = swap_data_account.bids
             .iter()
-            .position(|item_search| {
-                item_search.collection == bid_to_add.collection &&
-                    item_search.amount == bid_to_add.amount
-            })
+            .position(|item_search| { item_search.collection == bid_to_add.collection })
             .unwrap_or_else(|| 0);
-
-        require!(
-            duplicate_index != 0 &&
-                !swap_data_account.bids[duplicate_index].collection.eq(&bid_to_add.collection),
-            MYERROR::AlreadyExist
+        msg!("duplicate_index {:?}", duplicate_index);
+        msg!(
+            "swap_data_account.bids[duplicate_index] {:?} Vs bid_to_add {:?}",
+            swap_data_account.bids[duplicate_index],
+            bid_to_add
         );
 
-        // check if have to send more?
-        let token_balance = ctx.accounts.maker_token_ata.amount;
+        if
+            duplicate_index == 0 &&
+            !swap_data_account.bids[duplicate_index].collection.eq(&bid_to_add.collection)
+        {
+            msg!("ADD");
+            swap_data_account.bids.push(bid_to_add.clone());
+        } else {
+            msg!("CHANGE");
 
+            swap_data_account.bids[duplicate_index].amount = bid_to_add.amount;
+        }
+
+        // check if have to send more?
+        let token_balance = ctx.accounts.swap_data_account_token_ata.amount;
+        msg!("bid_to_add.amount {:?}", bid_to_add.amount);
         msg!("token_balance {:?}", token_balance);
 
-        if bid_to_add.amount.is_negative() && bid_to_add.amount.unsigned_abs().gt(&token_balance) {
-            let amount_to_send = bid_to_add.amount
-                .unsigned_abs()
-                .checked_add(token_balance)
-                .unwrap();
+        let mut amount_to_send: i64 = bid_to_add.amount
+            .checked_add_unsigned(token_balance)
+            .unwrap();
+        msg!("amount_to_send {:?}", amount_to_send);
 
-            let transfert_token_data = get_transfer_token_ix(amount_to_send, SendToken {
-                from: ctx.accounts.maker.to_account_info(),
-                from_ata: ctx.accounts.maker_token_ata.clone(),
-                to: swap_data_account.to_account_info(),
-                to_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                // mint: ctx.accounts.mint_token.clone(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-            }).unwrap();
+        if bid_to_add.amount.is_positive() && !token_balance.eq(&0) {
+            amount_to_send = token_balance as i64;
+            msg!("amount_to_send forced to  {:?}", amount_to_send);
+        }
+
+        if amount_to_send.is_negative() {
+            let transfert_token_data = get_transfer_token_ix(
+                amount_to_send.unsigned_abs(),
+                SendToken {
+                    from: ctx.accounts.maker.to_account_info(),
+                    from_ata: ctx.accounts.maker_token_ata.clone(),
+                    to: swap_data_account.to_account_info(),
+                    to_ata: ctx.accounts.swap_data_account_token_ata.clone(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                }
+            ).unwrap();
+
             msg!(
                 "transfer {:?} of {:?} from {:?} to {:?} ",
-                bid_to_add.amount.unsigned_abs(),
+                amount_to_send,
                 swap_data_account.payment_mint,
                 ctx.accounts.maker.key(),
                 swap_data_account.key()
             );
+
             invoke(&transfert_token_data.instruction, &transfert_token_data.account_infos)?;
+        } else {
+            let transfert_token_data = get_transfer_token_ix(
+                amount_to_send.unsigned_abs(),
+                SendToken {
+                    from: swap_data_account.to_account_info(),
+                    from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
+                    to: ctx.accounts.maker.to_account_info(),
+                    to_ata: ctx.accounts.maker_token_ata.clone(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                }
+            ).unwrap();
+
+            msg!(
+                "transfer back {:?} of {:?} from {:?} to {:?} ",
+                amount_to_send,
+                swap_data_account.payment_mint,
+                swap_data_account.key(),
+                ctx.accounts.maker.key()
+            );
+
+            invoke_signed(
+                &transfert_token_data.instruction,
+                &transfert_token_data.account_infos,
+                &[&[&swap_data_account.seed.as_bytes()[..]]]
+            )?;
         }
 
         msg!("bid_to_add {:?} ", bid_to_add);
-        ctx.accounts.swap_data_account.bids.push(bid_to_add);
 
         Ok(())
     }
@@ -455,15 +499,15 @@ pub struct MakeSwap<'info> {
     )]
     nft_metadata: AccountInfo<'info>,
     /// CHECK: in constraints
-    nft_master_edition: AccountInfo<'info>,
+    nft_master_edition: Option<AccountInfo<'info>>,
     /// CHECK: in constraints
     #[account( mut )]
-    owner_token_record: AccountInfo<'info>,
+    owner_token_record: Option<AccountInfo<'info>>,
     /// CHECK: in constraints
     #[account( mut )]
-    destination_token_record: AccountInfo<'info>,
+    destination_token_record: Option<AccountInfo<'info>>,
     /// CHECK: account checked in CPI
-    auth_rules: AccountInfo<'info>,
+    auth_rules: Option<AccountInfo<'info>>,
     system_program: Program<'info, System>,
     /// CHECK: in constraints
     #[account(constraint = metadata_program.key().eq(&MPL_TOKEN_METADATA_ID) @ MYERROR::IncorrectMetadata)]
@@ -526,15 +570,15 @@ pub struct TakeSwap<'info> {
     )]
     nft_metadata: AccountInfo<'info>,
     /// CHECK: in constraints
-    nft_master_edition: AccountInfo<'info>,
+    nft_master_edition: Option<AccountInfo<'info>>,
     /// CHECK: in constraints
     #[account( mut )]
-    owner_token_record: AccountInfo<'info>,
+    owner_token_record: Option<AccountInfo<'info>>,
     /// CHECK: in constraints
     #[account( mut )]
-    destination_token_record: AccountInfo<'info>,
+    destination_token_record: Option<AccountInfo<'info>>,
     /// CHECK: account checked in CPI
-    auth_rules: AccountInfo<'info>,
+    auth_rules: Option<AccountInfo<'info>>,
     system_program: Program<'info, System>,
     /// CHECK: in constraints
     #[account(constraint = metadata_program.key().eq(&MPL_TOKEN_METADATA_ID) @ MYERROR::IncorrectMetadata)]
@@ -763,11 +807,11 @@ pub struct SendPNft<'info> {
     mint: AccountInfo<'info>,
     signer: AccountInfo<'info>,
     nft_metadata: AccountInfo<'info>,
-    nft_master_edition: AccountInfo<'info>,
-    owner_token_record: AccountInfo<'info>,
-    destination_token_record: AccountInfo<'info>,
+    nft_master_edition: Option<AccountInfo<'info>>,
+    owner_token_record: Option<AccountInfo<'info>>,
+    destination_token_record: Option<AccountInfo<'info>>,
     auth_rules_program: AccountInfo<'info>,
-    auth_rules: AccountInfo<'info>,
+    auth_rules: Option<AccountInfo<'info>>,
     metadata_program: AccountInfo<'info>,
     sysvar_instructions: AccountInfo<'info>,
     ata_program: AccountInfo<'info>,
@@ -900,18 +944,24 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
     )?;
     if matches!(metadata.token_standard, Some(TokenStandard::ProgrammableNonFungible)) {
         msg!("pnft");
-        transfer_builder
-            .edition(Some(ctx.nft_master_edition.key()))
-            .token_record(Some(ctx.owner_token_record.key()))
-            .destination_token_record(Some(ctx.destination_token_record.key()))
-            .authorization_rules_program(Some(ctx.auth_rules_program.key()))
-            .authorization_rules(Some(ctx.auth_rules.key()));
 
-        account_infos.push(ctx.nft_master_edition.to_account_info());
-        account_infos.push(ctx.owner_token_record.to_account_info());
-        account_infos.push(ctx.destination_token_record.to_account_info());
+        let nft_master_edition = ctx.nft_master_edition.unwrap();
+        let owner_token_record = ctx.owner_token_record.unwrap();
+        let destination_token_record = ctx.destination_token_record.unwrap();
+        let auth_rules = ctx.auth_rules.unwrap();
+
+        transfer_builder
+            .edition(Some(nft_master_edition.key()))
+            .token_record(Some(owner_token_record.key()))
+            .destination_token_record(Some(destination_token_record.key()))
+            .authorization_rules_program(Some(ctx.auth_rules_program.key()))
+            .authorization_rules(Some(auth_rules.key()));
+
+        account_infos.push(nft_master_edition);
+        account_infos.push(owner_token_record);
+        account_infos.push(destination_token_record);
         account_infos.push(ctx.auth_rules_program.to_account_info());
-        account_infos.push(ctx.auth_rules.to_account_info());
+        account_infos.push(auth_rules);
     }
 
     let instruction = transfer_builder
