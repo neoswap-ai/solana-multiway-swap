@@ -61,7 +61,7 @@ pub mod neo_swap {
         Ok(())
     }
 
-    pub fn deposit_initial_bid(ctx: Context<DepositInitialBid>, bid_to_add: Bid) -> Result<()> {
+    pub fn make_swap(ctx: Context<MakeSwap>, bid_to_add: Bid) -> Result<()> {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
         let maker = &ctx.accounts.maker;
         let mint_nft = &ctx.accounts.mint_nft;
@@ -140,6 +140,147 @@ pub mod neo_swap {
         Ok(())
     }
 
+    pub fn take_swap(ctx: Context<TakeSwap>, bid_to_accept: Bid) -> Result<()> {
+        let swap_data_account = &mut ctx.accounts.swap_data_account;
+        let maker = &ctx.accounts.maker;
+        let taker = &ctx.accounts.taker;
+        let taker_mint_nft = &ctx.accounts.taker_mint_nft;
+
+        require!(swap_data_account.accepted_bid.is_none(), MYERROR::AlreadyTaken);
+        require!(swap_data_account.taker_nft_mint.is_none(), MYERROR::AlreadyTaken);
+        require!(swap_data_account.taker.is_none(), MYERROR::AlreadyTaken);
+
+        require_keys_eq!(
+            swap_data_account.payment_mint,
+            ctx.accounts.mint_token.key(),
+            MYERROR::MintIncorrect
+        );
+
+        // Find Bid to accept
+        let found_bid_to_accept = swap_data_account.bids
+            .iter()
+            .find(|item_search| {
+                item_search.collection.eq(&bid_to_accept.collection) &&
+                    item_search.amount == bid_to_accept.amount &&
+                    item_search.fees == bid_to_accept.fees
+            })
+            .unwrap_or_else(|| {
+                msg!("bid_to_accept {:?}", bid_to_accept);
+                panic!("Bid not found")
+            })
+            .clone();
+
+        // checking if NFT is part of collection
+        let meta = get_metadata(ctx.accounts.taker_mint_nft.to_account_info().clone());
+        let meta_collection = meta.collection.expect(&MYERROR::CollectionNotFound.to_string());
+
+        require!(meta_collection.verified, MYERROR::UnVerifiedCollection);
+        require!(
+            meta_collection.key.eq(&found_bid_to_accept.collection),
+            MYERROR::IncorrectCollection
+        );
+        // Adding the Bid to the data:
+        swap_data_account.accepted_bid = Some(found_bid_to_accept.clone());
+        swap_data_account.taker = Some(taker.key());
+        swap_data_account.taker_nft_mint = Some(taker_mint_nft.key());
+
+        //transfer Maker NFT
+        let transfert_nft_data = create_p_nft_instruction(1, SendPNft {
+            from: taker.to_account_info(),
+            from_ata: ctx.accounts.taker_nft_ata.to_account_info(),
+            to: maker.to_account_info(),
+            to_ata: ctx.accounts.maker_nft_ata.to_account_info(),
+            mint: taker_mint_nft.to_account_info(),
+            signer: taker.to_account_info(),
+            auth_rules: ctx.accounts.auth_rules.to_account_info(),
+            auth_rules_program: ctx.accounts.auth_rules_program.to_account_info(),
+            destination_token_record: ctx.accounts.destination_token_record.to_account_info(),
+            metadata_program: ctx.accounts.metadata_program.to_account_info(),
+            nft_master_edition: ctx.accounts.nft_master_edition.to_account_info(),
+            nft_metadata: ctx.accounts.nft_metadata.to_account_info(),
+            owner_token_record: ctx.accounts.owner_token_record.to_account_info(),
+            sysvar_instructions: ctx.accounts.sysvar_instructions.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            ata_program: ctx.accounts.ata_program.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+        }).unwrap();
+        msg!(
+            "transfer {:?} of {:?} from {:?} to {:?} ",
+            1,
+            taker_mint_nft.key(),
+            ctx.accounts.taker_nft_ata.key(),
+            ctx.accounts.maker_nft_ata.key()
+        );
+        invoke(&transfert_nft_data.instruction, &transfert_nft_data.account_infos)?;
+
+        //Calculate amount to send
+        if found_bid_to_accept.amount.is_positive() {
+            // msg!("bid_to_add.amount {:?}", found_bid_to_accept);
+
+            //transfer Maker Token
+            let transfert_token_data = get_transfer_token_ix(
+                found_bid_to_accept.amount.unsigned_abs(),
+                SendToken {
+                    from: taker.to_account_info(),
+                    from_ata: ctx.accounts.taker_token_ata.clone(),
+                    to: maker.clone(),
+                    to_ata: ctx.accounts.maker_token_ata.clone(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                }
+            ).unwrap();
+
+            msg!(
+                "transfer {:?} of {:?} from {:?} to {:?} ",
+                found_bid_to_accept.amount.unsigned_abs(),
+                swap_data_account.payment_mint,
+                ctx.accounts.maker.key(),
+                swap_data_account.key()
+            );
+            invoke(&transfert_token_data.instruction, &transfert_token_data.account_infos)?;
+        }
+
+        Ok(())
+    }
+
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+
     pub fn add_bid(ctx: Context<AddBid>, bid_to_add: Bid) -> Result<()> {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
         let maker = &mut ctx.accounts.maker;
@@ -196,46 +337,6 @@ pub mod neo_swap {
 
         Ok(())
     }
-
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-
     pub fn override_time(ctx: Context<OverrideTime>, duration: i64) -> Result<()> {
         require!(ctx.accounts.swap_data_account.accepted_bid.is_none(), MYERROR::IncorrectState);
         ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
@@ -297,14 +398,14 @@ pub struct Initialize<'info> {
         space = SwapData::LEN
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
-    #[account(mut)]
+    #[account( mut )]
     maker: Signer<'info>,
     system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 #[instruction()]
-pub struct DepositInitialBid<'info> {
+pub struct MakeSwap<'info> {
     #[account(
         mut,
         seeds = [&swap_data_account.seed.as_bytes()], 
@@ -319,10 +420,10 @@ pub struct DepositInitialBid<'info> {
     )]
     swap_data_account_nft_ata: Account<'info, TokenAccount>,
     /// CHECK: inside the function Logic
-    #[account(mut)]
+    #[account( mut )]
     swap_data_account_token_ata: Account<'info, TokenAccount>,
 
-    #[account(mut)]
+    #[account( mut )]
     maker: Signer<'info>,
     #[account(
         mut,
@@ -331,7 +432,7 @@ pub struct DepositInitialBid<'info> {
     )]
     maker_nft_ata: Account<'info, TokenAccount>,
     /// CHECK: inside the function Logic
-    #[account(mut,
+    #[account( mut,
             constraint = (
                 maker_token_ata.owner.eq(maker.key) 
                 || maker_token_ata.key().eq(maker.key)
@@ -343,7 +444,7 @@ pub struct DepositInitialBid<'info> {
     mint_token: Account<'info, Mint>,
 
     /// CHECK: in constraints
-    #[account(mut,
+    #[account( mut,
         seeds =[
             b"metadata".as_ref(),
             metadata_program.key().as_ref(),
@@ -356,10 +457,10 @@ pub struct DepositInitialBid<'info> {
     /// CHECK: in constraints
     nft_master_edition: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(mut)]
+    #[account( mut )]
     owner_token_record: AccountInfo<'info>,
     /// CHECK: in constraints
-    #[account(mut)]
+    #[account( mut )]
     destination_token_record: AccountInfo<'info>,
     /// CHECK: account checked in CPI
     auth_rules: AccountInfo<'info>,
@@ -380,32 +481,73 @@ pub struct DepositInitialBid<'info> {
 
 #[derive(Accounts)]
 #[instruction()]
-pub struct AddBid<'info> {
+pub struct TakeSwap<'info> {
     #[account(
         mut,
         seeds = [&swap_data_account.seed.as_bytes()],
         bump,
-        constraint = swap_data_account.maker == maker.key() @ MYERROR::NotMaker
+        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
-    /// CHECK: inside the function Logic
-    #[account(mut)]
-    swap_data_account_token_ata: Account<'info, TokenAccount>,
-
-    #[account(mut)]
-    maker: Signer<'info>,
-    /// CHECK: inside the function Logic
-    #[account(mut,
-        constraint = (
-            maker_token_ata.owner.eq(maker.key) 
-            || maker_token_ata.key().eq(maker.key)
-        )  @ MYERROR::IncorrectOwner
-    )]
+    /// CHECK: Maker
+    maker: AccountInfo<'info>,
+    #[account( mut, constraint = maker_nft_ata.owner == maker.key()  @ MYERROR::IncorrectOwner )]
+    maker_nft_ata: Account<'info, TokenAccount>,
+    #[account( mut, constraint = maker_nft_ata.owner == maker.key()  @ MYERROR::IncorrectOwner )]
     maker_token_ata: Account<'info, TokenAccount>,
 
-    /// CHECK: in constraints
+    #[account( mut )]
+    taker: Signer<'info>,
+    #[account(
+        mut,
+        constraint = taker_nft_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
+        constraint = taker_nft_ata.owner == taker.key() @ MYERROR::IncorrectOwner
+    )]
+    taker_nft_ata: Account<'info, TokenAccount>,
+    #[account( mut,
+        constraint = taker_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
+        constraint = taker_token_ata.owner.eq(taker.key) @ MYERROR::IncorrectOwner
+    )]
+    taker_token_ata: Account<'info, TokenAccount>,
+
+    taker_mint_nft: Account<'info, Mint>,
+    #[account(constraint = mint_token.key().eq(&swap_data_account.payment_mint)  @ MYERROR::MintIncorrect)]
     mint_token: Account<'info, Mint>,
+
+    /// CHECK: in constraints
+    #[account( mut,
+        seeds =[
+            b"metadata".as_ref(),
+            metadata_program.key().as_ref(),
+            taker_mint_nft.key().as_ref()],
+        bump,
+        owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
+        seeds::program = metadata_program.key()
+    )]
+    nft_metadata: AccountInfo<'info>,
+    /// CHECK: in constraints
+    nft_master_edition: AccountInfo<'info>,
+    /// CHECK: in constraints
+    #[account( mut )]
+    owner_token_record: AccountInfo<'info>,
+    /// CHECK: in constraints
+    #[account( mut )]
+    destination_token_record: AccountInfo<'info>,
+    /// CHECK: account checked in CPI
+    auth_rules: AccountInfo<'info>,
+    system_program: Program<'info, System>,
+    /// CHECK: in constraints
+    #[account(constraint = metadata_program.key().eq(&MPL_TOKEN_METADATA_ID) @ MYERROR::IncorrectMetadata)]
+    metadata_program: AccountInfo<'info>,
+    /// CHECK: in constraints
+    #[account(constraint = sysvar_instructions.key().eq(&SYSVAR_INSTRUCTIONS_ID) @ MYERROR::IncorrectSysvar)]
+    sysvar_instructions: AccountInfo<'info>,
     token_program: Program<'info, Token>,
+    /// CHECK: in constraints
+    #[account(constraint = ata_program.key().eq(&SPL_ASSOCIATED_TOKEN_ACCOUNT_ID)  @ MYERROR::IncorrectSplAta)]
+    ata_program: AccountInfo<'info>,
+    /// CHECK: account checked in CPI
+    auth_rules_program: AccountInfo<'info>,
 }
 
 //
@@ -449,6 +591,36 @@ pub struct AddBid<'info> {
 
 #[derive(Accounts)]
 #[instruction()]
+pub struct AddBid<'info> {
+    #[account(
+        mut,
+        seeds = [&swap_data_account.seed.as_bytes()],
+        bump,
+        constraint = swap_data_account.maker == maker.key() @ MYERROR::NotMaker
+    )]
+    swap_data_account: Box<Account<'info, SwapData>>,
+    /// CHECK: inside the function Logic
+    #[account( mut )]
+    swap_data_account_token_ata: Account<'info, TokenAccount>,
+
+    #[account( mut )]
+    maker: Signer<'info>,
+    /// CHECK: inside the function Logic
+    #[account( mut,
+        constraint = (
+            maker_token_ata.owner.eq(maker.key) 
+            || maker_token_ata.key().eq(maker.key)
+        )  @ MYERROR::IncorrectOwner
+    )]
+    maker_token_ata: Account<'info, TokenAccount>,
+
+    /// CHECK: in constraints
+    mint_token: Account<'info, Mint>,
+    token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+#[instruction()]
 pub struct OverrideTime<'info> {
     #[account(
         mut,
@@ -457,7 +629,7 @@ pub struct OverrideTime<'info> {
         constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
-    #[account(mut)]
+    #[account( mut )]
     maker: Signer<'info>,
 }
 
@@ -529,7 +701,7 @@ impl SwapData {
         32 * 5; //Pubkey
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug)]
+#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, PartialEq)]
 pub struct Bid {
     collection: Pubkey, // collection of the NFT aker wants to get
     amount: i64, // amount of tokens to transfer. amount < 0 maker gives
@@ -539,7 +711,7 @@ impl Bid {
     const LEN: usize = 32 + 8 + Fees::LEN;
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug)]
+#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, PartialEq)]
 pub struct Fees {
     maker_neoswap_fee: u64,
     taker_neoswap_fee: u64, // Destinary : hardcoded
@@ -665,7 +837,7 @@ fn get_seed_buffer(maker: Pubkey, mint: Pubkey) -> Vec<u8> {
 fn get_seed_string(maker: Pubkey, mint: Pubkey) -> String {
     maker.to_string().split_at(16).0.to_owned() + mint.to_string().split_at(16).0
 }
-fn _get_metadata(nft_metadata: AccountInfo) -> Metadata {
+fn get_metadata(nft_metadata: AccountInfo) -> Metadata {
     Metadata::safe_deserialize(&nft_metadata.data.borrow()).unwrap()
 }
 fn get_transfer_token_ix(lamport: u64, ctx: SendToken<'_>) -> Result<TransferData<'_>> {
@@ -829,6 +1001,10 @@ pub enum MYERROR {
     CannotFindAccount,
     #[msg("Swap is not in the adequate state to perform this action")]
     IncorrectState,
+    #[msg("Cannot find the given collection in the SDA")]
+    CollectionNotFound,
+    #[msg("Swap already accepted")]
+    AlreadyTaken,
 
     /// Program errors 8900-8999
     #[msg("Incorrect Sysvar Instruction Program")]
