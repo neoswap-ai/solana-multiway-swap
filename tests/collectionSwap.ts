@@ -209,7 +209,7 @@ describe("compressed NFT Test Unit", () => {
                 console.log("SYSv", SYSVAR_INSTRUCTIONS_PUBKEY.toBytes());
 
                 const initIx = await program.methods
-                    .depositInitialBid(bidToAdd)
+                    .makeSwap(bidToAdd)
                     .accounts({
                         swapDataAccount,
                         swapDataAccountNftAta,

@@ -39,7 +39,7 @@ export const idlSwap: Idl = {
             ],
         },
         {
-            name: "depositInitialBid",
+            name: "makeSwap",
             accounts: [
                 {
                     name: "swapDataAccount",
@@ -147,6 +147,119 @@ export const idlSwap: Idl = {
             ],
         },
         {
+            name: "takeSwap",
+            accounts: [
+                {
+                    name: "swapDataAccount",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "maker",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "makerNftAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "makerTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "taker",
+                    isMut: true,
+                    isSigner: true,
+                },
+                {
+                    name: "takerNftAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "takerTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "takerMintNft",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "mintToken",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "nftMetadata",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "nftMasterEdition",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "ownerTokenRecord",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "destinationTokenRecord",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "authRules",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "systemProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "metadataProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "sysvarInstructions",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "tokenProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "ataProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "authRulesProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+            ],
+            args: [
+                {
+                    name: "bidToAccept",
+                    type: {
+                        defined: "Bid",
+                    },
+                },
+            ],
+        },
+        {
             name: "addBid",
             accounts: [
                 {
@@ -222,7 +335,7 @@ export const idlSwap: Idl = {
                         type: "publicKey",
                     },
                     {
-                        name: "makerMint",
+                        name: "makerNftMint",
                         type: "publicKey",
                     },
                     {
@@ -240,7 +353,7 @@ export const idlSwap: Idl = {
                         },
                     },
                     {
-                        name: "takerMint",
+                        name: "takerNftMint",
                         type: {
                             option: "publicKey",
                         },
@@ -320,29 +433,6 @@ export const idlSwap: Idl = {
                 ],
             },
         },
-        {
-            name: "TradeStatus",
-            type: {
-                kind: "enum",
-                variants: [
-                    {
-                        name: "Initializing",
-                    },
-                    {
-                        name: "Initialized",
-                    },
-                    {
-                        name: "Accepted",
-                    },
-                    {
-                        name: "Closed",
-                    },
-                    {
-                        name: "Canceling",
-                    },
-                ],
-            },
-        },
     ],
     errors: [
         {
@@ -402,18 +492,33 @@ export const idlSwap: Idl = {
         },
         {
             code: 6011,
+            name: "IncorrectState",
+            msg: "Swap is not in the adequate state to perform this action",
+        },
+        {
+            code: 6012,
+            name: "CollectionNotFound",
+            msg: "Cannot find the given collection in the SDA",
+        },
+        {
+            code: 6013,
+            name: "AlreadyTaken",
+            msg: "Swap already accepted",
+        },
+        {
+            code: 6900,
             name: "IncorrectSysvar",
             msg: "Incorrect Sysvar Instruction Program",
         },
         {
-            code: 6012,
+            code: 6901,
             name: "IncorrectMetadata",
             msg: "Incorrect Metadata Program",
         },
         {
-            code: 6013,
+            code: 6902,
             name: "IncorrectSplAta",
             msg: "Incorrect Token ATA Program",
         },
     ],
-} 
+};
