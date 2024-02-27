@@ -6,7 +6,7 @@ use ::{
             program::invoke,
             pubkey::Pubkey,
             // system_program::ID as SYSTEM_PROGRAM_ID,
-            sysvar::ID as SYSVAR_INSTRUCTIONS_ID,
+            sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
             pubkey,
         },
     },
@@ -40,15 +40,21 @@ pub mod neo_swap {
         duration: i64
     ) -> Result<()> {
         let maker = ctx.accounts.maker.key();
+        require!(duration.is_positive() || duration.eq(&0), MYERROR::SeedLengthIncorrect);
+
         // Write according Data into Swap's PDA
         ctx.accounts.swap_data_account.maker = maker;
-        ctx.accounts.swap_data_account.maker_mint = mint;
+        ctx.accounts.swap_data_account.maker_nft_mint = mint;
 
         ctx.accounts.swap_data_account.bids = [].to_vec();
 
         ctx.accounts.swap_data_account.royalties_paid = false;
 
-        ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
+        if duration.eq(&0) {
+            ctx.accounts.swap_data_account.end_time = 0;
+        } else {
+            ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
+        }
         ctx.accounts.swap_data_account.seed = get_seed_string(maker, mint);
         ctx.accounts.swap_data_account.payment_mint = payment_mint;
 
@@ -61,7 +67,7 @@ pub mod neo_swap {
         let mint_nft = &ctx.accounts.mint_nft;
 
         require_keys_eq!(swap_data_account.maker, maker.key(), MYERROR::NotMaker);
-        require_keys_eq!(swap_data_account.maker_mint, mint_nft.key(), MYERROR::MintIncorrect);
+        require_keys_eq!(swap_data_account.maker_nft_mint, mint_nft.key(), MYERROR::MintIncorrect);
 
         require_keys_eq!(
             swap_data_account.payment_mint,
@@ -139,6 +145,7 @@ pub mod neo_swap {
         let maker = &mut ctx.accounts.maker;
 
         require_keys_eq!(swap_data_account.maker, maker.key(), MYERROR::NotMaker);
+        require!(swap_data_account.taker.is_none(), MYERROR::UnexpectedState);
 
         // search for duplicate
         let duplicate_index = swap_data_account.bids
@@ -230,7 +237,7 @@ pub mod neo_swap {
     //
 
     pub fn override_time(ctx: Context<OverrideTime>, duration: i64) -> Result<()> {
-        require!(ctx.accounts.swap_data_account.accepted_bid.is_none(), MYERROR::UnexpectedState);
+        require!(ctx.accounts.swap_data_account.accepted_bid.is_none(), MYERROR::IncorrectState);
         ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
         Ok(())
     }
@@ -497,12 +504,12 @@ pub struct OverrideTime<'info> {
 #[derive(Default)]
 pub struct SwapData {
     pub maker: Pubkey, // maker Pubkey
-    pub maker_mint: Pubkey, // mint of the maker's NFT
+    pub maker_nft_mint: Pubkey, // mint of the maker's NFT
 
     pub bids: Vec<Bid>, // List of possible bids Taker can accept
 
     pub taker: Option<Pubkey>, // taker Pubkey
-    pub taker_mint: Option<Pubkey>, // mint of the taker's NFT
+    pub taker_nft_mint: Option<Pubkey>, // mint of the taker's NFT
     pub accepted_bid: Option<Bid>, // index of accepted bid when Taker accepted one
 
     pub end_time: i64, // time until when the trade valid
@@ -645,12 +652,10 @@ pub struct TransferData<'a> {
 //
 //
 
-fn get_seed_buffer(maker: Pubkey, mint: Pubkey) -> [u8; 32] {
-    let mut seed = [0u8; 32];
-
-    seed[..16].copy_from_slice(&maker.to_bytes()[..16]);
-    seed[16..].copy_from_slice(&mint.to_bytes()[..16]);
-    seed
+fn get_seed_buffer(maker: Pubkey, mint: Pubkey) -> Vec<u8> {
+    let seed_str = get_seed_string(maker, mint);
+    msg!("seed_str {:?}", seed_str);
+    seed_str.as_bytes().to_vec()
 }
 fn get_seed_string(maker: Pubkey, mint: Pubkey) -> String {
     maker.to_string().split_at(16).0.to_owned() + mint.to_string().split_at(16).0
@@ -710,7 +715,6 @@ fn create_p_nft_instruction(amount: u64, ctx: SendPNft<'_>) -> Result<TransferDa
         ctx.sysvar_instructions.to_account_info(),
         ctx.token_program.to_account_info(),
         ctx.ata_program.to_account_info(),
-        ctx.sysvar_instructions.to_account_info(),
         ctx.metadata_program.to_account_info()
     ];
 
@@ -818,6 +822,8 @@ pub enum MYERROR {
     AlreadyExist,
     #[msg("Cannot find the account")]
     CannotFindAccount,
+    #[msg("Swap is not in the adequate state to perform this action")]
+    IncorrectState,
 
     /// Program errors 8900-8999
     #[msg("Incorrect Sysvar Instruction Program")]
