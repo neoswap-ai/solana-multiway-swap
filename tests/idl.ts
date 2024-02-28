@@ -402,6 +402,11 @@ export const idlSwap: Idl = {
                     isSigner: false,
                 },
                 {
+                    name: "makerTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
                     name: "nftMintMaker",
                     isMut: false,
                     isSigner: false,

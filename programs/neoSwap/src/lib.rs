@@ -33,41 +33,31 @@ pub mod neo_swap {
 
     const NS_FEE_ACCOUNT: Pubkey = pubkey!("FjecsBcSXQh4rjPSksh2eBiXUswcMpAwU25ykcr842j8");
 
-    pub fn initialize(
-        ctx: Context<Initialize>,
-        mint: Pubkey,
-        payment_mint: Pubkey,
-        duration: i64
-    ) -> Result<()> {
-        let maker = ctx.accounts.maker.key();
-        require!(duration.is_positive() || duration.eq(&0), MYERROR::SeedLengthIncorrect);
-
-        // Write according Data into Swap's PDA
-        ctx.accounts.swap_data_account.maker = maker;
-        ctx.accounts.swap_data_account.nft_mint_maker = mint;
-
-        ctx.accounts.swap_data_account.bids = [].to_vec();
-
-        ctx.accounts.swap_data_account.royalties_paid = false;
-
-        if duration.eq(&0) {
-            ctx.accounts.swap_data_account.end_time = 0;
-        } else {
-            ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
-        }
-        ctx.accounts.swap_data_account.seed = get_seed_string(maker, mint);
-        ctx.accounts.swap_data_account.payment_mint = payment_mint;
-
-        Ok(())
-    }
-
-    pub fn make_swap(ctx: Context<MakeSwap>, bid_to_add: Bid) -> Result<()> {
+    pub fn make_swap(ctx: Context<MakeSwap>, bid_to_add: Bid, duration: i64) -> Result<()> {
         let swap_data_account = &mut ctx.accounts.swap_data_account;
         let maker = &ctx.accounts.maker;
         let mint_nft = &ctx.accounts.mint_nft;
 
-        require_keys_eq!(swap_data_account.maker, maker.key(), MYERROR::NotMaker);
-        require_keys_eq!(swap_data_account.nft_mint_maker, mint_nft.key(), MYERROR::MintIncorrect);
+        require!(duration.is_positive() || duration.eq(&0), MYERROR::SeedLengthIncorrect);
+
+        // Write according Data into Swap's PDA
+        swap_data_account.maker = maker.key();
+        swap_data_account.nft_mint_maker = mint_nft.key();
+
+        swap_data_account.bids = [].to_vec();
+
+        swap_data_account.royalties_paid = false;
+
+        if duration.eq(&0) {
+            swap_data_account.end_time = 0;
+        } else {
+            swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
+        }
+        swap_data_account.seed = get_seed_string(maker.key(), mint_nft.key());
+        swap_data_account.payment_mint = ctx.accounts.mint_token.key();
+
+        // require_keys_eq!(swap_data_account.maker, maker.key(), MYERROR::NotMaker);
+        // require_keys_eq!(swap_data_account.nft_mint_maker, mint_nft.key(), MYERROR::MintIncorrect);
 
         require_keys_eq!(
             swap_data_account.payment_mint,
@@ -102,15 +92,15 @@ pub mod neo_swap {
         msg!(
             "transfer {:?} of {:?} from {:?} to {:?} ",
             1,
-            ctx.accounts.mint_nft.key(),
-            ctx.accounts.maker_nft_ata.key(),
-            ctx.accounts.swap_data_account_nft_ata.key()
+            ctx.accounts.mint_nft.key().to_string().split_at(5).0,
+            ctx.accounts.maker_nft_ata.key().to_string().split_at(5).0,
+            ctx.accounts.swap_data_account_nft_ata.key().to_string().split_at(5).0
         );
         invoke(&transfert_nft_data.instruction, &transfert_nft_data.account_infos)?;
 
         //Calculate amount to send
-        let mut amount_to_send = bid_to_add.fees.maker_neoswap_fee
-            .checked_add(bid_to_add.fees.maker_royalties)
+        let mut amount_to_send = bid_to_add.maker_neoswap_fee
+            .checked_add(bid_to_add.maker_royalties)
             .unwrap();
 
         if bid_to_add.amount.is_negative() {
@@ -162,14 +152,18 @@ pub mod neo_swap {
             .find(|item_search| {
                 item_search.collection.eq(&bid_to_accept.collection) &&
                     item_search.amount == bid_to_accept.amount &&
-                    item_search.fees == bid_to_accept.fees
+                    item_search.maker_neoswap_fee == bid_to_accept.maker_neoswap_fee &&
+                    item_search.maker_royalties == bid_to_accept.maker_royalties &&
+                    item_search.taker_neoswap_fee == bid_to_accept.taker_neoswap_fee &&
+                    item_search.taker_royalties == bid_to_accept.taker_royalties
             })
             .expect(&MYERROR::BidNotFound.to_string())
             .clone();
 
         // checking if NFT is part of collection
-        let meta = get_metadata(ctx.accounts.nft_metadata.to_account_info());
-        let meta_collection = meta.collection.expect(&MYERROR::CollectionNotFound.to_string());
+        let meta_collection = get_metadata(
+            ctx.accounts.nft_metadata.to_account_info()
+        ).collection.expect(&MYERROR::CollectionNotFound.to_string());
 
         require!(meta_collection.verified, MYERROR::UnVerifiedCollection);
         require!(
@@ -234,31 +228,287 @@ pub mod neo_swap {
         }
 
         // transfer fees taker Token
-        let fee_taker =
-            found_bid_to_accept.fees.taker_neoswap_fee + found_bid_to_accept.fees.taker_royalties;
+        let fee_taker = found_bid_to_accept.taker_neoswap_fee + found_bid_to_accept.taker_royalties;
 
-        let transfert_fee_data = get_transfer_token_ix(fee_taker, SendToken {
-            from: taker.to_account_info(),
-            from_ata: ctx.accounts.taker_token_ata.clone(),
-            to: ctx.accounts.ns_fee.to_account_info(),
-            to_ata: ctx.accounts.ns_fee_token_ata.clone(),
-            token_program: ctx.accounts.token_program.to_account_info(),
-        }).unwrap();
+        if fee_taker > 0 {
+            let transfert_fee_data = get_transfer_token_ix(fee_taker, SendToken {
+                from: taker.to_account_info(),
+                from_ata: ctx.accounts.taker_token_ata.clone(),
+                to: swap_data_account.to_account_info(),
+                to_ata: ctx.accounts.swap_data_account_token_ata.clone(),
+                token_program: ctx.accounts.token_program.to_account_info(),
+            }).unwrap();
 
-        msg!(
-            "transfer fees {:?} of {:?} from {:?} to {:?} ",
-            fee_taker,
-            swap_data_account.payment_mint,
-            taker.key(),
-            swap_data_account.key()
+            msg!(
+                "transfer fees {:?} of {:?} from {:?} to {:?} ",
+                fee_taker,
+                swap_data_account.payment_mint,
+                taker.key(),
+                swap_data_account.key()
+            );
+            invoke(&transfert_fee_data.instruction, &transfert_fee_data.account_infos)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn pay_royalties(ctx: Context<PayRoyalties>) -> Result<()> {
+        require!(
+            ctx.accounts.swap_data_account.royalties_paid == false,
+            MYERROR::RoyaltiesAlreadyPaid
         );
-        invoke(&transfert_fee_data.instruction, &transfert_fee_data.account_infos)?;
+        let seed: &[u8] = ctx.accounts.swap_data_account.seed.as_bytes();
+        let bump = ctx.bumps.swap_data_account;
 
+        let payment_mint = ctx.accounts.swap_data_account.payment_mint;
+
+        let token_program = ctx.accounts.token_program.to_account_info().clone();
+
+        let sda = ctx.accounts.swap_data_account.to_account_info().clone();
+        let sda_ata = ctx.accounts.swap_data_account_token_ata.clone();
+
+        let accepted_bid = ctx.accounts.swap_data_account.accepted_bid
+            .clone()
+            .expect(&MYERROR::IncorrectState.to_string());
+
+        // Paying Royalties
+        // Maker
+        let taker_amount = accepted_bid.taker_royalties;
+        msg!("taker_amount {:?}", taker_amount);
+
+        if taker_amount > 0 {
+            let maker_meta = get_metadata(ctx.accounts.maker_nft_metadata.clone());
+            let maker_creators = maker_meta.creators.unwrap();
+            let mut maker_verified_shares = 0;
+            maker_creators.iter().for_each(|item| {
+                if item.verified {
+                    maker_verified_shares += item.share as u64;
+                }
+            });
+            let maker_creator0 = maker_creators[0].clone();
+            let creator0_amount =
+                (taker_amount * (maker_creator0.share as u64)) / maker_verified_shares;
+            if maker_creator0.verified == true {
+                if creator0_amount > 0 {
+                    let creator0_data = get_transfer_token_ix(creator0_amount, SendToken {
+                        from: sda.clone(),
+                        from_ata: sda_ata.clone(),
+                        to: ctx.accounts.maker_creator0.clone(),
+                        to_ata: ctx.accounts.maker_creator0_token_ata.clone(),
+                        token_program: token_program.clone(),
+                    }).unwrap();
+
+                    msg!(
+                        "0 taker pays {:?} of {:?} from {:?} to {:?} ",
+                        creator0_amount,
+                        payment_mint,
+                        ctx.accounts.swap_data_account.key(),
+                        ctx.accounts.maker_creator0.key()
+                    );
+                    invoke_signed(
+                        &creator0_data.instruction,
+                        &creator0_data.account_infos,
+                        &[&[&seed[..], &[bump]]]
+                    )?;
+                } else {
+                    msg!("maker 0 amount {:?}", maker_creator0);
+                }
+            } else {
+                msg!("maker 0 UNVERIFIED {:?}", maker_creator0);
+            }
+
+            if maker_creators.len() >= 2 {
+                let maker_creator = maker_creators[1].clone();
+                let creator_amount =
+                    (taker_amount * (maker_creator.share as u64)) / maker_verified_shares;
+                if maker_creator.verified == false {
+                    msg!("maker 1 UNVERIFIED {:?}", maker_creator);
+                } else if creator_amount > 0 {
+                    let creator_data = get_transfer_token_ix(creator_amount, SendToken {
+                        from: ctx.accounts.swap_data_account.to_account_info().clone(),
+                        from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
+                        to: ctx.accounts.maker_creator1.clone(),
+                        to_ata: ctx.accounts.maker_creator1_token_ata.clone(),
+                        token_program: token_program.clone(),
+                    }).unwrap();
+                    msg!(
+                        "1 sdA {:?} SDAata {:?} makercr0 {:?} merata {:?} ",
+                        sda.clone().key,
+                        sda_ata.clone().key(),
+                        ctx.accounts.maker_creator1.clone().key(),
+                        ctx.accounts.maker_creator1_token_ata.clone().key()
+                    );
+                    msg!(
+                        "1 taker pays {:?} of {:?} from {:?} to {:?} ",
+                        creator_amount,
+                        payment_mint,
+                        ctx.accounts.swap_data_account.key(),
+                        ctx.accounts.maker_creator1.key()
+                    );
+                    invoke_signed(
+                        &creator_data.instruction,
+                        &creator_data.account_infos,
+                        &[&[&seed[..], &[bump]]]
+                    )?;
+                } else {
+                    msg!("maker 1 amount {:?}", maker_creator);
+                }
+            }
+
+            if maker_creators.len() >= 3 {
+                let maker_creator = maker_creators[2].clone();
+                let creator_amount =
+                    (taker_amount * (maker_creator.share as u64)) / maker_verified_shares;
+                if maker_creator.verified == false {
+                    msg!("maker 2 UNVERIFIED {:?}", maker_creator);
+                } else if creator_amount > 0 {
+                    let creator_data = get_transfer_token_ix(creator_amount, SendToken {
+                        from: sda.clone(),
+                        from_ata: sda_ata.clone(),
+                        to: ctx.accounts.maker_creator2.to_account_info(),
+                        to_ata: ctx.accounts.maker_creator2_token_ata.clone(),
+                        token_program: token_program.clone(),
+                    }).unwrap();
+
+                    msg!(
+                        "2 taker pays {:?} of {:?} from {:?} to {:?} ",
+                        creator_amount,
+                        payment_mint,
+                        ctx.accounts.swap_data_account.key(),
+                        ctx.accounts.maker_creator2.key()
+                    );
+                    invoke_signed(
+                        &creator_data.instruction,
+                        &creator_data.account_infos,
+                        &[&[&seed[..], &[bump]]]
+                    )?;
+                } else {
+                    msg!("maker 2 amount {:?}", maker_creator);
+                }
+            }
+        } else {
+            msg!("maker fee skipped");
+        }
+        // Taker
+        let taker_meta = get_metadata(ctx.accounts.taker_nft_metadata.clone());
+        let taker_creators = taker_meta.creators.unwrap();
+        let maker_amount = accepted_bid.maker_royalties;
+        msg!("maker_amount {:?}", maker_amount);
+
+        if maker_amount > 0 {
+            let mut taker_verified_shares = 0;
+            taker_creators.iter().for_each(|item| {
+                if item.verified {
+                    taker_verified_shares += item.share as u64;
+                }
+            });
+            let taker_creator0 = taker_creators[0].clone();
+            let creator0_amount =
+                (maker_amount * (taker_creator0.share as u64)) / taker_verified_shares;
+            if taker_creator0.verified == true {
+                if creator0_amount > 0 {
+                    let creator0_data = get_transfer_token_ix(creator0_amount, SendToken {
+                        from: sda.clone(),
+                        from_ata: sda_ata.clone(),
+                        to: ctx.accounts.taker_creator0.to_account_info(),
+                        to_ata: ctx.accounts.taker_creator0_token_ata.clone(),
+                        token_program: token_program.clone(),
+                    }).unwrap();
+
+                    msg!(
+                        "0 maker pays {:?} of {:?} from {:?} to {:?} ",
+                        creator0_amount,
+                        payment_mint,
+                        ctx.accounts.swap_data_account.key(),
+                        ctx.accounts.taker_creator0.key()
+                    );
+                    invoke_signed(
+                        &creator0_data.instruction,
+                        &creator0_data.account_infos,
+                        &[&[&seed[..], &[bump]]]
+                    )?;
+                } else {
+                    msg!("taker 0 amount {:?}", taker_creator0);
+                }
+            } else {
+                msg!("taker 0 UNVERIFIED {:?}", taker_creator0);
+            }
+            if taker_creators.len() >= 2 {
+                let taker_creator = taker_creators[1].clone();
+                let creator_amount =
+                    (maker_amount * (taker_creator.share as u64)) / taker_verified_shares;
+                if taker_creator.verified == false {
+                    msg!("taker 1 UNVERIFIED {:?}", taker_creator);
+                } else if creator_amount > 0 {
+                    let creator_data = get_transfer_token_ix(creator_amount, SendToken {
+                        from: sda.clone(),
+                        from_ata: sda_ata.clone(),
+                        to: ctx.accounts.taker_creator1.to_account_info(),
+                        to_ata: ctx.accounts.taker_creator1_token_ata.clone(),
+                        token_program: token_program.clone(),
+                    }).unwrap();
+
+                    msg!(
+                        "1 maker pays {:?} of {:?} from {:?} to {:?} ",
+                        creator_amount,
+                        payment_mint,
+                        ctx.accounts.swap_data_account.key(),
+                        ctx.accounts.taker_creator1.key()
+                    );
+                    invoke_signed(
+                        &creator_data.instruction,
+                        &creator_data.account_infos,
+                        &[&[&seed[..], &[bump]]]
+                    )?;
+                } else {
+                    msg!("taker 1 amount {:?}", taker_creator);
+                }
+            }
+
+            if taker_creators.len() >= 3 {
+                let taker_creator = taker_creators[2].clone();
+
+                let creator_amount =
+                    (maker_amount * (taker_creator.share as u64)) / taker_verified_shares;
+                if taker_creator.verified == false {
+                    msg!("taker 2 UNVERIFIED {:?}", taker_creator);
+                } else if creator_amount > 0 {
+                    let creator_data = get_transfer_token_ix(creator_amount, SendToken {
+                        from: sda.clone(),
+                        from_ata: sda_ata.clone(),
+                        to: ctx.accounts.taker_creator2.to_account_info(),
+                        to_ata: ctx.accounts.taker_creator2_token_ata.clone(),
+                        token_program: token_program.clone(),
+                    }).unwrap();
+
+                    msg!(
+                        "2 maker pays {:?} of {:?} from {:?} to {:?} ",
+                        creator_amount,
+                        ctx.accounts.swap_data_account.payment_mint,
+                        ctx.accounts.swap_data_account.key(),
+                        ctx.accounts.taker_creator2.key()
+                    );
+                    invoke_signed(
+                        &creator_data.instruction,
+                        &creator_data.account_infos,
+                        &[&[&seed[..], &[bump]]]
+                    )?;
+                } else {
+                    msg!("taker 2 amount {:?}", taker_creator);
+                }
+            }
+        } else {
+            msg!("taker fee skipped");
+        }
+
+        ctx.accounts.swap_data_account.royalties_paid = true;
         Ok(())
     }
 
     pub fn claim_swap(ctx: Context<ClaimSwap>) -> Result<()> {
         require_keys_eq!(ctx.accounts.ns_fee.key(), NS_FEE_ACCOUNT, MYERROR::IncorrectFeeAccount);
+        require!(ctx.accounts.swap_data_account.royalties_paid == true, MYERROR::FeeNotPaid);
+
         let seed: &[u8] = ctx.accounts.swap_data_account.seed.as_bytes();
         let bump = ctx.bumps.swap_data_account;
 
@@ -305,7 +555,7 @@ pub mod neo_swap {
             auth_rules_program: ctx.accounts.auth_rules_program.to_account_info(),
             destination_token_record: ctx.accounts.destination_token_record.clone(),
             metadata_program: ctx.accounts.metadata_program.to_account_info(),
-            nft_master_edition: ctx.accounts.nft_master_edition.clone(),
+            nft_master_edition: ctx.accounts.maker_nft_master_edition.clone(),
             nft_metadata: ctx.accounts.maker_nft_metadata.to_account_info(),
             owner_token_record: ctx.accounts.owner_token_record.clone(),
             ata_program: ctx.accounts.ata_program.to_account_info(),
@@ -315,7 +565,7 @@ pub mod neo_swap {
         }).unwrap();
 
         msg!(
-            "nft transfer Back {:?} of {:?} from {:?} to {:?} ",
+            "nft transfer {:?} of {:?} from {:?} to {:?} ",
             1,
             ctx.accounts.nft_mint_maker.key(),
             ctx.accounts.swap_data_account_maker_nft_ata.key(),
@@ -329,29 +579,29 @@ pub mod neo_swap {
         )?;
 
         // Paying NS Fees
-        let neoswap_fee_amount =
-            accepted_bid.fees.maker_neoswap_fee + accepted_bid.fees.taker_neoswap_fee;
+        let neoswap_fee_amount = accepted_bid.maker_neoswap_fee + accepted_bid.taker_neoswap_fee;
+        if neoswap_fee_amount > 0 {
+            let ns_fee_data = get_transfer_token_ix(neoswap_fee_amount, SendToken {
+                from: ctx.accounts.swap_data_account.to_account_info(),
+                from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
+                to: ctx.accounts.ns_fee.to_account_info(),
+                to_ata: ctx.accounts.ns_fee_token_ata.clone(),
+                token_program: ctx.accounts.token_program.to_account_info(),
+            }).unwrap();
 
-        let ns_fee_data = get_transfer_token_ix(neoswap_fee_amount, SendToken {
-            from: ctx.accounts.swap_data_account.to_account_info(),
-            from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-            to: ctx.accounts.ns_fee.to_account_info(),
-            to_ata: ctx.accounts.nf_fee_token_ata.clone(),
-            token_program: ctx.accounts.token_program.to_account_info(),
-        }).unwrap();
-
-        msg!(
-            "token transfer {:?} of {:?} from {:?} to {:?} ",
-            ctx.accounts.swap_data_account_token_ata.amount,
-            ctx.accounts.swap_data_account.payment_mint,
-            ctx.accounts.swap_data_account.key(),
-            ctx.accounts.ns_fee.key()
-        );
-        invoke_signed(
-            &ns_fee_data.instruction,
-            &ns_fee_data.account_infos,
-            &[&[&seed[..], &[bump]]]
-        )?;
+            msg!(
+                "ns Fee token transfer {:?} of {:?} from {:?} to {:?} ",
+                neoswap_fee_amount,
+                ctx.accounts.swap_data_account.payment_mint,
+                ctx.accounts.swap_data_account.key(),
+                ctx.accounts.ns_fee.key()
+            );
+            invoke_signed(
+                &ns_fee_data.instruction,
+                &ns_fee_data.account_infos,
+                &[&[&seed[..], &[bump]]]
+            )?;
+        }
 
         //
         //
@@ -361,6 +611,32 @@ pub mod neo_swap {
 
         let _ = ctx.accounts.swap_data_account_maker_nft_ata.reload();
         let _ = ctx.accounts.swap_data_account_token_ata.reload();
+
+        if ctx.accounts.swap_data_account_token_ata.amount > 0 {
+            let ns_fee_data = get_transfer_token_ix(
+                ctx.accounts.swap_data_account_token_ata.amount,
+                SendToken {
+                    from: ctx.accounts.swap_data_account.to_account_info(),
+                    from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
+                    to: ctx.accounts.maker.to_account_info(),
+                    to_ata: ctx.accounts.maker_token_ata.clone(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                }
+            ).unwrap();
+
+            msg!(
+                "token transfer Back {:?} of {:?} from {:?} to {:?} ",
+                ctx.accounts.swap_data_account_token_ata.amount,
+                ctx.accounts.swap_data_account.payment_mint,
+                ctx.accounts.swap_data_account.key(),
+                ctx.accounts.ns_fee.key()
+            );
+            invoke_signed(
+                &ns_fee_data.instruction,
+                &ns_fee_data.account_infos,
+                &[&[&seed[..], &[bump]]]
+            )?;
+        }
 
         let ix1 = spl_token::instruction::close_account(
             &ctx.accounts.token_program.key,
@@ -400,186 +676,6 @@ pub mod neo_swap {
         )?;
         msg!("{} closed", ctx.accounts.swap_data_account_token_ata.key());
 
-        Ok(())
-    }
-
-    pub fn pay_royalties(ctx: Context<PayRoyalties>) -> Result<()> {
-        let seed: &[u8] = ctx.accounts.swap_data_account.seed.as_bytes();
-        let bump = ctx.bumps.swap_data_account;
-
-        let accepted_bid = ctx.accounts.swap_data_account.accepted_bid
-            .clone()
-            .expect(&MYERROR::IncorrectState.to_string());
-
-        // Paying Royalties
-        // Maker
-        let taker_amount = accepted_bid.fees.taker_royalties;
-        let maker_meta = get_metadata(ctx.accounts.maker_nft_metadata.clone());
-        let maker_creators = maker_meta.creators.unwrap();
-
-        let maker_creator0 = maker_creators[0].clone();
-        let creator0_data = get_transfer_token_ix(
-            (taker_amount * (maker_creator0.share as u64)) / 100,
-            SendToken {
-                from: ctx.accounts.swap_data_account.to_account_info(),
-                from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                to: ctx.accounts.maker_creator0.to_account_info(),
-                to_ata: ctx.accounts.maker_creator0_token_ata.clone(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-            }
-        ).unwrap();
-
-        msg!(
-            "taker pays {:?} of {:?} from {:?} to {:?} ",
-            ctx.accounts.swap_data_account_token_ata.amount,
-            ctx.accounts.swap_data_account.payment_mint,
-            ctx.accounts.swap_data_account.key(),
-            ctx.accounts.maker_creator0.key()
-        );
-        invoke_signed(
-            &creator0_data.instruction,
-            &creator0_data.account_infos,
-            &[&[&seed[..], &[bump]]]
-        )?;
-
-        if maker_creators.len() >= 1 {
-            let maker_creator = maker_creators[1].clone();
-            let creator1 = ctx.accounts.maker_creator1.clone().unwrap();
-            let creator_data = get_transfer_token_ix(
-                (taker_amount * (maker_creator.share as u64)) / 100,
-                SendToken {
-                    from: ctx.accounts.swap_data_account.to_account_info(),
-                    from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                    to: creator1.clone(),
-                    to_ata: ctx.accounts.maker_creator1_token_ata.clone(),
-                    token_program: ctx.accounts.token_program.to_account_info(),
-                }
-            ).unwrap();
-
-            msg!(
-                "taker pays {:?} of {:?} from {:?} to {:?} ",
-                ctx.accounts.swap_data_account_token_ata.amount,
-                ctx.accounts.swap_data_account.payment_mint,
-                ctx.accounts.swap_data_account.key(),
-                creator1.key()
-            );
-            invoke_signed(
-                &creator_data.instruction,
-                &creator_data.account_infos,
-                &[&[&seed[..], &[bump]]]
-            )?;
-        }
-
-        if maker_creators.len() >= 2 {
-            let maker_creator = maker_creators[2].clone();
-            let creator_data = get_transfer_token_ix(
-                (taker_amount * (maker_creator.share as u64)) / 100,
-                SendToken {
-                    from: ctx.accounts.swap_data_account.to_account_info(),
-                    from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                    to: ctx.accounts.maker_creator2.to_account_info(),
-                    to_ata: ctx.accounts.maker_creator2_token_ata.clone(),
-                    token_program: ctx.accounts.token_program.to_account_info(),
-                }
-            ).unwrap();
-
-            msg!(
-                "taker pays {:?} of {:?} from {:?} to {:?} ",
-                ctx.accounts.swap_data_account_token_ata.amount,
-                ctx.accounts.swap_data_account.payment_mint,
-                ctx.accounts.swap_data_account.key(),
-                ctx.accounts.maker_creator2.key()
-            );
-            invoke_signed(
-                &creator_data.instruction,
-                &creator_data.account_infos,
-                &[&[&seed[..], &[bump]]]
-            )?;
-        }
-
-        // Taker
-        let taker_meta = get_metadata(ctx.accounts.taker_nft_metadata.clone());
-        let taker_creators = taker_meta.creators.unwrap();
-        let maker_amount = accepted_bid.fees.maker_royalties;
-
-        let taker_creator0 = taker_creators[0].clone();
-        let creator0_data = get_transfer_token_ix(
-            (maker_amount * (taker_creator0.share as u64)) / 100,
-            SendToken {
-                from: ctx.accounts.swap_data_account.to_account_info(),
-                from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                to: ctx.accounts.taker_creator0.to_account_info(),
-                to_ata: ctx.accounts.taker_creator0_token_ata.clone(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-            }
-        ).unwrap();
-
-        msg!(
-            "maker pays {:?} of {:?} from {:?} to {:?} ",
-            ctx.accounts.swap_data_account_token_ata.amount,
-            ctx.accounts.swap_data_account.payment_mint,
-            ctx.accounts.swap_data_account.key(),
-            ctx.accounts.taker_creator0.key()
-        );
-        invoke_signed(
-            &creator0_data.instruction,
-            &creator0_data.account_infos,
-            &[&[&seed[..], &[bump]]]
-        )?;
-
-        if taker_creators.len() >= 1 {
-            let taker_creator = taker_creators[1].clone();
-            let creator_data = get_transfer_token_ix(
-                (taker_amount * (taker_creator.share as u64)) / 100,
-                SendToken {
-                    from: ctx.accounts.swap_data_account.to_account_info(),
-                    from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                    to: ctx.accounts.taker_creator1.to_account_info(),
-                    to_ata: ctx.accounts.taker_creator1_token_ata.clone(),
-                    token_program: ctx.accounts.token_program.to_account_info(),
-                }
-            ).unwrap();
-
-            msg!(
-                "maker pays {:?} of {:?} from {:?} to {:?} ",
-                ctx.accounts.swap_data_account_token_ata.amount,
-                ctx.accounts.swap_data_account.payment_mint,
-                ctx.accounts.swap_data_account.key(),
-                ctx.accounts.taker_creator1.key()
-            );
-            invoke_signed(
-                &creator_data.instruction,
-                &creator_data.account_infos,
-                &[&[&seed[..], &[bump]]]
-            )?;
-        }
-
-        if taker_creators.len() >= 2 {
-            let taker_creator = taker_creators[2].clone();
-            let creator_data = get_transfer_token_ix(
-                (taker_amount * (taker_creator.share as u64)) / 100,
-                SendToken {
-                    from: ctx.accounts.swap_data_account.to_account_info(),
-                    from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                    to: ctx.accounts.taker_creator2.to_account_info(),
-                    to_ata: ctx.accounts.taker_creator2_token_ata.clone(),
-                    token_program: ctx.accounts.token_program.to_account_info(),
-                }
-            ).unwrap();
-
-            msg!(
-                "maker pays {:?} of {:?} from {:?} to {:?} ",
-                ctx.accounts.swap_data_account_token_ata.amount,
-                ctx.accounts.swap_data_account.payment_mint,
-                ctx.accounts.swap_data_account.key(),
-                ctx.accounts.taker_creator2.key()
-            );
-            invoke_signed(
-                &creator_data.instruction,
-                &creator_data.account_infos,
-                &[&[&seed[..], &[bump]]]
-            )?;
-        }
         Ok(())
     }
 
@@ -734,10 +830,6 @@ pub mod neo_swap {
         ctx.accounts.swap_data_account.end_time = Clock::get()?.unix_timestamp + duration;
         Ok(())
     }
-    // //claim
-    //     let meta = get_metadata(ctx.accounts.nft_metadata.clone());
-    // let creators = meta.creators.clone().unwrap();
-    // creators.iter().for_each(|creator| {});
 }
 
 //
@@ -778,31 +870,17 @@ pub mod neo_swap {
 //
 //
 //
-
-#[derive(Accounts)]
-#[instruction(mint: Pubkey)]
-pub struct Initialize<'info> {
-    #[account(
-        init,
-        payer = maker,
-        seeds = [&get_seed_buffer(maker.key(), mint)],
-        bump,
-        space = SwapData::LEN
-    )]
-    swap_data_account: Box<Account<'info, SwapData>>,
-    #[account( mut )]
-    maker: Signer<'info>,
-    system_program: Program<'info, System>,
-}
 
 #[derive(Accounts)]
 #[instruction()]
 pub struct MakeSwap<'info> {
     #[account(
-        mut,
-        seeds = [&swap_data_account.seed.as_bytes()], 
+        init,
+        payer = maker,
+        seeds = [&get_seed_buffer(maker.key(), mint_nft.key())],
         bump,
-        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
+        space = SwapData::LEN
+        // constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     /// CHECK: in constraints
@@ -832,8 +910,8 @@ pub struct MakeSwap<'info> {
         )]
     maker_token_ata: Account<'info, TokenAccount>,
     #[account(constraint = maker_nft_ata.mint == mint_nft.key()  @ MYERROR::MintIncorrect)]
-    mint_nft: Account<'info, Mint>,
-    mint_token: Account<'info, Mint>,
+    mint_nft: Box<Account<'info, Mint>>,
+    mint_token: Box<Account<'info, Mint>>,
 
     /// CHECK: in constraints
     #[account( mut,
@@ -872,7 +950,6 @@ pub struct MakeSwap<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction()]
 pub struct TakeSwap<'info> {
     #[account(
         mut,
@@ -912,15 +989,15 @@ pub struct TakeSwap<'info> {
     )]
     taker_token_ata: Account<'info, TokenAccount>,
 
-    nft_mint_taker: Account<'info, Mint>,
+    nft_mint_taker: Box<Account<'info, Mint>>,
     #[account(constraint = mint_token.key().eq(&swap_data_account.payment_mint)  @ MYERROR::MintIncorrect)]
-    mint_token: Account<'info, Mint>,
+    mint_token: Box<Account<'info, Mint>>,
 
     /// CHECK: in constraints
     ns_fee: AccountInfo<'info>,
     #[account( mut, 
         constraint = ns_fee_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
-        constraint = ns_fee_token_ata.owner == ns_fee.key()  @ MYERROR::IncorrectOwner 
+        // constraint = ns_fee_token_ata.owner == ns_fee.key()  @ MYERROR::IncorrectOwner 
     )]
     ns_fee_token_ata: Account<'info, TokenAccount>,
 
@@ -965,6 +1042,7 @@ pub struct TakeSwap<'info> {
 pub struct ClaimSwap<'info> {
     #[account(
         mut,
+        close = maker,
         seeds = [&swap_data_account.seed.as_bytes()], 
         bump,
         constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker,
@@ -988,14 +1066,14 @@ pub struct ClaimSwap<'info> {
     #[account( mut )]
     ns_fee: AccountInfo<'info>,
     #[account( mut,
-        constraint = nf_fee_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
-        constraint = nf_fee_token_ata.owner.eq(ns_fee.key) @ MYERROR::IncorrectOwner )]
-    nf_fee_token_ata: Account<'info, TokenAccount>,
+        constraint = ns_fee_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
+        constraint = ns_fee_token_ata.owner.eq(ns_fee.key) @ MYERROR::IncorrectOwner )]
+    ns_fee_token_ata: Account<'info, TokenAccount>,
 
     taker: Signer<'info>,
     #[account(
         mut,
-        constraint = taker_maker_nft_ata.mint == nft_mint_taker.key() @ MYERROR::MintIncorrect,
+        constraint = taker_maker_nft_ata.mint == nft_mint_maker.key() @ MYERROR::MintIncorrect,
         constraint = taker_maker_nft_ata.owner == taker.key() @ MYERROR::IncorrectOwner
     )]
     taker_maker_nft_ata: Account<'info, TokenAccount>,
@@ -1008,32 +1086,36 @@ pub struct ClaimSwap<'info> {
 
     /// CHECK: logic
     maker: AccountInfo<'info>,
-
+    #[account( mut,
+        constraint = maker_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
+        constraint = maker_token_ata.owner.eq(maker.key) @ MYERROR::IncorrectOwner
+    )]
+    maker_token_ata: Account<'info, TokenAccount>,
     #[account(
         constraint = swap_data_account.nft_mint_maker.eq(&nft_mint_maker.key())  @ MYERROR::MintIncorrect
     )]
-    nft_mint_maker: Account<'info, Mint>,
-    #[account(
-        constraint = swap_data_account.nft_mint_taker.expect(&MYERROR::IncorrectState.to_string()).eq(&nft_mint_taker.key())  @ MYERROR::MintIncorrect,
-    )]
-    nft_mint_taker: Account<'info, Mint>,
+    nft_mint_maker: Box<Account<'info, Mint>>,
+    // #[account(
+    //     constraint = swap_data_account.nft_mint_taker.expect(&MYERROR::IncorrectState.to_string()).eq(&nft_mint_taker.key())  @ MYERROR::MintIncorrect,
+    // )]
+    // nft_mint_taker: Box<Account<'info, Mint>>,
 
     #[account(
         constraint = swap_data_account.payment_mint.eq(&mint_token.key())  @ MYERROR::MintIncorrect
     )]
-    mint_token: Account<'info, Mint>,
+    mint_token: Box<Account<'info, Mint>>,
 
-    /// CHECK: in constraints
-    #[account( mut,
-        seeds =[
-            b"metadata".as_ref(),
-            metadata_program.key().as_ref(),
-            nft_mint_maker.key().as_ref()],
-        bump,
-        owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
-        seeds::program = metadata_program.key()
-    )]
-    taker_nft_metadata: AccountInfo<'info>,
+    // /// CHECK: in constraints
+    // #[account( mut,
+    //     seeds =[
+    //         b"metadata".as_ref(),
+    //         metadata_program.key().as_ref(),
+    //         nft_mint_maker.key().as_ref()],
+    //     bump,
+    //     owner = metadata_program.key() @ MYERROR::IncorrectMetadata,
+    //     seeds::program = metadata_program.key()
+    // )]
+    // taker_nft_metadata: AccountInfo<'info>,
     /// CHECK: in constraints
     #[account( mut,
             seeds =[
@@ -1046,7 +1128,7 @@ pub struct ClaimSwap<'info> {
         )]
     maker_nft_metadata: AccountInfo<'info>,
     /// CHECK: in constraints
-    nft_master_edition: Option<AccountInfo<'info>>,
+    maker_nft_master_edition: Option<AccountInfo<'info>>,
     /// CHECK: in constraints
     #[account( mut )]
     owner_token_record: Option<AccountInfo<'info>>,
@@ -1108,8 +1190,8 @@ pub struct CancelSwap<'info> {
     maker_token_ata: Account<'info, TokenAccount>,
 
     #[account(constraint = maker_nft_ata.mint == nft_mint_maker.key()  @ MYERROR::MintIncorrect)]
-    nft_mint_maker: Account<'info, Mint>,
-    mint_token: Account<'info, Mint>,
+    nft_mint_maker: Box<Account<'info, Mint>>,
+    mint_token: Box<Account<'info, Mint>>,
 
     /// CHECK: in constraints
     #[account( mut,
@@ -1166,13 +1248,8 @@ pub struct PayRoyalties<'info> {
     #[account(
         constraint = swap_data_account.payment_mint.eq(&mint_token.key())  @ MYERROR::MintIncorrect
     )]
-    mint_token: Account<'info, Mint>,
-    // #[account(
-    //     constraint = swap_data_account.nft_mint_taker.expect(&MYERROR::IncorrectState.to_string()).eq(&nft_mint_taker.key())  @ MYERROR::MintIncorrect,
-    // )]
-    // nft_mint_taker: Account<'info, Mint>,
-    // #[account(constraint = swap_data_account.maker_nft_mint.eq(&nft_mint_maker.key())  @ MYERROR::MintIncorrect)]
-    // nft_mint_maker: Account<'info, Mint>,
+    mint_token: Box<Account<'info, Mint>>,
+
     /// CHECK: in constraints
     #[account( mut,
         seeds =[
@@ -1204,22 +1281,28 @@ pub struct PayRoyalties<'info> {
 
     /// CHECK: account checked in CPI
     maker_creator0: AccountInfo<'info>,
+    #[account( mut )]
     maker_creator0_token_ata: Account<'info, TokenAccount>,
     /// CHECK: account checked in CPI
-    maker_creator1: Option<AccountInfo<'info>>,
+    maker_creator1: AccountInfo<'info>,
+    #[account( mut )]
     maker_creator1_token_ata: Account<'info, TokenAccount>,
     /// CHECK: account checked in CPI
     maker_creator2: AccountInfo<'info>,
+    #[account( mut )]
     maker_creator2_token_ata: Account<'info, TokenAccount>,
 
     /// CHECK: account checked in CPI
     taker_creator0: AccountInfo<'info>,
+    #[account( mut )]
     taker_creator0_token_ata: Account<'info, TokenAccount>,
     /// CHECK: account checked in CPI
     taker_creator1: AccountInfo<'info>,
+    #[account( mut )]
     taker_creator1_token_ata: Account<'info, TokenAccount>,
     /// CHECK: account checked in CPI
     taker_creator2: AccountInfo<'info>,
+    #[account( mut )]
     taker_creator2_token_ata: Account<'info, TokenAccount>,
 }
 //
@@ -1347,22 +1430,16 @@ impl SwapData {
 pub struct Bid {
     collection: Pubkey, // collection of the NFT aker wants to get
     amount: i64, // amount of tokens to transfer. amount < 0 maker gives
-    fees: Fees, // Object fith amounts that need to be sent for paying fees
-}
-impl Bid {
-    const LEN: usize = 32 + 8 + Fees::LEN;
-}
 
-#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, PartialEq)]
-pub struct Fees {
+    // Object fith amounts that need to be sent for paying fees
     maker_neoswap_fee: u64,
     taker_neoswap_fee: u64, // Destinary : hardcoded
 
     taker_royalties: u64,
     maker_royalties: u64, // Destinary : Creators
 }
-impl Fees {
-    const LEN: usize = 8 * 4;
+impl Bid {
+    const LEN: usize = 32 + 8 * 5;
 }
 
 // pub enum TradeStatus {
@@ -1423,7 +1500,7 @@ pub struct SendToken<'info> {
     to: AccountInfo<'info>,
     to_ata: Account<'info, TokenAccount>,
 
-    // mint: Account<'info, Mint>,
+    // mint: Box<Account<'info, Mint>>,
 
     token_program: AccountInfo<'info>,
 }
@@ -1473,7 +1550,7 @@ pub struct TransferData<'a> {
 
 fn get_seed_buffer(maker: Pubkey, mint: Pubkey) -> Vec<u8> {
     let seed_str = get_seed_string(maker, mint);
-    msg!("seed_str {:?}", seed_str);
+    // msg!("seed_str {:?}", seed_str);
     seed_str.as_bytes().to_vec()
 }
 fn get_seed_string(maker: Pubkey, mint: Pubkey) -> String {
@@ -1629,6 +1706,8 @@ pub enum MYERROR {
     UnexpectedState,
     #[msg("Fee Account is not correct")]
     IncorrectFeeAccount,
+    #[msg("Royalties already paied")]
+    RoyaltiesAlreadyPaid,
 
     /// User errors 6100-6199
     #[msg("wrong signer, only maker can perform this action")]
@@ -1637,6 +1716,7 @@ pub enum MYERROR {
     NotTaker,
     #[msg("Owner Given is incorrect")]
     IncorrectOwner,
+
     /// Item errors 6200-6299
     #[msg("Collection is unverified")]
     UnVerifiedCollection,
@@ -1658,6 +1738,8 @@ pub enum MYERROR {
     AlreadyTaken,
     #[msg("Bid not found in the list of bids")]
     BidNotFound,
+    #[msg("Fees are not paid, please pay the fees before claiming the swap")]
+    FeeNotPaid,
 
     /// Program errors 6900-6999
     #[msg("Incorrect Sysvar Instruction Program")]
