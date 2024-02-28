@@ -5,40 +5,6 @@ export const idlSwap: Idl = {
     docs: ["@title List of function to manage NeoSwap's multi-items swaps"],
     instructions: [
         {
-            name: "initialize",
-            accounts: [
-                {
-                    name: "swapDataAccount",
-                    isMut: true,
-                    isSigner: false,
-                },
-                {
-                    name: "maker",
-                    isMut: true,
-                    isSigner: true,
-                },
-                {
-                    name: "systemProgram",
-                    isMut: false,
-                    isSigner: false,
-                },
-            ],
-            args: [
-                {
-                    name: "mint",
-                    type: "publicKey",
-                },
-                {
-                    name: "paymentMint",
-                    type: "publicKey",
-                },
-                {
-                    name: "duration",
-                    type: "i64",
-                },
-            ],
-        },
-        {
             name: "makeSwap",
             accounts: [
                 {
@@ -148,6 +114,10 @@ export const idlSwap: Idl = {
                         defined: "Bid",
                     },
                 },
+                {
+                    name: "duration",
+                    type: "i64",
+                },
             ],
         },
         {
@@ -155,6 +125,11 @@ export const idlSwap: Idl = {
             accounts: [
                 {
                     name: "swapDataAccount",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "swapDataAccountTokenAta",
                     isMut: true,
                     isSigner: false,
                 },
@@ -189,13 +164,23 @@ export const idlSwap: Idl = {
                     isSigner: false,
                 },
                 {
-                    name: "takerMintNft",
+                    name: "nftMintTaker",
                     isMut: false,
                     isSigner: false,
                 },
                 {
                     name: "mintToken",
                     isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "nsFee",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "nsFeeTokenAta",
+                    isMut: true,
                     isSigner: false,
                 },
                 {
@@ -268,7 +253,7 @@ export const idlSwap: Idl = {
             ],
         },
         {
-            name: "addBid",
+            name: "payRoyalties",
             accounts: [
                 {
                     name: "swapDataAccount",
@@ -281,17 +266,22 @@ export const idlSwap: Idl = {
                     isSigner: false,
                 },
                 {
-                    name: "maker",
-                    isMut: true,
-                    isSigner: true,
+                    name: "mintToken",
+                    isMut: false,
+                    isSigner: false,
                 },
                 {
-                    name: "makerTokenAta",
+                    name: "takerNftMetadata",
                     isMut: true,
                     isSigner: false,
                 },
                 {
-                    name: "mintToken",
+                    name: "makerNftMetadata",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "metadataProgram",
                     isMut: false,
                     isSigner: false,
                 },
@@ -300,15 +290,293 @@ export const idlSwap: Idl = {
                     isMut: false,
                     isSigner: false,
                 },
-            ],
-            args: [
                 {
-                    name: "bidToAdd",
-                    type: {
-                        defined: "Bid",
-                    },
+                    name: "makerCreator0",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "makerCreator0TokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "makerCreator1",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "makerCreator1TokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "makerCreator2",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "makerCreator2TokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "takerCreator0",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "takerCreator0TokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "takerCreator1",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "takerCreator1TokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "takerCreator2",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "takerCreator2TokenAta",
+                    isMut: true,
+                    isSigner: false,
                 },
             ],
+            args: [],
+        },
+        {
+            name: "claimSwap",
+            accounts: [
+                {
+                    name: "swapDataAccount",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "swapDataAccountMakerNftAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "swapDataAccountTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "nsFee",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "nsFeeTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "taker",
+                    isMut: false,
+                    isSigner: true,
+                },
+                {
+                    name: "takerMakerNftAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "takerTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "maker",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "nftMintMaker",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "mintToken",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "makerNftMetadata",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "makerNftMasterEdition",
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "ownerTokenRecord",
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "destinationTokenRecord",
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "authRules",
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "systemProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "metadataProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "sysvarInstructions",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "tokenProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "ataProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "authRulesProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+            ],
+            args: [],
+        },
+        {
+            name: "cancelSwap",
+            accounts: [
+                {
+                    name: "swapDataAccount",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "swapDataAccountNftAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "swapDataAccountTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "maker",
+                    isMut: false,
+                    isSigner: true,
+                },
+                {
+                    name: "makerNftAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "makerTokenAta",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "nftMintMaker",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "mintToken",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "nftMetadata",
+                    isMut: true,
+                    isSigner: false,
+                },
+                {
+                    name: "nftMasterEdition",
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "ownerTokenRecord",
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "destinationTokenRecord",
+                    isMut: true,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "authRules",
+                    isMut: false,
+                    isSigner: false,
+                    isOptional: true,
+                },
+                {
+                    name: "systemProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "metadataProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "sysvarInstructions",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "tokenProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "ataProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+                {
+                    name: "authRulesProgram",
+                    isMut: false,
+                    isSigner: false,
+                },
+            ],
+            args: [],
         },
         {
             name: "overrideTime",
@@ -343,7 +611,7 @@ export const idlSwap: Idl = {
                         type: "publicKey",
                     },
                     {
-                        name: "makerNftMint",
+                        name: "nftMintMaker",
                         type: "publicKey",
                     },
                     {
@@ -361,7 +629,7 @@ export const idlSwap: Idl = {
                         },
                     },
                     {
-                        name: "takerNftMint",
+                        name: "nftMintTaker",
                         type: {
                             option: "publicKey",
                         },
@@ -409,20 +677,6 @@ export const idlSwap: Idl = {
                         type: "i64",
                     },
                     {
-                        name: "fees",
-                        type: {
-                            defined: "Fees",
-                        },
-                    },
-                ],
-            },
-        },
-        {
-            name: "Fees",
-            type: {
-                kind: "struct",
-                fields: [
-                    {
                         name: "makerNeoswapFee",
                         type: "u64",
                     },
@@ -465,53 +719,78 @@ export const idlSwap: Idl = {
         },
         {
             code: 6004,
+            name: "IncorrectFeeAccount",
+            msg: "Fee Account is not correct",
+        },
+        {
+            code: 6005,
+            name: "RoyaltiesAlreadyPaid",
+            msg: "Royalties already paied",
+        },
+        {
+            code: 6006,
             name: "NotMaker",
             msg: "wrong signer, only maker can perform this action",
         },
         {
-            code: 6005,
+            code: 6007,
             name: "NotTaker",
             msg: "wrong address for Taker",
         },
         {
-            code: 6006,
+            code: 6008,
             name: "IncorrectOwner",
             msg: "Owner Given is incorrect",
         },
         {
-            code: 6007,
+            code: 6009,
             name: "UnVerifiedCollection",
             msg: "Collection is unverified",
         },
         {
-            code: 6008,
+            code: 6010,
             name: "IncorrectCollection",
             msg: "Collection doesnt't match givent mint collection",
         },
         {
-            code: 6009,
+            code: 6011,
+            name: "UnVerifiedCreator",
+            msg: "Creator is unverified",
+        },
+        {
+            code: 6012,
             name: "AlreadyExist",
             msg: "The item you're trying to add already exists in the SDA",
         },
         {
-            code: 6010,
+            code: 6013,
             name: "CannotFindAccount",
             msg: "Cannot find the account",
         },
         {
-            code: 6011,
+            code: 6014,
             name: "IncorrectState",
             msg: "Swap is not in the adequate state to perform this action",
         },
         {
-            code: 6012,
+            code: 6015,
             name: "CollectionNotFound",
             msg: "Cannot find the given collection in the SDA",
         },
         {
-            code: 6013,
+            code: 6016,
             name: "AlreadyTaken",
             msg: "Swap already accepted",
+        },
+        {
+            code: 6017,
+            name: "BidNotFound",
+            msg: "Bid not found in the list of bids",
+        },
+        {
+            code: 6018,
+            name: "FeeNotPaid",
+            msg: "Fees are not paid, please pay the fees before claiming the swap",
         },
         {
             code: 6900,
