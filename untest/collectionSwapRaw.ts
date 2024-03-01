@@ -47,7 +47,7 @@ import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { AnchorProvider, Idl, Wallet } from "@coral-xyz/anchor";
 const user6 = Keypair.fromSecretKey(user6Sk);
 
-import { idlSwap } from "./idl";
+import { idlSwap } from "../tests/idl";
 import { Metaplex } from "@metaplex-foundation/js";
 import { none, some } from "@metaplex-foundation/umi";
 
@@ -70,7 +70,9 @@ describe("compressed NFT Test Unit", () => {
     let nsFee = new PublicKey("FjecsBcSXQh4rjPSksh2eBiXUswcMpAwU25ykcr842j8");
     // let swapDataAccount = new PublicKey("7Vnt8ifj2w3NrLcbt5dyyqpPnJxsvh7V9x1q7eL1tNw6"); // one way
     let swapDataAccount = new PublicKey("AbJJYus1SBmXtDBJeRGezFhaoHonSrkDEJCHYLUAKdzr"); // reverse
+    
     // let swapDataAccount: PublicKey | undefined = undefined;
+
     // let maker_mint = new PublicKey("8n6EL6wceWymYJdfJvfRxiXWmcfX9tySsRXDRqZxSe1f");
     // let maker_collection = new PublicKey("BamRUYoLsaomADRMdE2HXdpu9N8CUdCWwswup3yDjjBF");
 
@@ -85,7 +87,7 @@ describe("compressed NFT Test Unit", () => {
     let maker_collection = new PublicKey("DvwXZN69F8eRVSoac2qMzSdceDQCBWQWVWqWjpbcG8o4");
 
     let paymentMint = new PublicKey("VkW2xoKYRe8zVJgtX6otepGpw7cVvVMF2jVBPxDopw3");
-    let duration = new BN(0);
+    let endBid = new BN(0);
 
     let bid: Bid = {
         collection: taker_collection,
@@ -213,7 +215,7 @@ describe("compressed NFT Test Unit", () => {
                 console.log("bid", bid);
 
                 const initIx = await program.methods
-                    .makeSwap(bid, duration)
+                    .makeSwap(bid, endBid)
                     .accounts({
                         swapDataAccount,
                         swapDataAccountNftAta,
