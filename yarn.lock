@@ -1467,8 +1467,8 @@ __metadata:
   linkType: hard
 
 "@neoswap/solana-collection-swap@file:../NPM::locator=root-workspace-0b6124%40workspace%3A.":
-  version: 0.1.0-Beta4
-  resolution: "@neoswap/solana-collection-swap@file:../NPM#../NPM::hash=9d4633&locator=root-workspace-0b6124%40workspace%3A."
+  version: 0.1.2
+  resolution: "@neoswap/solana-collection-swap@file:../NPM#../NPM::hash=c980a7&locator=root-workspace-0b6124%40workspace%3A."
   dependencies:
     "@coral-xyz/anchor": ^0.28.0
     "@metaplex-foundation/js": ^0.19.5
@@ -1484,7 +1484,7 @@ __metadata:
     bs58: ^5.0.0
     parcel: ^2.5.0
     typescript: ^4.6.3
-  checksum: 45cf7b7b18fe79f2e50bb0f736e8e497bfdaf891429121a06d113ff13cb2fd5a8d6bb7337ca008110cd8a1971a7a102f5caf08ba6c4b75d2c3c4b32324e522a4
+  checksum: 1e794e01ec00ab9d8c0ea58608894ec1dac79a46e6f0ec5bc99c548ad15998db6a0774e306d1e54a9d327d8e875604c32cdee869e64cab604620dd560bad2d6c
   languageName: node
   linkType: hard
 
@@ -6155,9 +6155,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.668":
-  version: 1.4.689
-  resolution: "electron-to-chromium@npm:1.4.689"
-  checksum: b7f5242d8788132e8bf08f725c9711ff27474dc9f6b72cccf6b5ef22411f219d35747055fbc4e00c6286f4f8ddb3b625cd2724a0461b001e9832d212de2626d7
+  version: 1.4.690
+  resolution: "electron-to-chromium@npm:1.4.690"
+  checksum: c3fd731041dde1096ede37aded29a08e77e80182f3f602ad065c88323ea0cbcad3d9b10a86a107b9db41dde19b6f3ed81b9e0cde30e9b2338bf75a239ad57b3b
   languageName: node
   linkType: hard
 
