@@ -858,7 +858,7 @@ pub struct MakeSwap<'info> {
     /// CHECK: in constraints
     #[account(
         mut,
-        constraint = swap_data_account_nft_ata.owner == swap_data_account.to_account_info().key()  @ MYERROR::IncorrectOwner
+        constraint = swap_data_account_nft_ata.owner.eq(&swap_data_account.to_account_info().key() ) @ MYERROR::IncorrectOwner
     )]
     swap_data_account_nft_ata: Account<'info, TokenAccount>,
     /// CHECK: inside the function Logic
@@ -869,8 +869,8 @@ pub struct MakeSwap<'info> {
     maker: Signer<'info>,
     #[account(
         mut,
-        constraint = maker_nft_ata.mint == nft_mint_maker.key() @ MYERROR::MintIncorrect,
-        constraint = maker_nft_ata.owner == maker.key() @ MYERROR::IncorrectOwner
+        constraint = maker_nft_ata.mint.eq(&nft_mint_maker.key()) @ MYERROR::MintIncorrect,
+        constraint = maker_nft_ata.owner.eq(&maker.key()) @ MYERROR::IncorrectOwner
     )]
     maker_nft_ata: Account<'info, TokenAccount>,
     /// CHECK: inside the function Logic
@@ -881,7 +881,7 @@ pub struct MakeSwap<'info> {
             )  @ MYERROR::IncorrectOwner
         )]
     maker_token_ata: Account<'info, TokenAccount>,
-    #[account(constraint = maker_nft_ata.mint == nft_mint_maker.key()  @ MYERROR::MintIncorrect)]
+    #[account(constraint = maker_nft_ata.mint.eq(&nft_mint_maker.key()) @ MYERROR::MintIncorrect)]
     nft_mint_maker: Box<Account<'info, Mint>>,
     mint_token: Box<Account<'info, Mint>>,
 
@@ -927,23 +927,24 @@ pub struct TakeSwap<'info> {
         mut,
         seeds = [&swap_data_account.seed.as_bytes()],
         bump,
-        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
+        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker,
+        constraint = mint_token.key().eq(&swap_data_account.payment_mint)  @ MYERROR::MintIncorrect,
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account( mut,
-        constraint = swap_data_account_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
+        constraint = swap_data_account_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
         constraint = swap_data_account_token_ata.owner.eq(&swap_data_account.key()) @ MYERROR::IncorrectOwner )]
     swap_data_account_token_ata: Account<'info, TokenAccount>,
     /// CHECK: Maker
     maker: AccountInfo<'info>,
     #[account( mut, 
-        constraint = maker_nft_ata.mint == nft_mint_taker.key() @ MYERROR::MintIncorrect,
-        constraint = maker_nft_ata.owner == maker.key()  @ MYERROR::IncorrectOwner 
+        constraint = maker_nft_ata.mint.eq(&nft_mint_taker.key()) @ MYERROR::MintIncorrect,
+        constraint = maker_nft_ata.owner.eq(&maker.key() ) @ MYERROR::IncorrectOwner 
     )]
     maker_nft_ata: Account<'info, TokenAccount>,
     #[account( mut, 
-        constraint = maker_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
-        constraint = maker_token_ata.owner == maker.key()  @ MYERROR::IncorrectOwner 
+        constraint = maker_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
+        constraint = maker_token_ata.owner.eq(&maker.key() ) @ MYERROR::IncorrectOwner 
     )]
     maker_token_ata: Account<'info, TokenAccount>,
 
@@ -951,27 +952,18 @@ pub struct TakeSwap<'info> {
     taker: Signer<'info>,
     #[account(
         mut,
-        constraint = taker_nft_ata.mint == nft_mint_taker.key() @ MYERROR::MintIncorrect,
-        constraint = taker_nft_ata.owner == taker.key() @ MYERROR::IncorrectOwner
+        constraint = taker_nft_ata.mint.eq(&nft_mint_taker.key()) @ MYERROR::MintIncorrect,
+        constraint = taker_nft_ata.owner.eq(&taker.key()) @ MYERROR::IncorrectOwner
     )]
     taker_nft_ata: Account<'info, TokenAccount>,
     #[account( mut,
-        constraint = taker_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
+        constraint = taker_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
         constraint = taker_token_ata.owner.eq(taker.key) @ MYERROR::IncorrectOwner
     )]
     taker_token_ata: Account<'info, TokenAccount>,
 
     nft_mint_taker: Box<Account<'info, Mint>>,
-    #[account(constraint = mint_token.key().eq(&swap_data_account.payment_mint)  @ MYERROR::MintIncorrect)]
     mint_token: Box<Account<'info, Mint>>,
-
-    // /// CHECK: in constraints
-    // ns_fee: AccountInfo<'info>,
-    // #[account( mut,
-    //     constraint = ns_fee_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
-    //     // constraint = ns_fee_token_ata.owner == ns_fee.key()  @ MYERROR::IncorrectOwner
-    // )]
-    // ns_fee_token_ata: Account<'info, TokenAccount>,
 
     /// CHECK: in constraints
     #[account( mut,
@@ -1015,13 +1007,12 @@ pub struct PayRoyalties<'info> {
     #[account(
         mut,
         seeds = [&swap_data_account.seed.as_bytes()], 
-        bump,
-        
+        bump, 
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     /// CHECK: in constraints
     #[account( mut,
-        constraint = swap_data_account_token_ata.mint == mint_token.key() @ MYERROR::MintIncorrect,
+        constraint = swap_data_account_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
         constraint = swap_data_account_token_ata.owner.eq(&swap_data_account.key()) @ MYERROR::IncorrectOwner )]
     swap_data_account_token_ata: Account<'info, TokenAccount>,
 
@@ -1143,11 +1134,12 @@ pub struct ClaimSwap<'info> {
         constraint = swap_data_account.nft_mint_maker.eq(&nft_mint_maker.key())  @ MYERROR::MintIncorrect
     )]
     nft_mint_maker: Box<Account<'info, Mint>>,
-    signer: Signer<'info>,
     #[account(
         constraint = swap_data_account.payment_mint.eq(&mint_token.key())  @ MYERROR::MintIncorrect
     )]
     mint_token: Box<Account<'info, Mint>>,
+
+    signer: Signer<'info>,
 
     /// CHECK: in constraints
     #[account( mut,
