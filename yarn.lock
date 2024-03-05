@@ -1466,9 +1466,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@neoswap/solana@file:../NPM::locator=root-workspace-0b6124%40workspace%3A.":
-  version: 0.5.0-Beta0
-  resolution: "@neoswap/solana@file:../NPM#../NPM::hash=abe77a&locator=root-workspace-0b6124%40workspace%3A."
+"@neoswap/solana-collection-swap@file:../NPM::locator=root-workspace-0b6124%40workspace%3A.":
+  version: 0.1.0-Beta4
+  resolution: "@neoswap/solana-collection-swap@file:../NPM#../NPM::hash=9d4633&locator=root-workspace-0b6124%40workspace%3A."
   dependencies:
     "@coral-xyz/anchor": ^0.28.0
     "@metaplex-foundation/js": ^0.19.5
@@ -1479,13 +1479,12 @@ __metadata:
     "@solana/spl-account-compression": 0.2.0
     "@solana/spl-token": ^0.3.7
     "@solana/web3.js": 1.87.6
-    "@types/bn.js": ^5.1.1
     "@types/debug": ^4.1.8
     "@types/node-fetch": ^2.6.4
     bs58: ^5.0.0
     parcel: ^2.5.0
     typescript: ^4.6.3
-  checksum: 260b20c3e4eaaf94a4e1633d0c6943a92d1dbba5a12ceee8f6d871d098224fcb31dd70649086657aa9b1e89f8f3bf2dbbea5d82cd05dae95397ed60498f5949f
+  checksum: 45cf7b7b18fe79f2e50bb0f736e8e497bfdaf891429121a06d113ff13cb2fd5a8d6bb7337ca008110cd8a1971a7a102f5caf08ba6c4b75d2c3c4b32324e522a4
   languageName: node
   linkType: hard
 
@@ -4043,15 +4042,6 @@ __metadata:
   dependencies:
     "@types/node": "*"
   checksum: e50ed2dd3abe997e047caf90e0352c71e54fc388679735217978b4ceb7e336e51477791b715f49fd77195ac26dd296c7bad08a3be9750e235f9b2e1edb1b51c2
-  languageName: node
-  linkType: hard
-
-"@types/bn.js@npm:^5.1.1":
-  version: 5.1.5
-  resolution: "@types/bn.js@npm:5.1.5"
-  dependencies:
-    "@types/node": "*"
-  checksum: c87b28c4af74545624f8a3dae5294b16aa190c222626e8d4b2e327b33b1a3f1eeb43e7a24d914a9774bca43d8cd6e1cb0325c1f4b3a244af6693a024e1d918e6
   languageName: node
   linkType: hard
 
@@ -9348,7 +9338,7 @@ __metadata:
     "@metaplex-foundation/mpl-token-metadata": ^3.2.0
     "@metaplex-foundation/umi": ^0.8.2
     "@metaplex-foundation/umi-bundle-defaults": ^0.8.2
-    "@neoswap/solana": "file:../NPM"
+    "@neoswap/solana-collection-swap": "file:../NPM"
     "@project-serum/anchor": ^0.25.0
     "@solana/spl-token": ^0.3.5
     "@solana/wallet-adapter-base": ^0.9.17

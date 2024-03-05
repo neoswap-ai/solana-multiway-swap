@@ -1,7 +1,7 @@
 [programs.devnet]
-neo_swap = "CtZHiWNnLu5rQuTN3jo7CmYDR8Wns6qXHn7taPvmnACp"
+neo_swap = "dJQt7qcMCamttsfYqoRjG8sD2fMsEEpg1XmhYYViJsW"
 [programs.localnet]
-neo_swap = "CtZHiWNnLu5rQuTN3jo7CmYDR8Wns6qXHn7taPvmnACp"
+neo_swap = "dJQt7qcMCamttsfYqoRjG8sD2fMsEEpg1XmhYYViJsW"
 [programs.mainnet]
 neo_swap = "5wW12LWQuwGW2mNHpDMqQSp5ijY41JgLGd1maGcywWA4"
 
