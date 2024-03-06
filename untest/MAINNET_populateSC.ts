@@ -40,6 +40,8 @@ const user4 = Keypair.fromSecretKey(user4Sk);
 import user5Sk from "../deleteme/user5";
 const user5 = Keypair.fromSecretKey(user5Sk);
 import user6Sk from "../deleteme/user6";
+import { WRAPPED_SOL_MINT } from "@metaplex-foundation/js";
+import { TOKEN_PROGRAM_ID, createTransferInstruction } from "@solana/spl-token";
 const user6 = Keypair.fromSecretKey(user6Sk);
 
 describe("compressed NFT Test Unit", () => {
@@ -65,7 +67,7 @@ describe("compressed NFT Test Unit", () => {
         "C7b3yy1dZPQATUpL17MfE1LAnKyXsMdA9bdEF82aUmnx",
         "F75nLh3M4AZS8KFqP21ACzZvo1TfghUE3LXCZajYGkot",
         "2M8WjKPHn24tMHDRqwo9TXz2ZUAFzug3r7UeUFrBqDGK",
-        "GW6mMEYA7wZrLhwYgmEf8aDcib6EGNDGkYszZsRE2uBU",
+        "GW6mMEYA7wZrLhwYgmEf8aDcib6EGNDGkYszZsRE2uBU", // 7LBKwGbx2H3hfnkMALFV1rKX1jv5sNfDwhCmgdymxPsq
     ];
 
     let Apeanas = "Hrn7amdBfEfyGZ2Y1E2xLor4Q2cz1dCEcNnKWC1ap9sS";
@@ -81,7 +83,7 @@ describe("compressed NFT Test Unit", () => {
     let pa = 0.01;
 
     let NCandy = [
-        "ENvJpH178z3SjpwrQkJojAC3BZcv3yx8fym6gr7mPbn2",
+        "ENvJpH178z3SjpwrQkJojAC3BZcv3yx8fym6gr7mPbn2", // 8DrwLrCmv8ehVjqXzW3zW2NwkqVhqLQ3a3bJvpPHhd6E
         "75xsAfTpWoiuctGNpi1SyAPJNiXH9EFZvwcE8gwNFqmN",
         "DDVKhzCpAc5MCGP4iiFeK5mgdPzoufqMkHsdVMaAmLK8",
     ];
@@ -118,48 +120,48 @@ describe("compressed NFT Test Unit", () => {
         console.log("getOpenSda", await neoSwap.UTILS.getOpenSda({ clusterOrUrl }));
     });
 
-    it("createMultiple", async () => {
-        console.log(neoConst.NEOSWAP_PROGRAM_ID_DEV.toString());
-        let idata = [];
-        await Promise.all(
-            NCandy.map(async (r, i) => {
-                await delay(500 * i);
-                let paymentMint = payments[Math.ceil(Math.random())];
-         
-                bid.collection = collections.filter((x) => x != candy)[
-                    Math.ceil(Math.random() * (collections.length - 2))
-                ];
-                console.log("bid.collection", bid.collection);
-                console.log("paymentMint", paymentMint);
-                console.log("r", r);
-                try {
-                    let initData = await neoSwap.makeSwap({
-                        maker: maker,
-                        bid,
-                        endDate,
-                        nftMintMaker: r,
-                        paymentMint,
-                        clusterOrUrl,
-                    });
-                    idata.push({ nft: r, initData });
-                    console.log("initData", initData);
-                } catch (error) {
-                    idata.push({
-                        data: {
-                            maker: maker,
-                            bid,
-                            endDate,
-                            nftMintMaker: r,
-                            paymentMint,
-                            clusterOrUrl,
-                        },
-                        error,
-                    });
-                }
-            })
-        );
-        console.log("idata", idata);
-    });
+    // it("createMultiple", async () => {
+    //     console.log(neoConst.NEOSWAP_PROGRAM_ID_DEV.toString());
+    //     let idata = [];
+    //     await Promise.all(
+    //         NCandy.map(async (r, i) => {
+    //             await delay(500 * i);
+    //             let paymentMint = payments[Math.ceil(Math.random())];
+
+    //             bid.collection = collections.filter((x) => x != candy)[
+    //                 Math.ceil(Math.random() * (collections.length - 2))
+    //             ];
+    //             console.log("bid.collection", bid.collection);
+    //             console.log("paymentMint", paymentMint);
+    //             console.log("r", r);
+    //             try {
+    //                 let initData = await neoSwap.makeSwap({
+    //                     maker: maker,
+    //                     bid,
+    //                     endDate,
+    //                     nftMintMaker: r,
+    //                     paymentMint,
+    //                     clusterOrUrl,
+    //                 });
+    //                 idata.push({ nft: r, initData });
+    //                 console.log("initData", initData);
+    //             } catch (error) {
+    //                 idata.push({
+    //                     data: {
+    //                         maker: maker,
+    //                         bid,
+    //                         endDate,
+    //                         nftMintMaker: r,
+    //                         paymentMint,
+    //                         clusterOrUrl,
+    //                     },
+    //                     error,
+    //                 });
+    //             }
+    //         })
+    //     );
+    //     console.log("idata", idata);
+    // });
 
     // it("takeAncCloseSwap", async () => {
     //     let hash = await neoSwap.takeAndCloseSwap({
@@ -230,6 +232,16 @@ describe("compressed NFT Test Unit", () => {
     //     );
     //     console.log("datas", datas);
     // });
+
+    it("send nft", async () => {
+        let mint = "ENvJpH178z3SjpwrQkJojAC3BZcv3yx8fym6gr7mPbn2";
+        let from = user1.publicKey.toString();
+        let to = user2.publicKey.toString();
+        let tx = await sendtoken(from, to, mint, connection);
+        // await simuTx(tx, from, connection);
+        const txSig = await connection.sendTransaction(tx, [maker]);
+        console.log("txSig", txSig);
+    });
 
     // it("makeSwap", async () => {
     //     console.log(neoConst.NEOSWAP_PROGRAM_ID_DEV.toString());
@@ -341,12 +353,13 @@ describe("compressed NFT Test Unit", () => {
     // it("cancelswap", async () => {
     //     try {
     //         let tx = await neoSwap.CREATE_INSTRUCTIONS.createCancelSwapInstructions({
-    //             swapDataAccount,
+    //             swapDataAccount: "7LBKwGbx2H3hfnkMALFV1rKX1jv5sNfDwhCmgdymxPsq",
     //             clusterOrUrl,
     //         });
-    //         await simuTx(tx, maker.publicKey, connection);
-    //         // const txSig = await connection.sendTransaction(tx[0].tx, [taker]);
-    //         // console.log("txSig", txSig);
+    //         await simuVTx(tx.tx, connection);
+    //         tx.tx.sign([user1]);
+    //         const txSig = await connection.sendTransaction(tx.tx);
+    //         console.log("txSig", txSig);
     //     } catch (error) {
     //         console.log(error);
     //         throw error;
@@ -362,9 +375,14 @@ type Bid = {
     takerRoyalties: BN;
     makerRoyalties: BN;
 };
+async function simuVTx(tx: VersionedTransaction, connection: Connection) {
+    tx.message.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-async function simuTx(tx: Transaction, signer: PublicKey, connection: Connection) {
-    tx.feePayer = signer;
+    let simu = await connection.simulateTransaction(tx);
+    console.log("simu", simu.value);
+}
+async function simuTx(tx: Transaction, signer: PublicKey | string, connection: Connection) {
+    tx.feePayer = new PublicKey(signer);
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
     let simu = await connection.simulateTransaction(new VersionedTransaction(tx.compileMessage()));
@@ -373,4 +391,43 @@ async function simuTx(tx: Transaction, signer: PublicKey, connection: Connection
 
 async function delay(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendtoken(from: string, to: string, mint: string, connection: Connection) {
+    let ixs = [];
+    let { mintAta: fromRevenueAta, instruction: fromAtaIx } = await neoSwap.UTILS.findOrCreateAta({
+        mint,
+        owner: from,
+        signer: from,
+        connection,
+    });
+    if (!!fromAtaIx) {
+        console.log("destAta", fromRevenueAta);
+        ixs.push(fromAtaIx);
+    }
+    let { mintAta: toRevenueAta, instruction: destAtaIx } = await neoSwap.UTILS.findOrCreateAta({
+        mint,
+        owner: to,
+        signer: from,
+        connection,
+    });
+
+    if (!!destAtaIx) {
+        console.log("destAta", toRevenueAta);
+        ixs.push(destAtaIx);
+    }
+    ixs.push(
+        createTransferInstruction(
+            new PublicKey(fromRevenueAta),
+            new PublicKey(toRevenueAta),
+            new PublicKey(from),
+            1,
+            [],
+            TOKEN_PROGRAM_ID
+        )
+    );
+    let tx = new Transaction().add(...ixs);
+    tx.feePayer = new PublicKey(from);
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    return tx;
 }

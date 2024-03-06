@@ -24,7 +24,7 @@ declare_id!("2vumtPDSVo3UKqYYxMVbDaQz1K4foQf6A31KiUaii1M7"); // mainnet test
 // declare_id!("Et2RutKNHzB6XmsDXUGnDHJAGAsJ73gdHVkoKyV79BFY");
 // declare_id!("HCg7NKnvWwWZdLXqDwZdjn9RDz9eLDYuSAcUHqeC1vmH");
 // declare_id!("EU5zoiRSvPE5k1Fy49UJZvPMBKxzatdBGFJ11XPFD42Z");
-// declare_id!("dJQt7qcMCamttsfYqoRjG8sD2fMsEEpg1XmhYYViJsW"); // devnet Test
+// declare_id!("28c8n7mgURdiuo1n2Po7kjMNqnhNihMC5aJLTG6bLn5E"); // devnet Test
 
 ///@title List of function to manage NeoSwap's multi-items swaps
 #[program]
@@ -133,9 +133,9 @@ pub mod neo_swap {
         require!(swap_data_account.accepted_bid.is_none(), MYERROR::AlreadyTaken);
         require!(swap_data_account.nft_mint_taker.is_none(), MYERROR::AlreadyTaken);
         require!(swap_data_account.taker.is_none(), MYERROR::AlreadyTaken);
-        require_gt!(
-            swap_data_account.end_time,
-            Clock::get().unwrap().unix_timestamp,
+        require!(
+            swap_data_account.end_time > Clock::get().unwrap().unix_timestamp ||
+                swap_data_account.end_time.eq(&0),
             MYERROR::TooLate
         );
 
@@ -651,7 +651,8 @@ pub mod neo_swap {
         require!(ctx.accounts.swap_data_account.accepted_bid.is_none(), MYERROR::IncorrectState);
         require!(
             ctx.accounts.maker.key().eq(&ctx.accounts.swap_data_account.maker) ||
-                Clock::get().unwrap().unix_timestamp > ctx.accounts.swap_data_account.end_time,
+                (!ctx.accounts.swap_data_account.end_time.eq(&0) &&
+                    Clock::get().unwrap().unix_timestamp > ctx.accounts.swap_data_account.end_time),
             MYERROR::TooEarly
         );
 
@@ -1500,7 +1501,7 @@ pub struct TransferData<'a> {
 //
 //
 fn shorten(address: Pubkey) -> String {
-    address.to_string().split_at(4).0.to_owned() + "..." + address.to_string().split_at(28).1
+    address.to_string().split_at(4).0.to_owned() + "..." + address.to_string().split_at(40).1
 }
 
 fn get_seed_buffer(maker: Pubkey, mint: Pubkey) -> Vec<u8> {

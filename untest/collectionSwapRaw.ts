@@ -60,7 +60,7 @@ describe("compressed NFT Test Unit", () => {
     // "https://compatible-late-wildflower.solana-mainnet.quiknode.pro/58382ac09eaaeea48164b2f768abeb4b522bf3e0/";
     // let clusterOrUrl = "devnet";
     let connection = new Connection(clusterOrUrl);
-    let pidPk = new PublicKey("dJQt7qcMCamttsfYqoRjG8sD2fMsEEpg1XmhYYViJsW");
+    let pidPk = new PublicKey("28c8n7mgURdiuo1n2Po7kjMNqnhNihMC5aJLTG6bLn5E");
     let program = new Program(
         idlSwap as anchor.Idl,
         pidPk,
