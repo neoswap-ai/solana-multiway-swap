@@ -50,7 +50,7 @@ pub mod neo_swap {
 
         swap_data_account.end_time = end_date;
 
-        swap_data_account.seed = get_seed_string(maker.key(), nft_mint_maker.key());
+        swap_data_account.seed = init_get_seed_string(maker.key(), nft_mint_maker.key());
         swap_data_account.payment_mint = ctx.accounts.mint_token.key();
 
         require_keys_eq!(
@@ -256,7 +256,7 @@ pub mod neo_swap {
             ctx.accounts.swap_data_account.royalties_paid == false,
             MYERROR::RoyaltiesAlreadyPaid
         );
-        let seed: &[u8] = ctx.accounts.swap_data_account.seed.as_bytes();
+        let seed: &[u8] = &get_seed_buffer(ctx.accounts.swap_data_account.clone());
         let bump = ctx.bumps.swap_data_account;
 
         let payment_mint = ctx.accounts.swap_data_account.payment_mint;
@@ -475,7 +475,7 @@ pub mod neo_swap {
         require_keys_eq!(ctx.accounts.ns_fee.key(), NS_FEE_ACCOUNT, MYERROR::IncorrectFeeAccount);
         require!(ctx.accounts.swap_data_account.royalties_paid == true, MYERROR::FeeNotPaid);
 
-        let seed: &[u8] = ctx.accounts.swap_data_account.seed.as_bytes();
+        let seed: &[u8] = &get_seed_buffer(ctx.accounts.swap_data_account.clone());
         let bump = ctx.bumps.swap_data_account;
 
         let accepted_bid = ctx.accounts.swap_data_account.accepted_bid
@@ -645,7 +645,7 @@ pub mod neo_swap {
     }
 
     pub fn cancel_swap(ctx: Context<CancelSwap>) -> Result<()> {
-        let seed: &[u8] = ctx.accounts.swap_data_account.seed.as_bytes();
+        let seed: &[u8] = &get_seed_buffer(ctx.accounts.swap_data_account.clone());
         let bump = ctx.bumps.swap_data_account;
 
         require!(ctx.accounts.swap_data_account.accepted_bid.is_none(), MYERROR::IncorrectState);
@@ -850,7 +850,7 @@ pub struct MakeSwap<'info> {
     #[account(
         init,
         payer = maker,
-        seeds = [&get_seed_buffer(maker.key(), nft_mint_maker.key())],
+        seeds = [&init_get_seed_buffer(maker.key(), nft_mint_maker.key())],
         bump,
         space = SwapData::LEN
         // constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
@@ -859,11 +859,15 @@ pub struct MakeSwap<'info> {
     /// CHECK: in constraints
     #[account(
         mut,
+        constraint = swap_data_account_nft_ata.mint.eq(&nft_mint_maker.key()) @ MYERROR::MintIncorrect,
         constraint = swap_data_account_nft_ata.owner.eq(&swap_data_account.to_account_info().key() ) @ MYERROR::IncorrectOwner
     )]
     swap_data_account_nft_ata: Account<'info, TokenAccount>,
     /// CHECK: inside the function Logic
-    #[account( mut )]
+    #[account( mut,
+        constraint = swap_data_account_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
+        constraint = swap_data_account_token_ata.owner.eq(&swap_data_account.key()) @ MYERROR::IncorrectOwner
+     )]
     swap_data_account_token_ata: Account<'info, TokenAccount>,
 
     #[account( mut )]
@@ -876,13 +880,11 @@ pub struct MakeSwap<'info> {
     maker_nft_ata: Account<'info, TokenAccount>,
     /// CHECK: inside the function Logic
     #[account( mut,
-            constraint = (
-                maker_token_ata.owner.eq(maker.key) 
-                || maker_token_ata.key().eq(maker.key)
-            )  @ MYERROR::IncorrectOwner
-        )]
+        constraint = maker_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
+        constraint = maker_token_ata.owner.eq(maker.key)  @ MYERROR::IncorrectOwner,
+    )]
     maker_token_ata: Account<'info, TokenAccount>,
-    #[account(constraint = maker_nft_ata.mint.eq(&nft_mint_maker.key()) @ MYERROR::MintIncorrect)]
+
     nft_mint_maker: Box<Account<'info, Mint>>,
     mint_token: Box<Account<'info, Mint>>,
 
@@ -926,7 +928,7 @@ pub struct MakeSwap<'info> {
 pub struct TakeSwap<'info> {
     #[account(
         mut,
-        seeds = [&swap_data_account.seed.as_bytes()],
+        seeds = [&get_seed_buffer(swap_data_account.clone())],
         bump,
         constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker,
         constraint = mint_token.key().eq(&swap_data_account.payment_mint)  @ MYERROR::MintIncorrect,
@@ -1007,7 +1009,7 @@ pub struct TakeSwap<'info> {
 pub struct PayRoyalties<'info> {
     #[account(
         mut,
-        seeds = [&swap_data_account.seed.as_bytes()], 
+        seeds = [&get_seed_buffer(swap_data_account.clone())],
         bump, 
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
@@ -1084,11 +1086,8 @@ pub struct ClaimSwap<'info> {
     #[account(
         mut,
         close = maker,
-        seeds = [&swap_data_account.seed.as_bytes()], 
+        seeds = [&get_seed_buffer(swap_data_account.clone())],
         bump,
-        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker,
-        constraint = taker.key().eq(&swap_data_account.taker.expect(&MYERROR::IncorrectState.to_string()))  @ MYERROR::NotTaker,
-        constraint = nft_mint_maker.key().eq(&swap_data_account.nft_mint_maker)  @ MYERROR::MintIncorrect        
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
     #[account(
@@ -1110,6 +1109,9 @@ pub struct ClaimSwap<'info> {
         constraint = ns_fee_token_ata.owner.eq(ns_fee.key) @ MYERROR::IncorrectOwner )]
     ns_fee_token_ata: Account<'info, TokenAccount>,
     /// CHECK : in constraints
+    #[account( mut,
+        constraint = taker.key().eq(&swap_data_account.taker.expect(&MYERROR::IncorrectState.to_string()))  @ MYERROR::NotTaker,
+    )]
     taker: AccountInfo<'info>,
     #[account(
         mut,
@@ -1124,7 +1126,9 @@ pub struct ClaimSwap<'info> {
     taker_token_ata: Account<'info, TokenAccount>,
 
     /// CHECK: logic
-    #[account( mut )]
+    #[account( mut,
+        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker,
+     )]
     maker: AccountInfo<'info>,
     #[account( mut,
         constraint = maker_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
@@ -1132,11 +1136,11 @@ pub struct ClaimSwap<'info> {
     )]
     maker_token_ata: Account<'info, TokenAccount>,
     #[account(
-        constraint = swap_data_account.nft_mint_maker.eq(&nft_mint_maker.key())  @ MYERROR::MintIncorrect
+        constraint = nft_mint_maker.key().eq(&swap_data_account.nft_mint_maker)  @ MYERROR::MintIncorrect ,       
     )]
     nft_mint_maker: Box<Account<'info, Mint>>,
     #[account(
-        constraint = swap_data_account.payment_mint.eq(&mint_token.key())  @ MYERROR::MintIncorrect
+        constraint = mint_token.key().eq(&swap_data_account.payment_mint)  @ MYERROR::MintIncorrect        
     )]
     mint_token: Box<Account<'info, Mint>>,
 
@@ -1183,9 +1187,8 @@ pub struct CancelSwap<'info> {
     #[account(
         mut,
         close = maker,
-        seeds = [&swap_data_account.seed.as_bytes()], 
+        seeds = [&get_seed_buffer(swap_data_account.clone())],
         bump,
-        constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
     )]
     swap_data_account: Box<Account<'info, SwapData>>,
 
@@ -1201,7 +1204,7 @@ pub struct CancelSwap<'info> {
         constraint = swap_data_account_token_ata.owner.eq(&swap_data_account.to_account_info().key() ) @ MYERROR::IncorrectOwner
     )]
     swap_data_account_token_ata: Account<'info, TokenAccount>,
-
+    #[account( constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker )]
     maker: Signer<'info>,
     #[account(
         mut,
@@ -1211,15 +1214,14 @@ pub struct CancelSwap<'info> {
     maker_nft_ata: Account<'info, TokenAccount>,
     /// CHECK: inside the function Logic
     #[account( mut,
-            constraint = (
-                maker_token_ata.owner.eq(maker.key) 
-                || maker_token_ata.key().eq(maker.key)
-            )  @ MYERROR::IncorrectOwner
+            constraint = maker_token_ata.owner.eq(&maker.key())  @ MYERROR::IncorrectOwner,
+            constraint = maker_token_ata.mint.eq(&mint_token.key()) @ MYERROR::MintIncorrect,
         )]
     maker_token_ata: Account<'info, TokenAccount>,
 
-    #[account(constraint = maker_nft_ata.mint.eq(&nft_mint_maker.key())  @ MYERROR::MintIncorrect)]
+    #[account(constraint = swap_data_account.nft_mint_maker.eq(&nft_mint_maker.key())  @ MYERROR::MintIncorrect)]
     nft_mint_maker: Box<Account<'info, Mint>>,
+    #[account(constraint = swap_data_account.payment_mint.eq(&mint_token.key())  @ MYERROR::MintIncorrect)]
     mint_token: Box<Account<'info, Mint>>,
 
     /// CHECK: in constraints
@@ -1302,7 +1304,7 @@ pub struct CancelSwap<'info> {
 pub struct OverrideTime<'info> {
     #[account(
         mut,
-        seeds = [&swap_data_account.seed.as_bytes()], 
+        seeds = [&get_seed_buffer(swap_data_account.clone())],
         bump,
         constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker
     )]
@@ -1373,6 +1375,7 @@ impl SwapData {
     const LEN: usize =
         8 + //Base
         1 + //Royalties
+        3 + //Options
         8 + //i64
         (25 + 1) * Bid::LEN + //bid len
         32 + //seed
@@ -1395,38 +1398,6 @@ impl Bid {
     const LEN: usize = 32 + 8 * 5;
 }
 
-// pub enum TradeStatus {
-//     Initializing = 0,
-//     Initialized = 1,
-//     Accepted = 2,
-//     Closed = 3,
-//     Canceling = 100,
-// }
-// impl TradeStatus {
-//     pub fn from_u8(status: u8) -> TradeStatus {
-//         match status {
-//             0 => TradeStatus::Initializing,
-//             1 => TradeStatus::Initialized,
-//             2 => TradeStatus::Accepted,
-//             3 => TradeStatus::Closed,
-
-//             100 => TradeStatus::Canceling,
-
-//             _ => panic!("Invalid Proposal Status"),
-//         }
-//     }
-
-//     pub fn to_u8(&self) -> u8 {
-//         match self {
-//             TradeStatus::Initializing => 0,
-//             TradeStatus::Initialized => 1,
-//             TradeStatus::Accepted => 2,
-//             TradeStatus::Closed => 3,
-
-//             TradeStatus::Canceling => 100,
-//         }
-//     }
-// }
 pub struct SendPNft<'info> {
     from: AccountInfo<'info>,
     from_ata: AccountInfo<'info>,
@@ -1504,13 +1475,17 @@ fn shorten(address: Pubkey) -> String {
     address.to_string().split_at(4).0.to_owned() + "..." + address.to_string().split_at(40).1
 }
 
-fn get_seed_buffer(maker: Pubkey, mint: Pubkey) -> Vec<u8> {
-    let seed_str = get_seed_string(maker, mint);
-    // msg!("seed_str {:?}", seed_str);
-    seed_str.as_bytes().to_vec()
+fn init_get_seed_string(maker: Pubkey, nft_mint_maker: Pubkey) -> String {
+    maker.to_string().split_at(16).0.to_owned() + nft_mint_maker.to_string().split_at(16).0
 }
-fn get_seed_string(maker: Pubkey, mint: Pubkey) -> String {
-    maker.to_string().split_at(16).0.to_owned() + mint.to_string().split_at(16).0
+fn init_get_seed_buffer(maker: Pubkey, nft_mint_maker: Pubkey) -> Vec<u8> {
+    init_get_seed_string(maker, nft_mint_maker).as_bytes().to_vec()
+}
+fn get_seed_buffer(sda: Box<anchor_lang::prelude::Account<'_, SwapData>>) -> Vec<u8> {
+    get_seed_string(sda).as_bytes().to_vec()
+}
+fn get_seed_string(sda: Box<anchor_lang::prelude::Account<'_, SwapData>>) -> String {
+    sda.maker.to_string().split_at(16).0.to_owned() + sda.nft_mint_maker.to_string().split_at(16).0
 }
 fn get_metadata(nft_metadata: AccountInfo) -> Metadata {
     Metadata::safe_deserialize(&nft_metadata.data.borrow()).unwrap()
