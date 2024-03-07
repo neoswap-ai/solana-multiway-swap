@@ -58,18 +58,18 @@ describe("compressed NFT Test Unit", () => {
 
     // let swapDataAccount: PublicKey | undefined = undefined;
 
-    let nftMintMaker = "8n6EL6wceWymYJdfJvfRxiXWmcfX9tySsRXDRqZxSe1f";
-    let maker_collection = "BamRUYoLsaomADRMdE2HXdpu9N8CUdCWwswup3yDjjBF";
+    // let nftMintMaker = "8n6EL6wceWymYJdfJvfRxiXWmcfX9tySsRXDRqZxSe1f";
+    // let maker_collection = "BamRUYoLsaomADRMdE2HXdpu9N8CUdCWwswup3yDjjBF";
 
-    let nftMintTaker = "EtmJDdHMpd8aC1SAnFodzY9GRMmMgDw5zKscRvjCVjcP";
-    let taker_collection = "DvwXZN69F8eRVSoac2qMzSdceDQCBWQWVWqWjpbcG8o4";
+    // let nftMintTaker = "EtmJDdHMpd8aC1SAnFodzY9GRMmMgDw5zKscRvjCVjcP";
+    // let taker_collection = "DvwXZN69F8eRVSoac2qMzSdceDQCBWQWVWqWjpbcG8o4";
 
     //reverse
-    // let nftMintTaker = "8n6EL6wceWymYJdfJvfRxiXWmcfX9tySsRXDRqZxSe1f";
-    // let taker_collection = "BamRUYoLsaomADRMdE2HXdpu9N8CUdCWwswup3yDjjBF";
+    let nftMintTaker = "8n6EL6wceWymYJdfJvfRxiXWmcfX9tySsRXDRqZxSe1f";
+    let taker_collection = "BamRUYoLsaomADRMdE2HXdpu9N8CUdCWwswup3yDjjBF";
 
-    // let nftMintMaker = "v4HLXrmbPqa5M6XFqveY23HcxfobPCkdutbNrYv24qY";
-    // let maker_collection = "DvwXZN69F8eRVSoac2qMzSdceDQCBWQWVWqWjpbcG8o4";
+    let nftMintMaker = "v4HLXrmbPqa5M6XFqveY23HcxfobPCkdutbNrYv24qY";
+    let maker_collection = "DvwXZN69F8eRVSoac2qMzSdceDQCBWQWVWqWjpbcG8o4";
 
     // let paymentMint = "VkW2xoKYRe8zVJgtX6otepGpw7cVvVMF2jVBPxDopw3";
     let paymentMint = WRAPPED_SOL_MINT.toString();
@@ -100,7 +100,6 @@ describe("compressed NFT Test Unit", () => {
         // console.log(neoConst.NEOSWAP_PROGRAM_ID_DEV.toString());
     });
 
-    
     // it("makeSwap", async () => {
     //     console.log(neoConst.NEOSWAP_PROGRAM_ID_DEV.toString());
 
@@ -156,27 +155,27 @@ describe("compressed NFT Test Unit", () => {
     //     console.log("hash", hash);
     // });
 
-    // it("makeSwap", async () => {
-    //     console.log(neoConst.NEOSWAP_PROGRAM_ID_DEV.toString());
-    //     try {
-    //         let maker = user1;
-    //         let initData = await neoSwap.CREATE_INSTRUCTIONS.createMakeSwapInstructions({
-    //             maker: maker.publicKey.toString(),
-    //             bid,
-    //             endDate,
-    //             nftMintMaker,
-    //             paymentMint,
-    //             clusterOrUrl,
-    //         });
-    //         console.log("SDA", initData.swapDataAccount.toString());
-    //         await simuTx(initData.bTx.tx, maker.publicKey, connection);
-    //         // const txSig = await connection.sendTransaction(initData.tx, [maker]);
-    //         // console.log("txSig", txSig);
-    //     } catch (error) {
-    //         console.log(error);
-    //         throw error;
-    //     }
-    // });
+    it("makeSwap", async () => {
+        console.log(neoConst.NEOSWAP_PROGRAM_ID_DEV.toString());
+        try {
+            let maker = user1;
+            let initData = await neoSwap.CREATE_INSTRUCTIONS.createMakeSwapInstructions({
+                maker: maker.publicKey.toString(),
+                bid,
+                endDate,
+                nftMintMaker,
+                paymentMint,
+                clusterOrUrl,
+            });
+            console.log("SDA", initData.swapDataAccount.toString());
+            await simuTx(initData.bTx.tx, maker.publicKey, connection);
+            // const txSig = await connection.sendTransaction(initData.tx, [maker]);
+            // console.log("txSig", txSig);
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    });
 
     // it("takeSwap", async () => {
     //     try {
