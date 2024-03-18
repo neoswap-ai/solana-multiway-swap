@@ -6,7 +6,7 @@
         "@metaplex-foundation/mpl-token-metadata": "^3.2.0",
         "@metaplex-foundation/umi": "^0.8.2",
         "@metaplex-foundation/umi-bundle-defaults": "^0.8.2",
-        "@neoswap/solana-collection-swap": "file:../NPM",
+        "@neoswap/solana-collection-swap": "^0.1.5-Beta22",
         "@project-serum/anchor": "^0.25.0",
         "@solana/spl-token": "^0.3.5",
         "@solana/wallet-adapter-base": "^0.9.17",

@@ -662,7 +662,7 @@ pub mod neo_swap {
             SendToken {
                 from: ctx.accounts.swap_data_account.to_account_info(),
                 from_ata: ctx.accounts.swap_data_account_token_ata.clone(),
-                to: ctx.accounts.maker.to_account_info().clone(),
+                to: ctx.accounts.maker.clone(),
                 to_ata: ctx.accounts.maker_token_ata.clone(),
                 token_program: ctx.accounts.token_program.to_account_info(),
             }
@@ -687,7 +687,7 @@ pub mod neo_swap {
             to: ctx.accounts.maker.to_account_info(),
             to_ata: ctx.accounts.maker_nft_ata.to_account_info(),
             mint: ctx.accounts.nft_mint_maker.to_account_info(),
-            signer: ctx.accounts.maker.to_account_info(),
+            signer: ctx.accounts.signer.to_account_info(),
             auth_rules: ctx.accounts.auth_rules_maker.clone(),
             auth_rules_program: ctx.accounts.auth_rules_program.to_account_info(),
             destination_token_record: ctx.accounts.destination_token_record_maker.clone(),
@@ -1182,7 +1182,6 @@ pub struct ClaimSwap<'info> {
     auth_rules_program: AccountInfo<'info>,
 }
 #[derive(Accounts)]
-#[instruction()]
 pub struct CancelSwap<'info> {
     #[account(
         mut,
@@ -1204,8 +1203,10 @@ pub struct CancelSwap<'info> {
         constraint = swap_data_account_token_ata.owner.eq(&swap_data_account.to_account_info().key() ) @ MYERROR::IncorrectOwner
     )]
     swap_data_account_token_ata: Account<'info, TokenAccount>,
+    /// CHECK: inside the function Logic
     #[account( constraint = maker.key().eq(&swap_data_account.maker)  @ MYERROR::NotMaker )]
-    maker: Signer<'info>,
+    maker: AccountInfo<'info>,
+    signer: Signer<'info>,
     #[account(
         mut,
         constraint = maker_nft_ata.mint.eq(&nft_mint_maker.key()) @ MYERROR::MintIncorrect,
@@ -1472,7 +1473,7 @@ pub struct TransferData<'a> {
 //
 //
 fn shorten(address: Pubkey) -> String {
-    address.to_string().split_at(4).0.to_owned() + "..." + address.to_string().split_at(40).1
+    address.to_string().split_at(4).0.to_string() + "..." + &address.to_string().split_at(40).1.to_string()
 }
 
 fn init_get_seed_string(maker: Pubkey, nft_mint_maker: Pubkey) -> String {
