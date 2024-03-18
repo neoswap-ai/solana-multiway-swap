@@ -109,7 +109,7 @@ describe("compressed NFT Test Unit", () => {
         await simuTx(initData.bTx.tx, connection);
 
         initData.bTx.tx.sign([maker]);
-        
+
         const txSig = await connection.sendTransaction(initData.bTx.tx);
         console.log("txSig", txSig);
     });
@@ -136,7 +136,7 @@ describe("compressed NFT Test Unit", () => {
     });
 });
 
-async function simuTx(tx: VersionedTransaction, connection: Connection) {
+export async function simuTx(tx: VersionedTransaction, connection: Connection) {
     let bcdata = await connection.getLatestBlockhash();
     let bxh = bcdata.blockhash;
     tx.message.recentBlockhash = bxh;
@@ -147,4 +147,6 @@ async function simuTx(tx: VersionedTransaction, connection: Connection) {
     if (simu.value.err) throw new Error(JSON.stringify(simu.value.err));
 }
 
-let delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+export async function delay(ms: number) {
+    await new Promise((res) => setTimeout(res, ms));
+}
