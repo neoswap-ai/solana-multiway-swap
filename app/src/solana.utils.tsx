@@ -7,48 +7,53 @@ import NeoSwap from './neoSwap.module.v4.2';
 import { CONST_PROGRAM } from './solana.test';
 
 export async function findAtaUserFromMint(
-    program: Program,
-    mint: PublicKey,
-    publickey: PublicKey
+    program: Program, // The anchor program instance to interact with the Solana blockchain
+    mint: PublicKey, // The public key of the mint (token) to find the ATAs for
+    publickey: PublicKey // The public key of the user whose ATAs are being searched
 ): Promise<
     Array<{
-        pubkey: web3.PublicKey;
-        account: web3.AccountInfo<Buffer>;
+        pubkey: web3.PublicKey; // The public key of the found token account
+        account: web3.AccountInfo<Buffer>; // The account information, including the balance, owner, and data
     }>
 > {
+    // Fetches and returns the associated token accounts by the owner's public key and the specified mint
     return (
         await program.provider.connection.getTokenAccountsByOwner(publickey, {
             mint: mint,
         })
-    ).value;
+    ).value; // Extracts the value from the response which contains the list of token accounts
 }
 
 export async function findOrCreateAta(
-    program: Program,
-    owner: PublicKey,
-    mint: PublicKey,
-    payer: PublicKey
+    program: Program, // The anchor program instance to interact with the Solana blockchain
+    owner: PublicKey, // The public key of the owner for whom the ATA will be found or created
+    mint: PublicKey, // The public key of the mint (token) for which the ATA is related
+    payer: PublicKey // The public key of the payer who will pay for the transaction if a new ATA needs to be created
 ): Promise<{ mintAta: PublicKey; transaction?: Transaction }> {
-    let mintAta;
-    let txCreate = new Transaction();
-    let ixCreateMintAta;
-    // Solana.
+    let mintAta; // Variable to store the mint's associated token account (ATA) public key
+    let txCreate = new Transaction(); // Initialize a new transaction for creating an ATA, if necessary
+    let ixCreateMintAta; // Instruction for creating the mint ATA
+
     try {
+        // Attempt to find the existing ATA for the given mint and owner
         const mintAtaData = await findAtaUserFromMint(program, mint, owner);
         console.log('mintAtaData', mintAtaData[0].pubkey.toBase58());
+
+        // If more than one ATA is found, log their public keys for debugging purposes
         if (mintAtaData.length > 1) {
             console.log('mintAtaData[1].pubkey.toBase58()', mintAtaData[1]?.pubkey.toBase58());
             console.log('mintAtaData[2].pubkey.toBase58()', mintAtaData[2]?.pubkey.toBase58());
         }
         return { mintAta: mintAtaData[0].pubkey };
     } catch (error) {
-        const res = await cIPdaAta(mint, payer, owner);
-        mintAta = res.mintAta;
-        ixCreateMintAta = res.ix;
+        // If no ATA is found, create a new one
+        const res = await cIPdaAta(mint, payer, owner); // Call the function to create a new ATA
+        mintAta = res.mintAta; // Store the new ATA's public key
+        ixCreateMintAta = res.ix; // Store the instruction to create the new ATA
         console.log('mintAta other + txadd', mintAta.toBase58());
 
-        txCreate.add(ixCreateMintAta);
-        return { mintAta, transaction: txCreate };
+        txCreate.add(ixCreateMintAta); // Add the create ATA instruction to the transaction
+        return { mintAta, transaction: txCreate }; // Return the new ATA's public key and the transaction
     }
 }
 
@@ -74,8 +79,10 @@ export async function sendAllPopulateInstruction(
         signers?: web3.Signer[] | undefined;
     }>
 ) {
+    // Fetch the latest blockhash to use for the transactions
     const recentBlockhash = (await program.provider.connection.getLatestBlockhash()).blockhash;
     let sendAllArray = transactionList;
+    // Populate each transaction with the feePayer and recentBlockhash
     sendAllArray.forEach((element) => {
         element.tx.feePayer = program.provider.publicKey;
         element.tx.recentBlockhash = recentBlockhash;
@@ -91,6 +98,7 @@ export async function getSwapData(
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
 }> {
+    // Retrieve swap data from a Program Derived Address (PDA) using the NeoSwap module
     return await NeoSwap.getSwapDataFromPDA({
         swapDataAccount,
         provider: program.provider as AnchorProvider,
@@ -98,13 +106,12 @@ export async function getSwapData(
     });
 }
 
-export async function getSeed(
-    sentData: SwapData,
-): Promise<{
+export async function getSeed(sentData: SwapData): Promise<{
     swapDataAccount: web3.PublicKey;
     swapDataAccount_seed: Buffer;
     swapDataAccount_bump: number;
 }> {
+    // Generate a seed and bump for a new swap data account based on given swap data
     return await NeoSwap.getSeedFromData({
         swapDataGiven: sentData,
         CONST_PROGRAM: CONST_PROGRAM,

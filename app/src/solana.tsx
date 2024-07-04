@@ -16,6 +16,9 @@ const Solana: FC = () => {
     const { publicKey } = useWallet();
     const anchorWallet = useAnchorWallet();
 
+    // Define callbacks for deposit, claim, and cancel operations, following a similar pattern
+    // Each operation checks for wallet connection, gets the program, and performs the operation using NeoSwap module
+    // Error handling is included for each operation
     const getProvider = useCallback(async (): Promise<AnchorProvider> => {
         if (!anchorWallet) {
             throw new WalletNotConnectedError();
@@ -155,6 +158,7 @@ const Solana: FC = () => {
         }
     }, [publicKey, getProgram]);
 
+    // Component returns buttons to trigger each operation, disabled if no wallet is connected
     return (
         <div>
             <div>
